@@ -1,11 +1,11 @@
-# DataQuest Lab — Guia de Layout, Estilo e Identidade Visual
+# Data Study Map - Guia de Layout, Estilo e Identidade Visual
 
 ## 1. Conceito da plataforma
 
-**Nome:** DataQuest Lab  
+**Nome:** Data Study Map  
 **Slogan:** Aprenda dados na prática, um desafio por vez.
 
-A DataQuest Lab é uma plataforma educacional voltada para pessoas que desejam aprender **SQL, Estatística, BI, Indicadores, KPIs e Análise de Dados** por meio de desafios práticos, explicações claras e trilhas de estudo personalizadas.
+A Data Study Map é uma plataforma educacional voltada para pessoas que desejam aprender **SQL, Estatística, BI, Indicadores, KPIs e Análise de Dados** por meio de desafios práticos, explicações claras e trilhas de estudo personalizadas.
 
 A proposta visual deve transmitir:
 
@@ -57,7 +57,7 @@ Priorizar:
 
 ### Nome oficial
 
-**DataQuest Lab**
+**Data Study Map**
 
 ### Interpretação do nome
 
@@ -67,15 +67,15 @@ Priorizar:
 
 ### Variações permitidas
 
-- DataQuest Lab
-- DataQuest
-- DQLab
+- Data Study Map
+- Data Study Map
+- DSM
 
 ### Uso recomendado
 
-Usar **DataQuest Lab** em materiais institucionais, cabeçalho da plataforma e tela inicial.
+Usar **Data Study Map** em materiais institucionais, cabeçalho da plataforma e tela inicial.
 
-Usar **DataQuest** em espaços menores ou elementos visuais compactos.
+Usar **Data Study Map** em espaços menores ou elementos visuais compactos.
 
 ---
 
@@ -133,7 +133,7 @@ A logo deve ser:
 Exemplo:
 
 ```txt
-DataQuest Lab
+Data Study Map
 ```
 
 ---
@@ -142,11 +142,11 @@ DataQuest Lab
 
 ### Fonte principal
 
-**Satoshi**
+**Inter**
 
-A fonte Satoshi é recomendada por transmitir uma sensação moderna, limpa, sofisticada e adequada para produtos digitais.
+A fonte Inter é recomendada por transmitir uma sensação moderna, limpa, sofisticada e adequada para produtos digitais.
 
-Ela combina bem com a proposta da DataQuest Lab porque comunica:
+Ela combina bem com a proposta da Data Study Map porque comunica:
 
 - Tecnologia
 - Educação digital
@@ -158,20 +158,20 @@ Ela combina bem com a proposta da DataQuest Lab porque comunica:
 ### Fallback recomendado
 
 ```css
-font-family: 'Satoshi', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 ```
 
 ### Uso dos pesos
 
 | Uso | Peso recomendado |
 |---|---|
-| Logo | Satoshi Black / 900 |
-| Títulos principais | Satoshi Bold / 700 |
-| Subtítulos | Satoshi Medium ou Bold / 500-700 |
-| Textos comuns | Satoshi Regular / 400 |
-| Botões | Satoshi Medium ou Bold / 500-700 |
-| Labels e badges | Satoshi Medium / 500 |
-| Números e KPIs | Satoshi Bold / 700 |
+| Logo | Inter Black / 900 |
+| Títulos principais | Inter Bold / 700 |
+| Subtítulos | Inter Medium ou Bold / 500-700 |
+| Textos comuns | Inter Regular / 400 |
+| Botões | Inter Medium ou Bold / 500-700 |
+| Labels e badges | Inter Medium / 500 |
+| Números e KPIs | Inter Bold / 700 |
 
 ### Hierarquia tipográfica sugerida
 
@@ -243,7 +243,7 @@ small {
 
 ```css
 :root {
-  --font-primary: 'Satoshi', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   --color-bg-primary: #F8FAFC;
   --color-bg-secondary: #F1F5F9;
@@ -854,7 +854,7 @@ A plataforma deve considerar:
 ## 23. Prompt base para Codex / VS Code
 
 ```txt
-Crie uma aplicação web em HTML, CSS e JavaScript puro chamada "DataQuest Lab".
+Crie uma aplicação web em HTML, CSS e JavaScript puro chamada "Data Study Map".
 
 Objetivo:
 A plataforma deve ajudar pessoas interessadas em aprender SQL, Estatística, BI, Indicadores e Análise de Dados por meio de desafios interativos, diagnóstico de perfil, explicações didáticas e recomendações personalizadas de estudo.
@@ -865,21 +865,21 @@ Não utilizar aparência gamer, hacker, neon ou dark como padrão principal.
 A interface deve parecer uma plataforma SaaS educacional premium, com bastante espaço em branco, hierarquia visual clara, boa legibilidade e cards suaves.
 
 Nome da plataforma:
-DataQuest Lab
+Data Study Map
 
 Slogan:
 Aprenda dados na prática, um desafio por vez.
 
 Fonte:
-Utilizar Satoshi como fonte principal.
+Utilizar Inter como fonte principal.
 Fallback: Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif.
 
 Aplicação da fonte:
-- Logo: Satoshi Black
-- Títulos: Satoshi Bold
-- Subtítulos: Satoshi Medium ou Bold
-- Textos: Satoshi Regular
-- Botões e labels: Satoshi Medium
+- Logo: Inter Black
+- Títulos: Inter Bold
+- Subtítulos: Inter Medium ou Bold
+- Textos: Inter Regular
+- Botões e labels: Inter Medium
 
 Paleta oficial:
 - Fundo principal: #F8FAFC
@@ -900,7 +900,7 @@ Paleta oficial:
 - Bordas: #E2E8F0
 
 Logo:
-Criar uma logo clean para "DataQuest Lab".
+Criar uma logo clean para "Data Study Map".
 A logo deve combinar banco de dados, lupa ou bússola e gráfico de crescimento.
 A logo deve ser simples, escalável e funcionar bem em fundo claro.
 Evitar efeitos neon, brilhos intensos ou sombras pesadas.
@@ -924,7 +924,7 @@ Funcionalidades:
 - O sistema deve permitir reiniciar o diagnóstico.
 - Não usar backend neste primeiro momento.
 - Armazenar progresso temporariamente em JavaScript.
-- Separar os arquivos em index.html, style.css e script.js.
+- Separar os arquivos em `index.html`, `style.css`, `styles/` e `src`.
 
 Áreas avaliadas no diagnóstico:
 - SQL

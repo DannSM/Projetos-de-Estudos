@@ -1,0 +1,207 @@
+:root {
+  --font-primary: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", "Fira Code", Consolas, monospace;
+
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+
+  --color-border: #e2e8f0;
+  --color-border-soft: #eef2f7;
+
+  --color-primary: #2563eb;
+  --color-primary-light: #dbeafe;
+  --color-primary-hover: #1d4ed8;
+  --color-accent: #06b6d4;
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-error: #dc2626;
+  --color-error-light: #fee2e2;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-lift: 0 18px 44px rgba(15, 23, 42, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, 0.08), transparent 26rem),
+    radial-gradient(circle at 90% 12%, rgba(6, 182, 212, 0.12), transparent 24rem),
+    linear-gradient(180deg, #ffffff 0%, var(--color-bg-primary) 28rem, var(--color-bg-secondary) 100%);
+  background-size: 42px 42px, 42px 42px, auto, auto, auto;
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 82px;
+  padding: 0.65rem clamp(1rem, 4vw, 2rem);
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: max-content;
+}
+
+.brand-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.7rem;
+  height: 4.7rem;
+  overflow: visible;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.brand-logo {
+  display: block;
+  width: 4.35rem;
+  height: 4.35rem;
+  object-fit: contain;
+  object-position: 50% 50%;
+  transform: translateX(2px);
+}
+
+.brand-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22rem;
+  color: var(--color-text-primary);
+  font-size: 1.42rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.brand-name strong {
+  color: var(--color-primary);
+  font-weight: 900;
+}
+
+.brand-name span:nth-child(2) {
+  color: var(--color-success);
+}
+
+.brand-name span:nth-child(2) strong {
+  color: var(--color-success);
+}
+
+.brand-name span:nth-child(3) {
+  color: var(--color-warning);
+}
+
+.brand-name span:nth-child(3) strong {
+  color: var(--color-warning);
+}
+
+.top-nav {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-text-secondary);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.top-nav a {
+  padding: 0.62rem 0.82rem;
+  border-radius: var(--radius-sm);
+}
+
+.top-nav a:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.header-cta,
+.button,
+.answer-button,
+.filter-button,
+.submit-button,
+.restart-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.header-cta,
+.button-primary,
+.submit-button {
+  color: #ffffff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.header-cta {
+  padding: 0.66rem 1rem;
+}
+
+.header-cta:hover,
+.button-primary:hover,
+.submit-button:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
+}
+
+:focus-visible {
+  outline: 3px solid rgba(245, 158, 11, 0.55);
+  outline-offset: 3px;
+}

@@ -1,0 +1,94 @@
+@media (max-width: 900px) {
+  .app-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .section-shell {
+    scroll-margin-top: 144px;
+  }
+
+  .top-nav {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .hero,
+  .two-column,
+  .challenge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: auto;
+  }
+
+  .track-grid,
+  .recommendation-grid,
+  .result-metrics,
+  .insight-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .score-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .app-header,
+  .section-heading,
+  .app-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-header {
+    display: flex;
+  }
+
+  .section-shell {
+    scroll-margin-top: 172px;
+  }
+
+  .header-cta {
+    display: none;
+  }
+
+  .brand-logo {
+    width: 3.55rem;
+    height: 3.55rem;
+    transform: translateX(1px);
+  }
+
+  .brand-logo-wrap {
+    width: 3.8rem;
+    height: 3.8rem;
+  }
+
+  .brand-name {
+    font-size: 1.16rem;
+  }
+
+  .hero-actions,
+  .button,
+  .submit-button,
+  .restart-button {
+    width: 100%;
+  }
+
+  .track-grid,
+  .recommendation-grid,
+  .result-metrics,
+  .insight-grid,
+  .hero-metrics,
+  .preview-options {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-top {
+    flex-direction: column;
+  }
+}
