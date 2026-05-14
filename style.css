@@ -453,7 +453,18 @@ h3 {
 .hero-preview-body {
   display: grid;
   gap: 0.9rem;
-  animation: previewIn 260ms ease;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.hero-preview-body.is-leaving {
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+}
+
+.hero-preview-body.is-entering {
+  animation: previewIn 280ms ease;
 }
 
 .hero-preview-body h2 {
@@ -525,9 +536,9 @@ h3 {
 }
 
 .preview-options .preview-correct {
-  color: var(--color-success);
-  background: var(--color-success-light);
-  border-color: var(--color-success);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
 }
 
 .two-column {

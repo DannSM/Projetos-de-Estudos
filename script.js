@@ -349,7 +349,8 @@ const state = {
   completedChallenges: new Set(),
   selectedChallengeOptions: {},
   heroPreviewIndex: 0,
-  heroPreviewTimer: null
+  heroPreviewTimer: null,
+  heroPreviewTransitioning: false
 };
 
 const quizMount = document.querySelector("#quizMount");
@@ -398,8 +399,8 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
     heroPreviewCode.textContent = "";
   }
 
-  heroPreviewOptions.innerHTML = challenge.options.map((option, optionIndex) => `
-    <span class="${optionIndex === challenge.correct ? "preview-correct" : ""}">${option}</span>
+  heroPreviewOptions.innerHTML = challenge.options.map((option) => `
+    <span>${option}</span>
   `).join("");
 
   heroPreviewControls.innerHTML = featuredChallenges.map((_, dotIndex) => `
@@ -408,10 +409,29 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
 
   heroPreviewControls.querySelectorAll("[data-preview-index]").forEach((button) => {
     button.addEventListener("click", () => {
-      renderHeroPreview(Number(button.dataset.previewIndex));
+      transitionHeroPreview(Number(button.dataset.previewIndex));
       startHeroPreviewRotation();
     });
   });
+}
+
+function transitionHeroPreview(nextIndex) {
+  if (!heroPreviewQuestion || state.heroPreviewTransitioning) return;
+
+  const previewBody = document.querySelector("#heroPreviewBody");
+  state.heroPreviewTransitioning = true;
+  previewBody.classList.add("is-leaving");
+
+  setTimeout(() => {
+    renderHeroPreview(nextIndex);
+    previewBody.classList.remove("is-leaving");
+    previewBody.classList.add("is-entering");
+
+    setTimeout(() => {
+      previewBody.classList.remove("is-entering");
+      state.heroPreviewTransitioning = false;
+    }, 260);
+  }, 210);
 }
 
 function startHeroPreviewRotation() {
@@ -420,7 +440,7 @@ function startHeroPreviewRotation() {
   }
 
   state.heroPreviewTimer = setInterval(() => {
-    renderHeroPreview(state.heroPreviewIndex + 1);
+    transitionHeroPreview(state.heroPreviewIndex + 1);
   }, 5200);
 }
 
