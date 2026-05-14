@@ -432,6 +432,23 @@ h3 {
   pointer-events: none;
 }
 
+.preview-progress {
+  height: 0.28rem;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  border-radius: 999px;
+}
+
+.preview-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent), var(--color-success));
+  border-radius: inherit;
+  transform-origin: left center;
+  animation: previewProgress 5200ms linear infinite;
+}
+
 .preview-ribbon {
   display: flex;
   align-items: center;
@@ -460,11 +477,11 @@ h3 {
 
 .hero-preview-body.is-leaving {
   opacity: 0;
-  transform: translateY(10px) scale(0.985);
+  transform: translateY(12px) scale(0.98);
 }
 
 .hero-preview-body.is-entering {
-  animation: previewIn 280ms ease;
+  animation: previewIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero-preview-body h2 {
@@ -499,12 +516,34 @@ h3 {
 @keyframes previewIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-8px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes optionIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes previewProgress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
   }
 }
 
@@ -533,6 +572,30 @@ h3 {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-weight: 700;
+  transform: translateY(0);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.preview-options span:hover {
+  background: #ffffff;
+  border-color: rgba(37, 99, 235, 0.26);
+  transform: translateY(-1px);
+}
+
+.hero-preview-body.is-entering .preview-options span {
+  animation: optionIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-preview-body.is-entering .preview-options span:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.hero-preview-body.is-entering .preview-options span:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.hero-preview-body.is-entering .preview-options span:nth-child(4) {
+  animation-delay: 135ms;
 }
 
 .preview-options .preview-correct {

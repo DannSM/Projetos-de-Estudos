@@ -311,6 +311,54 @@ const challenges = [
   }
 ];
 
+const heroPreviewChallenges = [
+  {
+    category: "SQL Básico",
+    level: "Iniciante",
+    points: 5,
+    question: "Qual resultado a query retorna?",
+    code: `SELECT COUNT(*)\nFROM clientes;`,
+    context: "A tabela clientes possui 8 linhas cadastradas.",
+    options: ["A) 1", "B) 5", "C) 8", "D) NULL"]
+  },
+  {
+    category: "SQL Básico",
+    level: "Iniciante",
+    points: 5,
+    question: "Qual filtro busca apenas vendas acima de 100?",
+    code: `SELECT *\nFROM vendas\nWHERE valor > 100;`,
+    context: "A cláusula WHERE restringe quais linhas entram no resultado.",
+    options: ["A) valor maior que 100", "B) valor igual a 100", "C) todos os valores", "D) valores vazios"]
+  },
+  {
+    category: "SQL Básico",
+    level: "Básico",
+    points: 8,
+    question: "Qual coluna será usada para ordenar o resultado?",
+    code: `SELECT nome, total\nFROM ranking_clientes\nORDER BY total DESC;`,
+    context: "DESC mostra os maiores valores primeiro.",
+    options: ["A) nome", "B) total", "C) ranking_clientes", "D) SELECT"]
+  },
+  {
+    category: "SQL Básico",
+    level: "Básico",
+    points: 8,
+    question: "O que essa query calcula?",
+    code: `SELECT AVG(nota)\nFROM avaliacoes;`,
+    context: "AVG calcula a média dos valores de uma coluna numérica.",
+    options: ["A) menor nota", "B) maior nota", "C) média das notas", "D) quantidade de notas"]
+  },
+  {
+    category: "Indicadores e KPIs",
+    level: "Básico",
+    points: 8,
+    question: "Qual leitura combina melhor com esse indicador?",
+    code: `conversao = vendas / visitantes`,
+    context: "A taxa de conversão mede a proporção de visitantes que viraram vendas.",
+    options: ["A) eficiência do funil", "B) estoque disponível", "C) soma de visitas", "D) custo fixo"]
+  }
+];
+
 const areaGoals = ["SQL", "Estatística", "Excel/BI", "Lógica de dados", "Interpretação de indicadores"];
 
 const areaGuides = {
@@ -367,6 +415,7 @@ const heroPreviewCode = document.querySelector("#heroPreviewCode");
 const heroPreviewOptions = document.querySelector("#heroPreviewOptions");
 const heroPreviewHint = document.querySelector("#heroPreviewHint");
 const heroPreviewControls = document.querySelector("#heroPreviewControls");
+const heroPreviewProgress = document.querySelector("#heroPreviewProgress");
 
 function init() {
   renderHeroPreview();
@@ -380,9 +429,8 @@ function init() {
 function renderHeroPreview(index = state.heroPreviewIndex) {
   if (!heroPreviewQuestion) return;
 
-  const featuredChallenges = challenges.slice(0, 5);
-  const challenge = featuredChallenges[index % featuredChallenges.length];
-  state.heroPreviewIndex = index % featuredChallenges.length;
+  const challenge = heroPreviewChallenges[index % heroPreviewChallenges.length];
+  state.heroPreviewIndex = index % heroPreviewChallenges.length;
 
   heroPreviewCategory.textContent = challenge.category;
   heroPreviewCategory.className = `category-tag ${challenge.category.includes("SQL") ? "badge-sql" : ""}`;
@@ -390,6 +438,7 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
   heroPreviewPoints.textContent = `${challenge.points} pontos`;
   heroPreviewQuestion.textContent = challenge.question;
   heroPreviewHint.textContent = challenge.context || challenge.explanation;
+  restartHeroPreviewProgress();
 
   if (challenge.code) {
     heroPreviewCode.hidden = false;
@@ -403,7 +452,7 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
     <span>${option}</span>
   `).join("");
 
-  heroPreviewControls.innerHTML = featuredChallenges.map((_, dotIndex) => `
+  heroPreviewControls.innerHTML = heroPreviewChallenges.map((_, dotIndex) => `
     <button class="preview-dot ${dotIndex === state.heroPreviewIndex ? "active" : ""}" type="button" data-preview-index="${dotIndex}" aria-label="Mostrar desafio ${dotIndex + 1}"></button>
   `).join("");
 
@@ -413,6 +462,14 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
       startHeroPreviewRotation();
     });
   });
+}
+
+function restartHeroPreviewProgress() {
+  if (!heroPreviewProgress) return;
+
+  heroPreviewProgress.style.animation = "none";
+  heroPreviewProgress.offsetHeight;
+  heroPreviewProgress.style.animation = "";
 }
 
 function transitionHeroPreview(nextIndex) {
@@ -430,7 +487,7 @@ function transitionHeroPreview(nextIndex) {
     setTimeout(() => {
       previewBody.classList.remove("is-entering");
       state.heroPreviewTransitioning = false;
-    }, 260);
+    }, 420);
   }, 210);
 }
 
