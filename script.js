@@ -347,7 +347,9 @@ const state = {
   areaScore: {},
   challengeScore: 0,
   completedChallenges: new Set(),
-  selectedChallengeOptions: {}
+  selectedChallengeOptions: {},
+  heroPreviewIndex: 0,
+  heroPreviewTimer: null
 };
 
 const quizMount = document.querySelector("#quizMount");
@@ -356,12 +358,70 @@ const resultMount = document.querySelector("#resultMount");
 const challengeMount = document.querySelector("#challengeMount");
 const challengeScore = document.querySelector("#challengeScore");
 const areaList = document.querySelector("#areaList");
+const heroPreviewCategory = document.querySelector("#heroPreviewCategory");
+const heroPreviewLevel = document.querySelector("#heroPreviewLevel");
+const heroPreviewPoints = document.querySelector("#heroPreviewPoints");
+const heroPreviewQuestion = document.querySelector("#heroPreviewQuestion");
+const heroPreviewCode = document.querySelector("#heroPreviewCode");
+const heroPreviewOptions = document.querySelector("#heroPreviewOptions");
+const heroPreviewHint = document.querySelector("#heroPreviewHint");
+const heroPreviewControls = document.querySelector("#heroPreviewControls");
 
 function init() {
+  renderHeroPreview();
+  startHeroPreviewRotation();
   renderAreaList();
   resetDiagnostic();
   renderChallenges("Todos");
   bindFilters();
+}
+
+function renderHeroPreview(index = state.heroPreviewIndex) {
+  if (!heroPreviewQuestion) return;
+
+  const featuredChallenges = challenges.slice(0, 5);
+  const challenge = featuredChallenges[index % featuredChallenges.length];
+  state.heroPreviewIndex = index % featuredChallenges.length;
+
+  heroPreviewCategory.textContent = challenge.category;
+  heroPreviewCategory.className = `category-tag ${challenge.category.includes("SQL") ? "badge-sql" : ""}`;
+  heroPreviewLevel.textContent = challenge.level;
+  heroPreviewPoints.textContent = `${challenge.points} pontos`;
+  heroPreviewQuestion.textContent = challenge.question;
+  heroPreviewHint.textContent = challenge.context || challenge.explanation;
+
+  if (challenge.code) {
+    heroPreviewCode.hidden = false;
+    heroPreviewCode.textContent = challenge.code;
+  } else {
+    heroPreviewCode.hidden = true;
+    heroPreviewCode.textContent = "";
+  }
+
+  heroPreviewOptions.innerHTML = challenge.options.map((option, optionIndex) => `
+    <span class="${optionIndex === challenge.correct ? "preview-correct" : ""}">${option}</span>
+  `).join("");
+
+  heroPreviewControls.innerHTML = featuredChallenges.map((_, dotIndex) => `
+    <button class="preview-dot ${dotIndex === state.heroPreviewIndex ? "active" : ""}" type="button" data-preview-index="${dotIndex}" aria-label="Mostrar desafio ${dotIndex + 1}"></button>
+  `).join("");
+
+  heroPreviewControls.querySelectorAll("[data-preview-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      renderHeroPreview(Number(button.dataset.previewIndex));
+      startHeroPreviewRotation();
+    });
+  });
+}
+
+function startHeroPreviewRotation() {
+  if (state.heroPreviewTimer) {
+    clearInterval(state.heroPreviewTimer);
+  }
+
+  state.heroPreviewTimer = setInterval(() => {
+    renderHeroPreview(state.heroPreviewIndex + 1);
+  }, 5200);
 }
 
 function renderAreaList() {

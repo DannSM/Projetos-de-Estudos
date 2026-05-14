@@ -60,23 +60,25 @@
         </div>
       </div>
 
-      <aside class="hero-panel" aria-label="Exemplo de desafio SQL">
-        <div class="challenge-preview-top">
-          <span class="category-tag badge-sql">SQL Intermediário</span>
-          <span class="level-tag">20 pontos</span>
+      <aside class="hero-panel hero-preview-card" aria-label="Prévia dinâmica de desafios">
+        <div class="preview-ribbon">
+          <span>Desafio em destaque</span>
+          <strong id="heroPreviewPoints">20 pontos</strong>
         </div>
-        <h2>Qual o resultado da query?</h2>
-        <code class="code-block">SELECT COUNT(*)
+        <div class="challenge-preview-top">
+          <span class="category-tag badge-sql" id="heroPreviewCategory">SQL Intermediário</span>
+          <span class="level-tag" id="heroPreviewLevel">Intermediário</span>
+        </div>
+        <div class="hero-preview-body" id="heroPreviewBody" aria-live="polite">
+          <h2 id="heroPreviewQuestion">Qual o resultado da query?</h2>
+          <code class="code-block" id="heroPreviewCode">SELECT COUNT(*)
 FROM cliente c
 LEFT JOIN compra cp
 ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
-        <div class="preview-options" aria-hidden="true">
-          <span>A) 3</span>
-          <span>B) 5</span>
-          <span class="preview-correct">C) 6</span>
-          <span>D) 7</span>
+          <div class="preview-options" id="heroPreviewOptions" aria-hidden="true"></div>
+          <p id="heroPreviewHint">O LEFT JOIN preserva clientes sem compra e pode multiplicar linhas quando há mais de uma compra relacionada.</p>
         </div>
-        <p>O LEFT JOIN preserva clientes sem compra e pode multiplicar linhas quando há mais de uma compra relacionada.</p>
+        <div class="preview-controls" id="heroPreviewControls" aria-label="Alternar desafio em destaque"></div>
       </aside>
     </section>
 

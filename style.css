@@ -210,6 +210,7 @@ input {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: clamp(4.5rem, 8vw, 6rem) 0;
+  scroll-margin-top: 110px;
 }
 
 .hero {
@@ -413,6 +414,87 @@ h3 {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98)),
     var(--color-surface);
+}
+
+.hero-preview-card {
+  isolation: isolate;
+}
+
+.hero-preview-card::after {
+  content: "";
+  position: absolute;
+  right: -3rem;
+  top: -3rem;
+  z-index: -1;
+  width: 9rem;
+  height: 9rem;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.preview-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.72rem 0.85rem;
+  color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary-light), #ffffff);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.preview-ribbon strong {
+  color: var(--color-success);
+}
+
+.hero-preview-body {
+  display: grid;
+  gap: 0.9rem;
+  animation: previewIn 260ms ease;
+}
+
+.hero-preview-body h2 {
+  margin-bottom: 0;
+}
+
+.hero-preview-body .code-block {
+  margin: 0;
+}
+
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.preview-dot {
+  width: 0.62rem;
+  height: 0.62rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  cursor: pointer;
+}
+
+.preview-dot.active {
+  width: 1.8rem;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+}
+
+@keyframes previewIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-panel h2 {
@@ -903,6 +985,10 @@ h3 {
     grid-template-columns: 1fr auto;
   }
 
+  .section-shell {
+    scroll-margin-top: 144px;
+  }
+
   .top-nav {
     grid-column: 1 / -1;
     justify-content: flex-start;
@@ -943,6 +1029,10 @@ h3 {
 
   .app-header {
     display: flex;
+  }
+
+  .section-shell {
+    scroll-margin-top: 172px;
   }
 
   .header-cta {
