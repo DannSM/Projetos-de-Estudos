@@ -3,7 +3,7 @@
 ## Conceito
 
 Data Study Map e uma plataforma educacional para aprender SQL, estatistica, BI, indicadores e analise de dados por meio de diagnostico, trilhas e desafios praticos.
-
+/
 ## Identidade
 
 - Nome oficial: Data Study Map

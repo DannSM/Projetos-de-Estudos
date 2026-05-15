@@ -2,7 +2,7 @@
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: clamp(3rem, 6vw, 4.5rem) 0;
-  scroll-margin-top: 110px;
+  scroll-margin-top: calc(var(--header-height) + 28px);
 }
 
 .hero {
@@ -14,7 +14,7 @@
 }
 
 .diagnostic-page {
-  min-height: calc(100vh - 82px);
+  min-height: calc(100vh - var(--header-height));
 }
 
 .has-sidebar {
@@ -23,7 +23,7 @@
 
 .app-sidebar {
   position: fixed;
-  top: 82px;
+  top: var(--header-height);
   bottom: 0;
   left: 0;
   z-index: 8;
@@ -103,7 +103,7 @@
 
 .diagnostic-intro-panel {
   position: sticky;
-  top: 112px;
+  top: calc(var(--header-height) + 30px);
 }
 
 .diagnostic-card {

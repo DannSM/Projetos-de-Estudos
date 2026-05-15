@@ -4,7 +4,7 @@
   }
 
   .section-shell {
-    scroll-margin-top: 144px;
+    scroll-margin-top: calc(var(--header-height) + 62px);
   }
 
   .has-sidebar {
@@ -13,7 +13,7 @@
 
   .app-sidebar {
     position: sticky;
-    top: 143px;
+    top: var(--header-height);
     bottom: auto;
     flex-direction: row;
     gap: 0.7rem;
@@ -96,11 +96,7 @@
   }
 
   .section-shell {
-    scroll-margin-top: 172px;
-  }
-
-  .app-sidebar {
-    top: 156px;
+    scroll-margin-top: calc(var(--header-height) + 68px);
   }
 
   .header-cta {

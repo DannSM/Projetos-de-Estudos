@@ -1,6 +1,7 @@
 :root {
   --font-primary: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-code: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  --header-height: 82px;
 
   --color-bg-primary: #f8fafc;
   --color-bg-secondary: #f1f5f9;
