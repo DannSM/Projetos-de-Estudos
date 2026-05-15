@@ -4,7 +4,7 @@
   }
 
   .section-shell {
-    scroll-margin-top: calc(var(--header-height) + 62px);
+    scroll-margin-top: calc(var(--header-height) + 56px);
   }
 
   .has-sidebar {
@@ -19,7 +19,7 @@
     gap: 0.7rem;
     width: 100%;
     overflow-x: auto;
-    padding: 0.7rem 1rem;
+    padding: 0.62rem 0.85rem;
     border-right: 0;
     border-bottom: 1px solid var(--color-border);
   }
@@ -57,8 +57,25 @@
     grid-template-columns: 1fr;
   }
 
-  .diagnostic-intro-panel {
+  .diagnostic-overview {
     position: static;
+    gap: 0.75rem;
+  }
+
+  .diagnostic-hero {
+    padding-top: 1rem;
+    padding-bottom: 0.2rem;
+  }
+
+  .diagnostic-shell {
+    gap: 1rem;
+    padding-top: 0.2rem;
+  }
+
+  .diagnostic-overview-card,
+  .quiz-card,
+  .result-card {
+    padding: 0.92rem;
   }
 
   .hero {
@@ -96,7 +113,47 @@
   }
 
   .section-shell {
-    scroll-margin-top: calc(var(--header-height) + 68px);
+    width: min(1120px, calc(100% - 24px));
+    scroll-margin-top: calc(var(--header-height) + 62px);
+  }
+
+  .app-sidebar {
+    padding: 0.52rem 0.72rem;
+  }
+
+  .app-sidebar a {
+    min-height: 2.45rem;
+    padding: 0.58rem 0.7rem;
+  }
+
+  .diagnostic-hero {
+    gap: 0.45rem;
+    padding-top: 0.85rem;
+    padding-bottom: 0.15rem;
+  }
+
+  .diagnostic-hero h1 {
+    font-size: clamp(1.64rem, 7.3vw, 2.1rem);
+  }
+
+  .diagnostic-overview {
+    gap: 0.62rem;
+  }
+
+  .diagnostic-overview-card,
+  .quiz-card,
+  .result-card {
+    padding: 0.82rem;
+  }
+
+  .area-pill {
+    min-height: 2.5rem;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .diagnostic-note p,
+  .overview-copy {
+    font-size: 0.86rem;
   }
 
   .header-cta {

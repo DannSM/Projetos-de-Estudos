@@ -21,8 +21,9 @@ Ele deve ser usado como referencia para manter consistencia entre Home, Diagnost
   - Desafios praticos com filtro e pontuacao
 - `diagnostico.html`
   - Diagnostico adaptativo em pagina dedicada
-  - Intro fixa com resumo da avaliacao
-  - Quiz em card principal
+  - Bloco textual principal no topo da pagina
+  - Coluna de contexto (resumo, criterio e progresso por area)
+  - Quiz em card principal com maior destaque
   - Resultado detalhado por nivel, area e pergunta
 
 ## 4) Tipografia
@@ -55,7 +56,10 @@ Definidos em `styles/base.css`:
   - `--color-primary: #2563eb`
   - `--color-primary-light: #dbeafe`
   - `--color-primary-hover: #1d4ed8`
+  - `--color-primary-press: #1e40af`
   - `--color-accent: #06b6d4`
+  - `--color-accent-strong: #0891b2`
+  - `--color-focus-ring: rgba(6, 182, 212, 0.45)`
   - `--color-success: #16a34a`
   - `--color-success-light: #dcfce7`
   - `--color-warning: #f59e0b`
@@ -84,7 +88,10 @@ Definidos em `styles/base.css`:
 - Home hero:
   - Grid de 2 colunas (conteudo + preview de desafio)
 - Diagnostico:
+  - Faixa superior com titulo e descricao
   - Grid de 2 colunas (painel de contexto + card do quiz)
+  - Painel de contexto em cards (resumo, leitura do resultado, progresso por area)
+  - Densidade otimizada (espacamentos reduzidos para leitura mais rapida)
   - Em mobile vira 1 coluna
 
 ## 7) Responsividade
@@ -94,11 +101,13 @@ Breakpoints em `styles/responsive.css`:
 - `@media (max-width: 900px)`
   - Sidebar vira horizontal
   - Grids principais passam para 1 coluna ou 2 colunas compactas
+  - Cards de diagnostico e resultado com padding reduzido
 - `@media (max-width: 620px)`
   - Header/sections/footer em coluna
   - CTA do header oculto
   - Botoes principais passam a largura total
   - Grids de cards e metricas passam para 1 coluna
+  - Margens laterais e espacos internos reduzidos para diminuir rolagem
 
 ## 8) Iconografia
 
@@ -114,8 +123,10 @@ Breakpoints em `styles/responsive.css`:
 - Navegacao
   - `.app-header`, `.app-sidebar`, links com estado `active`
 - Botoes
-  - Primarios: `.header-cta`, `.button-primary`, `.submit-button`
+  - Primarios: `.header-cta`, `.button-primary`, `.submit-button` (gradiente azul-ciano)
   - Secundarios: `.button-secondary`, `.restart-button`
+  - Hover/active com variacao de gradiente e sombra por profundidade
+  - Foco global com `:focus-visible` em anel ciano
 - Cards
   - Base: superficie clara, borda suave, radius `lg`, sombra `soft`
   - Hover com elevacao e borda destacada
@@ -127,6 +138,10 @@ Breakpoints em `styles/responsive.css`:
   - `.feedback-box.success` e `.feedback-box.error`
 - Loader de resultado
   - `.diagnostic-loading` com `loading-dots` animado
+- Contexto de diagnostico
+  - `.diagnostic-overview`, `.diagnostic-overview-card`, `.overview-title`, `.overview-copy`
+- Microespacamento
+  - `area-pill`, `quiz-top`, `answer-list`, `feedback-box`, `result-card`, `review-card` com escala mais compacta
 - Revisao por pergunta
   - `question-review-card` com status visual `is-hit` / `is-miss`
 

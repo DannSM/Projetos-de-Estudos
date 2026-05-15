@@ -59,31 +59,42 @@
   </aside>
 
   <main class="diagnostic-page has-sidebar">
+    <section class="section-shell diagnostic-hero">
+      <span class="section-kicker">Diagnóstico adaptativo</span>
+      <h1>Mapa objetivo do seu nível em dados.</h1>
+      <p class="diagnostic-hero-copy">Cada etapa testa fundamentos e libera a próxima somente quando sua base estiver consistente.</p>
+    </section>
+
     <section class="section-shell diagnostic-shell">
-      <div class="section-intro diagnostic-intro-panel">
-        <span class="section-kicker">Diagnóstico adaptativo</span>
-        <h1>Mapa objetivo do seu nível em dados.</h1>
-        <p>Cada etapa testa fundamentos e libera a próxima somente quando sua base estiver consistente.</p>
-        <div class="diagnostic-side-grid" aria-label="Resumo do diagnóstico">
-          <div>
-            <strong>15</strong>
-            <span>perguntas</span>
+      <aside class="diagnostic-overview" aria-label="Contexto do diagnóstico">
+        <article class="diagnostic-overview-card">
+          <div class="diagnostic-side-grid" aria-label="Resumo do diagnóstico">
+            <div>
+              <strong>15</strong>
+              <span>perguntas</span>
+            </div>
+            <div>
+              <strong>3</strong>
+              <span>níveis</span>
+            </div>
+            <div>
+              <strong>75%</strong>
+              <span>para avançar</span>
+            </div>
           </div>
-          <div>
-            <strong>3</strong>
-            <span>níveis</span>
-          </div>
-          <div>
-            <strong>75%</strong>
-            <span>para avançar</span>
-          </div>
-        </div>
-        <div class="diagnostic-note">
+        </article>
+
+        <article class="diagnostic-overview-card diagnostic-note">
           <strong>Leitura do resultado</strong>
           <p>Você recebe desempenho por nível, análise por área e recomendação do próximo foco para estudo prático.</p>
-        </div>
-        <div class="area-list" id="areaList"></div>
-      </div>
+        </article>
+
+        <article class="diagnostic-overview-card">
+          <strong class="overview-title">Progresso por área</strong>
+          <p class="overview-copy">Acompanhe acertos e lacunas conforme responde as perguntas.</p>
+          <div class="area-list" id="areaList"></div>
+        </article>
+      </aside>
 
       <div class="quiz-card diagnostic-card">
         <div id="quizMount"></div>
