@@ -5,25 +5,25 @@ const areaList = document.querySelector("#areaList");
 
 const diagnosticLevels = [
   {
-    name: "Basico",
-    label: "Nivel basico",
-    shortLabel: "Basico",
+    name: "Básico",
+    label: "Nível básico",
+    shortLabel: "Básico",
     minPercent: 0.75,
-    description: "Fundamentos essenciais para seguir com seguranca."
+    description: "Fundamentos essenciais para seguir com segurança."
   },
   {
-    name: "Intermediario",
-    label: "Nivel intermediario",
-    shortLabel: "Intermediario",
+    name: "Intermediário",
+    label: "Nível intermediário",
+    shortLabel: "Intermediário",
     minPercent: 0.75,
-    description: "Raciocinio pratico para lidar com dados relacionais, BI e metricas."
+    description: "Raciocínio prático para lidar com dados relacionais, BI e métricas."
   },
   {
-    name: "Avancado",
-    label: "Nivel avancado",
-    shortLabel: "Avancado",
+    name: "Avançado",
+    label: "Nível avançado",
+    shortLabel: "Avançado",
     minPercent: null,
-    description: "Leitura analitica mais madura para problemas proximos do trabalho real."
+    description: "Leitura analítica mais madura para problemas próximos do trabalho real."
   }
 ].map((level) => ({
   ...level,
@@ -92,7 +92,7 @@ function renderAreaProgress() {
 
 function renderLevelRoadmap() {
   return `
-    <div class="level-roadmap" aria-label="Etapas do diagnostico">
+    <div class="level-roadmap" aria-label="Etapas do diagnóstico">
       ${diagnosticLevels.map((level, index) => {
         const result = state.levelResults.find((item) => item.name === level.name);
         const isCurrent = index === state.currentLevelIndex && state.diagnosticStarted;
@@ -112,21 +112,21 @@ function renderLevelRoadmap() {
 function renderDiagnosticIntro() {
   quizMount.innerHTML = `
     <div class="diagnostic-intro quiz-step">
-      <span class="section-kicker">Diagnostico por niveis</span>
-      <h3 class="question-title">Comece pelo basico e avance conforme seu desempenho.</h3>
+      <span class="section-kicker">Diagnóstico por níveis</span>
+      <h3 class="question-title">Comece pelo básico e avance conforme seu desempenho.</h3>
       <p class="question-meta">
-        Sao ${diagnosticQuestions.length} perguntas no total. Voce avanca para o proximo nivel ao atingir 75% no nivel atual.
+        São ${diagnosticQuestions.length} perguntas no total. Você avança para o próximo nível ao atingir 75% no nível atual.
       </p>
       ${renderLevelRoadmap()}
       <div class="diagnostic-summary">
         <span>10 perguntas</span>
-        <span>3 niveis</span>
-        <span>Confirmacao antes de responder</span>
+        <span>3 níveis</span>
+        <span>Confirmação antes de responder</span>
       </div>
       <p class="explanation">
-        A avaliacao comeca no basico. Se a base ainda precisar de reforco, o diagnostico para ali e recomenda o proximo estudo.
+        A avaliação começa no básico. Se a base ainda precisar de reforço, o diagnóstico para ali e recomenda o próximo estudo.
       </p>
-      <button class="submit-button" id="startDiagnostic">Iniciar diagnostico</button>
+      <button class="submit-button" id="startDiagnostic">Iniciar diagnóstico</button>
     </div>
   `;
 
@@ -150,12 +150,12 @@ function renderQuestion() {
   quizMount.innerHTML = `
     <div class="quiz-step">
       ${renderLevelRoadmap()}
-      <div class="progress-line" aria-label="Progresso do diagnostico">
+      <div class="progress-line" aria-label="Progresso do diagnóstico">
         <span style="width: ${progress}%"></span>
       </div>
       <div class="quiz-top">
         <span>${level.label} - pergunta ${state.currentQuestion + 1} de ${level.questions.length}</span>
-        <span>${percentLabel}% do diagnostico</span>
+        <span>${percentLabel}% do diagnóstico</span>
       </div>
       <div class="concept-row">
         <span class="concept-tag">${question.concept}</span>
@@ -230,7 +230,7 @@ function confirmDiagnosticAnswer() {
 
   document.querySelector("#feedbackMount").innerHTML = `
     <div class="feedback-box ${isCorrect ? "success" : "error"}">
-      <strong>${isCorrect ? "Correto. Voce dominou este ponto." : "Ainda nao. O ponto principal e este:"}</strong>
+      <strong>${isCorrect ? "Correto. Você dominou este ponto." : "Ainda não. O ponto principal é este:"}</strong>
       <p class="question-meta">Resposta correta: <strong>${String.fromCharCode(65 + question.correct)}) ${question.options[question.correct]}</strong></p>
       <p class="explanation">${question.explanation}</p>
       <p class="question-meta">Conceito avaliado: ${question.concept}</p>
@@ -245,9 +245,9 @@ function confirmDiagnosticAnswer() {
 
 function getNextButtonLabel() {
   const level = getCurrentLevel();
-  if (state.currentQuestion < level.questions.length - 1) return "Proxima pergunta";
+  if (state.currentQuestion < level.questions.length - 1) return "Próxima pergunta";
   if (level.minPercent === null) return "Ver resultado";
-  return "Ver desempenho do nivel";
+  return "Ver desempenho do nível";
 }
 
 function advanceDiagnostic() {
@@ -292,10 +292,10 @@ function showLevelTransition(levelResult) {
   quizMount.innerHTML = `
     <div class="level-transition quiz-step">
       ${renderLevelRoadmap()}
-      <span class="section-kicker">Nivel concluido</span>
-      <h3 class="question-title">Voce fez ${levelResult.correct}/${levelResult.total} no ${levelResult.label}.</h3>
+      <span class="section-kicker">Nível concluído</span>
+      <h3 class="question-title">Você fez ${levelResult.correct}/${levelResult.total} no ${levelResult.label}.</h3>
       <p class="explanation">
-        Meta atingida. Agora o diagnostico avanca para ${nextLevel.label.toLowerCase()}, com perguntas mais exigentes.
+        Meta atingida. Agora o diagnóstico avança para ${nextLevel.label.toLowerCase()}, com perguntas mais exigentes.
       </p>
       <button class="submit-button" id="continueDiagnostic">Continuar para ${nextLevel.shortLabel}</button>
     </div>
@@ -323,13 +323,13 @@ function showResult({ blocked } = { blocked: false }) {
 
   quizMount.innerHTML = `
     <div class="feedback-box ${blocked ? "error" : "success"} quiz-step">
-      <strong>${blocked ? "Nivel nao liberado" : "Diagnostico concluido"}</strong>
+      <strong>${blocked ? "Nível não liberado" : "Diagnóstico concluído"}</strong>
       <p class="explanation">
         ${blocked
-          ? `Voce fez ${stopped.correct}/${stopped.total} no ${stopped.label}. Reforce este nivel antes de avancar.`
-          : `Voce respondeu os 3 niveis e acertou ${totalCorrect} de ${answered} perguntas.`}
+          ? `Você fez ${stopped.correct}/${stopped.total} no ${stopped.label}. Reforce este nível antes de avançar.`
+          : `Você respondeu os 3 níveis e acertou ${totalCorrect} de ${answered} perguntas.`}
       </p>
-      <button class="restart-button" id="restartDiagnostic">Refazer diagnostico</button>
+      <button class="restart-button" id="restartDiagnostic">Refazer diagnóstico</button>
     </div>
   `;
 
@@ -347,9 +347,9 @@ function showResult({ blocked } = { blocked: false }) {
       <p class="profile-detail">${profile.description}</p>
 
       <div class="priority-card result-summary">
-        <span class="section-kicker">Proximo passo</span>
+        <span class="section-kicker">Próximo passo</span>
         <h3>${blocked ? `Reforce ${stopped.label}` : `Comece por ${weakest.area}`}</h3>
-        <p>${blocked ? "O diagnostico parou no nivel atual para preservar a sequencia de aprendizagem." : "Essa e a area com maior ganho potencial agora."}</p>
+        <p>${blocked ? "O diagnóstico parou no nível atual para preservar a sequência de aprendizagem." : "Essa é a área com maior ganho potencial agora."}</p>
       </div>
 
       <div class="result-metrics">
@@ -359,7 +359,7 @@ function showResult({ blocked } = { blocked: false }) {
         </div>
         <div class="metric-card">
           <strong>${strongest.area}</strong>
-          <span>area mais forte agora</span>
+          <span>área mais forte agora</span>
         </div>
         <div class="metric-card">
           <strong>${blocked ? stopped.label : weakest.area}</strong>
@@ -368,12 +368,12 @@ function showResult({ blocked } = { blocked: false }) {
       </div>
 
       <div class="result-block">
-        <h3>Desempenho por nivel</h3>
+        <h3>Desempenho por nível</h3>
         ${renderLevelSummary()}
       </div>
 
       <div class="result-block">
-        <h3>Mapa por area</h3>
+        <h3>Mapa por área</h3>
         <div class="score-bars">
           ${insights.map((item) => `
             <div class="score-row">
@@ -397,13 +397,13 @@ function showResult({ blocked } = { blocked: false }) {
             <span class="concept-tag">${item.level}</span>
             <h3>${item.title}</h3>
             <p>${item.text}</p>
-            <p><strong>Proximo desafio:</strong> ${item.next}</p>
+            <p><strong>Próximo desafio:</strong> ${item.next}</p>
           </article>
         `).join("")}
       </div>
 
       <div class="result-block">
-        <h3>Revisao dos erros</h3>
+        <h3>Revisão dos erros</h3>
         ${missedAnswers.length ? `
           <div class="review-list">
             ${missedAnswers.map((item) => `
@@ -416,7 +416,7 @@ function showResult({ blocked } = { blocked: false }) {
               </article>
             `).join("")}
           </div>
-        ` : `<p class="explanation">Voce nao errou perguntas neste diagnostico. Mantenha revisao espacada e avance para desafios praticos.</p>`}
+        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
       </div>
     </article>
   `;
@@ -432,7 +432,7 @@ function renderLevelSummary() {
         const result = state.levelResults.find((item) => item.name === level.name);
         const text = result
           ? `${result.correct}/${result.total} - ${Math.round(result.percent * 100)}%`
-          : "nao aplicado";
+          : "não aplicado";
         return `
           <div class="level-summary-item ${result ? (result.passed ? "is-complete" : "is-blocked") : ""}">
             <strong>${level.shortLabel}</strong>

@@ -1,17 +1,17 @@
 # Data Study Map
 
-Aplicacao web estatica para diagnostico de conhecimentos em dados, trilhas sugeridas e desafios praticos.
+Aplicação web estática para diagnóstico de conhecimentos em dados, trilhas sugeridas e desafios práticos.
 
 ## Estrutura
 
-- `index.html`: pagina principal.
-- `diagnostico.html`: pagina do diagnostico adaptativo por niveis.
+- `index.html`: página principal.
+- `diagnostico.html`: página do diagnóstico adaptativo por níveis.
 - `style.css`: ponto de entrada dos estilos.
 - `styles/`: estilos separados por base, layout, componentes e responsividade.
-- `src/`: codigo JavaScript modularizado.
-- `src/data/`: perguntas, desafios e guias de conteudo.
+- `src/`: código JavaScript modularizado.
+- `src/data/`: perguntas, desafios e guias de conteúdo.
 - `assets/`: imagens e demais recursos visuais.
-- `docs/`: documentacao de design e identidade visual.
+- `docs/`: documentação de design e identidade visual.
 
 ## Como executar
 

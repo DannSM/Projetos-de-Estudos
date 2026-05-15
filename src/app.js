@@ -24,8 +24,15 @@ function bindHeaderHeightSync() {
   }
 }
 
+function renderIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
+}
+
 function init() {
   bindHeaderHeightSync();
+  renderIcons();
 
   if (document.querySelector("#heroPreviewQuestion")) {
     renderHeroPreview();

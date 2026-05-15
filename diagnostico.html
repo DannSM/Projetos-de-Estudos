@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diagnostico - Data Study Map</title>
+  <title>Diagnóstico - Data Study Map</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <header class="app-header">
@@ -22,32 +23,47 @@
       </span>
     </a>
 
-    <div class="header-context">Diagnostico em etapas para mapear seu nivel com criterio claro.</div>
-    <a class="header-cta" href="index.html#desafios">Praticar</a>
+    <div class="header-context">Diagnóstico em etapas para mapear seu nível com critério claro.</div>
+    <a class="header-cta" href="index.html#desafios">
+      <i data-lucide="target" aria-hidden="true"></i>
+      <span>Praticar</span>
+    </a>
   </header>
 
-  <aside class="app-sidebar" aria-label="Navegacao lateral">
+  <aside class="app-sidebar" aria-label="Navegação lateral">
     <div class="sidebar-section">
-      <span class="sidebar-label">Navegacao</span>
-      <a href="index.html">Inicio</a>
-      <a class="active" href="diagnostico.html">Diagnostico</a>
-      <a href="index.html#trilhas">Trilhas</a>
-      <a href="index.html#desafios">Desafios</a>
+      <span class="sidebar-label">Navegação</span>
+      <a href="index.html">
+        <i class="nav-icon" data-lucide="home" aria-hidden="true"></i>
+        <span>Início</span>
+      </a>
+      <a class="active" href="diagnostico.html">
+        <i class="nav-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
+        <span>Diagnóstico</span>
+      </a>
+      <a href="index.html#trilhas">
+        <i class="nav-icon" data-lucide="route" aria-hidden="true"></i>
+        <span>Trilhas</span>
+      </a>
+      <a href="index.html#desafios">
+        <i class="nav-icon" data-lucide="target" aria-hidden="true"></i>
+        <span>Desafios</span>
+      </a>
     </div>
     <div class="sidebar-section sidebar-panel">
-      <span class="sidebar-label">Criterio</span>
-      <strong>75% para avancar</strong>
-      <p>Se nao atingir a meta, o diagnostico para no nivel atual e prioriza reforco direcionado.</p>
+      <span class="sidebar-label">Critério</span>
+      <strong>75% para avançar</strong>
+      <p>Se não atingir a meta, o diagnóstico para no nível atual e prioriza reforço direcionado.</p>
     </div>
   </aside>
 
   <main class="diagnostic-page has-sidebar">
     <section class="section-shell diagnostic-shell">
       <div class="section-intro diagnostic-intro-panel">
-        <span class="section-kicker">Diagnostico adaptativo</span>
-        <h1>Mapa objetivo do seu nivel em dados.</h1>
-        <p>Cada etapa testa fundamentos e libera a proxima somente quando sua base estiver consistente.</p>
-        <div class="diagnostic-side-grid" aria-label="Resumo do diagnostico">
+        <span class="section-kicker">Diagnóstico adaptativo</span>
+        <h1>Mapa objetivo do seu nível em dados.</h1>
+        <p>Cada etapa testa fundamentos e libera a próxima somente quando sua base estiver consistente.</p>
+        <div class="diagnostic-side-grid" aria-label="Resumo do diagnóstico">
           <div>
             <strong>10</strong>
             <span>perguntas</span>
@@ -58,12 +74,12 @@
           </div>
           <div>
             <strong>75%</strong>
-            <span>para avancar</span>
+            <span>para avançar</span>
           </div>
         </div>
         <div class="diagnostic-note">
           <strong>Leitura do resultado</strong>
-          <p>Voce recebe desempenho por nivel, analise por area e recomendacao do proximo foco para estudo pratico.</p>
+          <p>Você recebe desempenho por nível, análise por área e recomendação do próximo foco para estudo prático.</p>
         </div>
         <div class="area-list" id="areaList"></div>
       </div>
@@ -80,7 +96,7 @@
 
   <footer class="app-footer">
     <span>Data Study Map</span>
-    <span>Diagnostico por niveis.</span>
+    <span>Diagnóstico por níveis.</span>
   </footer>
 
   <script src="src/data/content.js"></script>

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <header class="app-header">
@@ -22,23 +23,41 @@
       </span>
     </a>
 
-    <div class="header-context">Plataforma interativa para aprender dados na pratica.</div>
-    <a class="header-cta" href="diagnostico.html">Iniciar</a>
+    <div class="header-context">Plataforma interativa para aprender dados na prática.</div>
+    <a class="header-cta" href="diagnostico.html">
+      <i data-lucide="play" aria-hidden="true"></i>
+      <span>Iniciar</span>
+    </a>
   </header>
 
-  <aside class="app-sidebar" aria-label="Navegacao lateral">
+  <aside class="app-sidebar" aria-label="Navegação lateral">
     <div class="sidebar-section">
-      <span class="sidebar-label">Navegacao</span>
-      <a class="active" href="index.html">Inicio</a>
-      <a href="diagnostico.html">Diagnostico</a>
-      <a href="#trilhas">Trilhas</a>
-      <a href="#desafios">Desafios</a>
+      <span class="sidebar-label">Navegação</span>
+      <a class="active" href="index.html">
+        <i class="nav-icon" data-lucide="home" aria-hidden="true"></i>
+        <span>Início</span>
+      </a>
+      <a href="diagnostico.html">
+        <i class="nav-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
+        <span>Diagnóstico</span>
+      </a>
+      <a href="#trilhas">
+        <i class="nav-icon" data-lucide="route" aria-hidden="true"></i>
+        <span>Trilhas</span>
+      </a>
+      <a href="#desafios">
+        <i class="nav-icon" data-lucide="target" aria-hidden="true"></i>
+        <span>Desafios</span>
+      </a>
     </div>
     <div class="sidebar-section sidebar-panel">
-      <span class="sidebar-label">Diagnostico</span>
+      <span class="sidebar-label">Diagnóstico</span>
       <strong>10 perguntas</strong>
-      <p>Basico, intermediario e avancado com progresso por desempenho.</p>
-      <a class="sidebar-cta" href="diagnostico.html">Iniciar</a>
+      <p>Básico, intermediário e avançado com progresso por desempenho.</p>
+      <a class="sidebar-cta" href="diagnostico.html">
+        <i data-lucide="play" aria-hidden="true"></i>
+        <span>Iniciar</span>
+      </a>
     </div>
   </aside>
 
@@ -47,48 +66,57 @@
       <div class="hero-content">
         <div class="eyebrow">Data Study Map</div>
         <h1>Transforme estudo em progresso real com desafios curtos.</h1>
-        <p class="hero-lead">Diagnostico adaptativo, trilha orientada e pratica aplicada.</p>
+        <p class="hero-lead">Diagnóstico adaptativo, trilha orientada e prática aplicada.</p>
         <p class="hero-copy">
-          Descubra seu nivel atual, avance por etapas e pratique com foco no que realmente falta para evoluir em dados.
+          Descubra seu nível atual, avance por etapas e pratique com foco no que realmente falta para evoluir em dados.
         </p>
         <div class="hero-actions">
-          <a class="button button-primary" href="diagnostico.html">Fazer diagnostico</a>
-          <a class="button button-secondary" href="#trilhas">Ver trilhas</a>
+          <a class="button button-primary" href="diagnostico.html">
+            <i data-lucide="clipboard-list" aria-hidden="true"></i>
+            <span>Fazer diagnóstico</span>
+          </a>
+          <a class="button button-secondary" href="#trilhas">
+            <i data-lucide="route" aria-hidden="true"></i>
+            <span>Ver trilhas</span>
+          </a>
         </div>
-        <div class="hero-metrics" aria-label="Resumo da experiencia">
+        <div class="hero-metrics" aria-label="Resumo da experiência">
           <div>
+            <i class="metric-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
             <strong>10</strong>
-            <span>perguntas no diagnostico</span>
+            <span>perguntas no diagnóstico</span>
           </div>
           <div>
+            <i class="metric-icon" data-lucide="activity" aria-hidden="true"></i>
             <strong>5</strong>
-            <span>areas avaliadas</span>
+            <span>áreas avaliadas</span>
           </div>
           <div>
+            <i class="metric-icon" data-lucide="target" aria-hidden="true"></i>
             <strong>10</strong>
-            <span>desafios praticos</span>
+            <span>desafios práticos</span>
           </div>
         </div>
       </div>
 
-      <aside class="hero-panel hero-preview-card" aria-label="Previa dinamica de desafios">
+      <aside class="hero-panel hero-preview-card" aria-label="Prévia dinâmica de desafios">
         <div class="preview-progress" aria-hidden="true"><span id="heroPreviewProgress"></span></div>
         <div class="preview-ribbon">
           <span>Desafio em destaque</span>
           <strong id="heroPreviewPoints">20 pontos</strong>
         </div>
         <div class="challenge-preview-top">
-          <span class="category-tag badge-sql" id="heroPreviewCategory">SQL Intermediario</span>
-          <span class="level-tag" id="heroPreviewLevel">Intermediario</span>
+          <span class="category-tag badge-sql" id="heroPreviewCategory">SQL Intermediário</span>
+          <span class="level-tag" id="heroPreviewLevel">Intermediário</span>
         </div>
         <div class="hero-preview-body" id="heroPreviewBody" aria-live="polite">
-          <h2 id="heroPreviewQuestion">Qual o resultado da query?</h2>
+          <h2 id="heroPreviewQuestion">Qual é o resultado da query?</h2>
           <code class="code-block" id="heroPreviewCode">SELECT COUNT(*)
 FROM cliente c
 LEFT JOIN compra cp
 ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
           <div class="preview-options" id="heroPreviewOptions" aria-hidden="true"></div>
-          <p id="heroPreviewHint">O LEFT JOIN preserva clientes sem compra e pode multiplicar linhas quando ha mais de uma compra relacionada.</p>
+          <p id="heroPreviewHint">O LEFT JOIN preserva clientes sem compra e pode multiplicar linhas quando há mais de uma compra relacionada.</p>
         </div>
         <div class="preview-controls" id="heroPreviewControls" aria-label="Alternar desafio em destaque"></div>
       </aside>
@@ -98,24 +126,24 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
       <div class="section-heading compact">
         <div>
           <span class="section-kicker">Como funciona</span>
-          <h2>Comece rapido e avance com clareza.</h2>
+          <h2>Comece rápido e avance com clareza.</h2>
         </div>
       </div>
       <div class="home-journey-grid">
         <article class="journey-card">
           <span class="journey-index">01</span>
           <h3>Diagnostique</h3>
-          <p>Responda 10 perguntas por niveis e encontre suas lacunas reais.</p>
+          <p>Responda 10 perguntas por níveis e encontre suas lacunas reais.</p>
         </article>
         <article class="journey-card">
           <span class="journey-index">02</span>
           <h3>Priorize</h3>
-          <p>Receba um mapa objetivo de estudo para evitar conteudo sem foco.</p>
+          <p>Receba um mapa objetivo de estudo para evitar conteúdo sem foco.</p>
         </article>
         <article class="journey-card">
           <span class="journey-index">03</span>
           <h3>Pratique</h3>
-          <p>Resolva desafios curtos e valide evolucao com feedback imediato.</p>
+          <p>Resolva desafios curtos e valide evolução com feedback imediato.</p>
         </article>
       </div>
     </section>
@@ -124,41 +152,41 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
       <div class="section-heading">
         <div>
           <span class="section-kicker">Trilhas sugeridas</span>
-          <h2>Estude por prioridade, nao por volume.</h2>
+          <h2>Estude por prioridade, não por volume.</h2>
         </div>
-        <p>As trilhas combinam fundamentos, pratica e leitura analitica para formar repertorio aplicavel.</p>
+        <p>As trilhas combinam fundamentos, prática e leitura analítica para formar repertório aplicável.</p>
       </div>
 
       <div class="track-grid">
         <article class="track-card">
           <span class="track-number">01</span>
           <h3>Fundamentos de Dados</h3>
-          <p>Tipos de dados, tabelas, linhas, colunas, qualidade da informacao e indicadores basicos.</p>
+          <p>Tipos de dados, tabelas, linhas, colunas, qualidade da informação e indicadores básicos.</p>
         </article>
         <article class="track-card">
           <span class="track-number">02</span>
           <h3>SQL Essencial</h3>
-          <p>SELECT, WHERE, ORDER BY, GROUP BY, COUNT, SUM e AVG para analises do dia a dia.</p>
+          <p>SELECT, WHERE, ORDER BY, GROUP BY, COUNT, SUM e AVG para análises do dia a dia.</p>
         </article>
         <article class="track-card">
           <span class="track-number">03</span>
-          <h3>SQL Intermediario</h3>
+          <h3>SQL Intermediário</h3>
           <p>JOIN, LEFT JOIN, cardinalidade, COUNT DISTINCT, subqueries e CTEs.</p>
         </article>
         <article class="track-card">
           <span class="track-number">04</span>
-          <h3>Estatistica para Dados</h3>
-          <p>Media, mediana, moda, desvio padrao, distribuicao e correlacao.</p>
+          <h3>Estatística para Dados</h3>
+          <p>Média, mediana, moda, desvio padrão, distribuição e correlação.</p>
         </article>
         <article class="track-card">
           <span class="track-number">05</span>
           <h3>Indicadores e KPIs</h3>
-          <p>Metas, gaps, variacao percentual, evolucao historica, ranking e leitura de contexto.</p>
+          <p>Metas, gaps, variação percentual, evolução histórica, ranking e leitura de contexto.</p>
         </article>
         <article class="track-card">
           <span class="track-number">06</span>
-          <h3>Projetos Praticos</h3>
-          <p>Analise de vendas, NPS, dashboard operacional e geracao de insights acionaveis.</p>
+          <h3>Projetos Práticos</h3>
+          <p>Análise de vendas, NPS, dashboard operacional e geração de insights acionáveis.</p>
         </article>
       </div>
     </section>
@@ -166,22 +194,23 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
     <section id="desafios" class="section-shell">
       <div class="section-heading">
         <div>
-          <span class="section-kicker">Desafios praticos</span>
+          <span class="section-kicker">Desafios práticos</span>
           <h2>Resolva cards curtos com feedback imediato.</h2>
         </div>
-        <p>Escolha uma categoria, marque uma alternativa e use o botao responder para ver a explicacao didatica.</p>
+        <p>Escolha uma categoria, marque uma alternativa e use o botão responder para ver a explicação didática.</p>
       </div>
 
       <div class="challenge-toolbar" role="group" aria-label="Categorias de desafios">
         <button class="filter-button active" data-filter="Todos">Todos</button>
-        <button class="filter-button" data-filter="SQL Basico">SQL Basico</button>
-        <button class="filter-button" data-filter="SQL Intermediario">SQL Intermediario</button>
-        <button class="filter-button" data-filter="Estatistica">Estatistica</button>
+        <button class="filter-button" data-filter="SQL Básico">SQL Básico</button>
+        <button class="filter-button" data-filter="SQL Intermediário">SQL Intermediário</button>
+        <button class="filter-button" data-filter="Excel e BI">Excel e BI</button>
+        <button class="filter-button" data-filter="Estatística">Estatística</button>
         <button class="filter-button" data-filter="Indicadores e KPIs">Indicadores e KPIs</button>
-        <button class="filter-button" data-filter="Raciocinio analitico">Raciocinio analitico</button>
+        <button class="filter-button" data-filter="Raciocínio analítico">Raciocínio analítico</button>
       </div>
 
-      <div class="challenge-score" id="challengeScore">Pontuacao dos desafios: 0</div>
+      <div class="challenge-score" id="challengeScore">Pontuação dos desafios: 0</div>
       <div class="challenge-grid" id="challengeMount"></div>
     </section>
   </main>
