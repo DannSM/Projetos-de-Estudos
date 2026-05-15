@@ -747,6 +747,14 @@
   gap: 1.25rem;
 }
 
+.challenge-satisfaction-wrap {
+  margin-top: 1rem;
+}
+
+.challenge-satisfaction-wrap .satisfaction-block {
+  max-width: 46rem;
+}
+
 .challenge-card {
   gap: 0.8rem;
   min-height: 100%;

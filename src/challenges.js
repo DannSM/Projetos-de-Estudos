@@ -1,6 +1,8 @@
-
 const challengeMount = document.querySelector("#challengeMount");
 const challengeScore = document.querySelector("#challengeScore");
+const challengeSatisfactionMount = document.querySelector("#challengeSatisfactionMount");
+
+const CHALLENGE_SURVEY_MIN_ATTEMPTS = 3;
 
 function getAnonymousUserId() {
   if (state.anonymousUserId) return state.anonymousUserId;
@@ -11,11 +13,30 @@ function getAnonymousUserId() {
   return "anonymous";
 }
 
+function getChallengeSessionId() {
+  if (state.currentChallengeSessionId) {
+    return state.currentChallengeSessionId;
+  }
+
+  state.currentChallengeSessionId = window.supabaseDataService && typeof window.supabaseDataService.createAttemptId === "function"
+    ? window.supabaseDataService.createAttemptId("challenge_session")
+    : `challenge_session_${Date.now()}`;
+
+  return state.currentChallengeSessionId;
+}
+
 function persistChallengeAttemptRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveChallengeAttempt !== "function") {
     return;
   }
   void window.supabaseDataService.saveChallengeAttempt(payload);
+}
+
+function persistSatisfactionFeedbackRecord(payload) {
+  if (!window.supabaseDataService || typeof window.supabaseDataService.saveSatisfactionFeedback !== "function") {
+    return Promise.resolve({ ok: false, skipped: true });
+  }
+  return window.supabaseDataService.saveSatisfactionFeedback(payload);
 }
 
 function bindFilters() {
@@ -72,6 +93,7 @@ function renderChallenges(filter) {
   });
 
   updateChallengeScore();
+  renderChallengeSatisfactionState();
 }
 
 function selectChallengeAnswer(challengeIndex, selectedIndex) {
@@ -112,6 +134,11 @@ function handleChallengeAnswer(challengeIndex) {
 
   card.querySelector("[data-submit-challenge]").disabled = true;
 
+  state.challengeAnsweredCount += 1;
+  if (isCorrect) {
+    state.challengeCorrectCount += 1;
+  }
+
   if (isCorrect && !state.completedChallenges.has(challengeIndex)) {
     state.challengeScore += challenge.points;
     state.completedChallenges.add(challengeIndex);
@@ -141,6 +168,116 @@ function handleChallengeAnswer(challengeIndex) {
   `;
 
   updateChallengeScore();
+  renderChallengeSatisfactionState();
+}
+
+function renderChallengeSatisfactionState() {
+  if (!challengeSatisfactionMount) return;
+
+  if (state.challengeSurveySubmitted) {
+    challengeSatisfactionMount.innerHTML = `
+      <div class="satisfaction-block">
+        <h3>Pesquisa de satisfação</h3>
+        <div class="feedback-box success">
+          <strong>Avaliacao enviada.</strong>
+          <p class="question-meta">Obrigado por compartilhar sua percepção sobre os desafios.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (state.challengeAnsweredCount < CHALLENGE_SURVEY_MIN_ATTEMPTS) {
+    challengeSatisfactionMount.innerHTML = "";
+    return;
+  }
+
+  challengeSatisfactionMount.innerHTML = `
+    <div class="satisfaction-block">
+      <h3>Pesquisa de satisfação</h3>
+      <p class="question-meta">Quão satisfeita(o) você ficou com a experiência nos desafios?</p>
+      <div class="satisfaction-scale" role="radiogroup" aria-label="Nota de satisfação dos desafios">
+        ${[1, 2, 3, 4, 5].map((rating) => `
+          <button type="button" class="satisfaction-rating-button" data-challenge-satisfaction-rating="${rating}" aria-label="Nota ${rating}">
+            ${rating}
+          </button>
+        `).join("")}
+      </div>
+      <label class="satisfaction-label" for="challengeSatisfactionComment">Detalhe sua nota (opcional)</label>
+      <textarea
+        id="challengeSatisfactionComment"
+        class="satisfaction-textarea"
+        maxlength="240"
+        placeholder="Compartilhe sua percepção da experiência."
+      ></textarea>
+      <button class="submit-button" id="sendChallengeSatisfactionFeedback" disabled>Enviar avaliacao</button>
+      <div id="challengeSatisfactionFeedbackMount"></div>
+    </div>
+  `;
+
+  bindChallengeSatisfactionSurvey();
+}
+
+function bindChallengeSatisfactionSurvey() {
+  const feedbackMount = document.querySelector("#challengeSatisfactionFeedbackMount");
+  const sendButton = document.querySelector("#sendChallengeSatisfactionFeedback");
+  const commentField = document.querySelector("#challengeSatisfactionComment");
+  const ratingButtons = document.querySelectorAll("[data-challenge-satisfaction-rating]");
+
+  if (!feedbackMount || !sendButton || !commentField || !ratingButtons.length) {
+    return;
+  }
+
+  let selectedRating = null;
+  let isSubmitting = false;
+
+  ratingButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (isSubmitting) return;
+      selectedRating = Number(button.dataset.challengeSatisfactionRating);
+      ratingButtons.forEach((item) => {
+        item.classList.toggle("selected", Number(item.dataset.challengeSatisfactionRating) === selectedRating);
+      });
+      sendButton.disabled = false;
+    });
+  });
+
+  sendButton.addEventListener("click", async () => {
+    if (!selectedRating || isSubmitting) return;
+
+    isSubmitting = true;
+    sendButton.disabled = true;
+
+    const payload = {
+      attempt_id: getChallengeSessionId(),
+      anonymous_user_id: getAnonymousUserId(),
+      context: "desafios_sessao",
+      rating: selectedRating,
+      comment: commentField.value.trim() || null,
+      score_percent: state.challengeAnsweredCount
+        ? Math.round((state.challengeCorrectCount / state.challengeAnsweredCount) * 100)
+        : 0,
+      blocked_at_level: false
+    };
+
+    const result = await persistSatisfactionFeedbackRecord(payload);
+
+    if (result && result.ok) {
+      state.challengeSurveySubmitted = true;
+      renderChallengeSatisfactionState();
+      return;
+    }
+
+    feedbackMount.innerHTML = `
+      <div class="feedback-box error">
+        <strong>Não foi possível enviar agora.</strong>
+        <p class="question-meta">Você pode tentar novamente em instantes.</p>
+      </div>
+    `;
+
+    isSubmitting = false;
+    sendButton.disabled = false;
+  });
 }
 
 function updateChallengeScore() {

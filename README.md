@@ -49,7 +49,7 @@ Existe um schema inicial em `docs/supabase-schema.sql`.
 - dados consolidados do diagnostico
 - respostas individuais do diagnostico
 - tentativas de desafios (tema, nivel, acerto/erro, pontos, horario)
-- pesquisa de satisfacao (nota de 1 a 5 e comentario opcional)
+- pesquisa de satisfacao no diagnostico e nos desafios (nota de 1 a 5 e comentario opcional)
 
 ### 4) Comportamento de falha
 
