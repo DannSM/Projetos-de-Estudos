@@ -1,4 +1,4 @@
-# Data Study Map
+# Data Skill Map
 
 Aplicação web estática para diagnóstico de conhecimentos em dados, trilhas sugeridas e desafios práticos.
 
@@ -15,4 +15,4 @@ Aplicação web estática para diagnóstico de conhecimentos em dados, trilhas s
 
 ## Como executar
 
-Abra `index.html` em um navegador moderno ou sirva a pasta com um servidor estatico.
+Abra `index.html` em um navegador moderno ou sirva a pasta com um servidor estático.

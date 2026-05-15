@@ -6,7 +6,7 @@ const diagnosticQuestions = [
     question: "Qual cláusula filtra linhas antes de uma agregação?",
     options: ["WHERE", "HAVING", "ORDER BY", "GROUP BY"],
     correct: 0,
-    explanation: "WHERE filtra linhas antes do agrupamento. HAVING filtra depois que a agregação já foi calculada."
+    explanation: "WHERE filtra linhas antes do agrupamento. HAVING filtra após a agregação."
   },
   {
     area: "SQL",
@@ -20,7 +20,7 @@ const diagnosticQuestions = [
       "Não existe diferença."
     ],
     correct: 0,
-    explanation: "COUNT(*) conta todas as linhas retornadas. COUNT(coluna) ignora linhas em que aquela coluna está NULL."
+    explanation: "COUNT(*) conta todas as linhas. COUNT(coluna) ignora registros onde a coluna está NULL."
   },
   {
     area: "Estatística",
@@ -29,100 +29,202 @@ const diagnosticQuestions = [
     question: "Qual medida costuma ser mais resistente a valores extremos?",
     options: ["Média", "Mediana", "Amplitude", "Soma"],
     correct: 1,
-    explanation: "A mediana usa a posição central dos dados ordenados, então sofre menos impacto de valores muito altos ou baixos."
+    explanation: "A mediana sofre menos impacto de outliers do que a média."
   },
   {
     area: "Excel",
     level: "Básico",
     concept: "Referência absoluta",
-    question: "Ao arrastar uma fórmula para baixo, qual referência permanece fixa na mesma célula?",
-    options: ["A1", "$A$1", "A$1 e $A1 sempre mudam igual", "Nenhuma referência pode ser fixa"],
+    question: "Ao arrastar uma fórmula, qual referência permanece fixa na mesma célula?",
+    options: ["A1", "$A$1", "A$1 e $A1 sempre mudam igual", "Nenhuma pode ser fixa"],
     correct: 1,
-    explanation: "A referência $A$1 fixa coluna e linha. Ao copiar a fórmula, o endereço continua apontando para a mesma célula."
+    explanation: "$A$1 fixa coluna e linha, mantendo o endereço na cópia da fórmula."
+  },
+  {
+    area: "Lógica de dados",
+    level: "Básico",
+    concept: "Tipos de dados",
+    question: "Por que diferenciar texto, número e data em uma base?",
+    options: [
+      "Porque muda apenas a cor da célula.",
+      "Porque cálculos, filtros e ordenações dependem do tipo correto.",
+      "Porque todo dado precisa virar texto.",
+      "Porque datas não podem ser analisadas."
+    ],
+    correct: 1,
+    explanation: "Sem tipo correto, filtros e cálculos podem gerar interpretações erradas."
+  },
+  {
+    area: "Indicadores",
+    level: "Básico",
+    concept: "Meta e resultado",
+    question: "Se a meta era 120 e o resultado foi 105, qual é o gap absoluto?",
+    options: ["+15", "-15", "105%", "120%"],
+    correct: 1,
+    explanation: "Gap absoluto = resultado - meta. Nesse caso: 105 - 120 = -15."
   },
   {
     area: "SQL",
     level: "Intermediário",
     concept: "JOINs e cardinalidade",
-    question: "Em um LEFT JOIN entre clientes e compras, o que acontece com clientes sem compras?",
+    question: "Em um LEFT JOIN entre clientes e compras, o que ocorre com clientes sem compra?",
     options: [
-      "Eles são removidos do resultado.",
-      "Eles aparecem uma vez, com NULL nos campos da tabela de compras.",
-      "Eles aparecem apenas se houver chave duplicada.",
-      "Eles são contados somente com COUNT(coluna)."
+      "São removidos do resultado.",
+      "Aparecem com NULL nas colunas da tabela de compras.",
+      "Aparecem apenas se houver chave duplicada.",
+      "São contados apenas com COUNT(coluna)."
     ],
     correct: 1,
-    explanation: "O LEFT JOIN preserva a tabela da esquerda. Sem correspondência, os campos da tabela da direita ficam NULL."
+    explanation: "LEFT JOIN preserva a tabela da esquerda."
   },
   {
     area: "Lógica de dados",
     level: "Intermediário",
     concept: "Granularidade",
-    question: "Uma tabela tem uma linha por item comprado. Qual cuidado é essencial ao contar pedidos únicos?",
+    question: "Se uma tabela tem uma linha por item vendido, como contar pedidos únicos?",
     options: [
-      "Somar todos os preços sem agrupar.",
-      "Contar as linhas da tabela.",
-      "Contar IDs de pedido distintos.",
-      "Ordenar os itens por nome."
+      "Contando linhas da tabela.",
+      "Somando preço dos itens.",
+      "Contando IDs de pedido distintos.",
+      "Ordenando os itens por nome."
     ],
     correct: 2,
-    explanation: "Se cada pedido pode ter vários itens, contar linhas mede itens. Para pedidos únicos, use IDs distintos."
+    explanation: "Com uma linha por item, o pedido se repete. Use DISTINCT para pedidos únicos."
   },
   {
     area: "Estatística",
     level: "Intermediário",
     concept: "Correlação",
-    question: "Se duas métricas têm correlação positiva, qual leitura é mais adequada?",
+    question: "Correlação positiva entre duas métricas indica que:",
     options: [
-      "Quando uma aumenta, a outra tende a aumentar também.",
       "Uma causa obrigatoriamente a outra.",
+      "Quando uma cresce, a outra tende a crescer também.",
       "As duas sempre terão o mesmo valor.",
-      "Não existe relação possível entre elas."
+      "Não existe relação possível."
     ],
-    correct: 0,
-    explanation: "Correlação indica associação, não causalidade. Ela sugere movimento conjunto, mas não prova causa."
+    correct: 1,
+    explanation: "Correlação indica associação, não prova de causalidade."
   },
   {
     area: "Excel",
     level: "Intermediário",
     concept: "Tabela dinâmica",
-    question: "Em uma Tabela Dinâmica, qual configuração ajuda a analisar receita por mês e categoria?",
+    question: "Em uma Tabela Dinâmica, qual configuração é adequada para receita por mês e categoria?",
     options: [
-      "Linhas: mês, Colunas: categoria, Valores: soma de receita.",
-      "Linhas: receita, Valores: texto da categoria.",
-      "Linhas: mês, Valores: contagem de nomes de produto.",
-      "Colunas: fórmula aleatória sem campo de valor."
+      "Linhas: mês; Colunas: categoria; Valores: soma da receita.",
+      "Linhas: receita; Valores: texto da categoria.",
+      "Linhas: mês; Valores: contagem de categoria.",
+      "Colunas: fórmula sem campo de valor."
     ],
     correct: 0,
-    explanation: "A estrutura clássica usa dimensões em linhas/colunas e medida agregada em valores, como soma de receita."
+    explanation: "Dimensões ficam em linhas/colunas e a medida agregada em valores."
+  },
+  {
+    area: "Excel",
+    level: "Intermediário",
+    concept: "Busca por chave",
+    question: "Qual função é mais indicada para buscar preço por código em outra tabela?",
+    options: ["SE", "PROCV/PROCX", "SOMA", "MÉDIA"],
+    correct: 1,
+    explanation: "PROCV e PROCX servem para localizar valores por chave em outra tabela."
   },
   {
     area: "Indicadores",
-    level: "Avançado",
-    concept: "Diagnóstico de performance",
-    question: "Um KPI caiu apenas em uma região. Qual investigação tende a ser mais útil primeiro?",
+    level: "Intermediário",
+    concept: "Funil",
+    question: "Qual KPI é mais acionável para entender perda no funil de vendas?",
     options: [
-      "Alterar a meta de todas as regiões.",
-      "Comparar canal, produto e período dentro dessa região.",
-      "Parar de medir o indicador.",
-      "Olhar apenas a média global."
+      "Cor do botão da página.",
+      "Taxa de conversão por etapa.",
+      "Quantidade de abas da planilha.",
+      "Número de usuários no organograma."
     ],
     correct: 1,
-    explanation: "Quando a queda está localizada, quebras por dimensões internas ajudam a encontrar a causa provável."
+    explanation: "A taxa por etapa mostra em qual ponto a perda está maior."
   },
   {
     area: "SQL",
     level: "Avançado",
     concept: "Análise por janela",
-    question: "Qual recurso ajuda a ranquear vendas por cliente sem perder o detalhe das linhas?",
+    question: "Qual recurso ranqueia vendas por cliente sem perder o detalhe das linhas?",
     options: [
-      "WHERE",
-      "ORDER BY simples no resultado final",
-      "Função de janela como ROW_NUMBER() OVER(PARTITION BY cliente ORDER BY valor DESC)",
+      "GROUP BY cliente",
+      "ORDER BY apenas no resultado final",
+      "ROW_NUMBER() OVER(PARTITION BY cliente ORDER BY valor DESC)",
       "COUNT(*) sem agrupamento"
     ],
     correct: 2,
-    explanation: "Funções de janela calculam rankings e acumulados mantendo o detalhe das linhas, diferente de um GROUP BY tradicional."
+    explanation: "Funções de janela preservam granularidade e adicionam cálculos analíticos."
+  },
+  {
+    area: "SQL",
+    level: "Avançado",
+    concept: "CTE",
+    question: "Qual vantagem principal de usar CTE (WITH) em consultas longas?",
+    options: [
+      "Melhorar legibilidade e modularizar etapas da lógica.",
+      "Substituir a necessidade de índices.",
+      "Garantir sempre execução mais rápida.",
+      "Evitar qualquer uso de JOIN."
+    ],
+    correct: 0,
+    explanation: "CTE ajuda na organização e manutenção da consulta."
+  },
+  {
+    area: "Indicadores",
+    level: "Avançado",
+    concept: "Diagnóstico por dimensão",
+    question: "Um KPI caiu só em uma região. Qual análise tende a ser mais útil primeiro?",
+    options: [
+      "Alterar a meta global.",
+      "Comparar canal, produto e período dentro dessa região.",
+      "Parar de medir o indicador.",
+      "Olhar apenas a média geral."
+    ],
+    correct: 1,
+    explanation: "Quando a queda é localizada, a quebra por dimensões aponta a causa provável."
+  },
+  {
+    area: "Estatística",
+    level: "Avançado",
+    concept: "Outliers",
+    question: "Ao identificar um outlier extremo em receita, qual abordagem é mais adequada?",
+    options: [
+      "Remover sempre o valor sem investigar.",
+      "Ignorar e seguir com a média.",
+      "Investigar origem e comparar métricas robustas, como mediana.",
+      "Trocar todos os valores por percentuais."
+    ],
+    correct: 2,
+    explanation: "Outlier pode ser erro ou evento real; é preciso investigar antes de decidir tratar."
+  },
+  {
+    area: "Excel",
+    level: "Avançado",
+    concept: "Modelagem analítica",
+    question: "Em BI, por que separar fato e dimensão melhora análise?",
+    options: [
+      "Porque elimina validação de dados.",
+      "Porque organiza medidas e contexto, facilitando filtros e agregações corretas.",
+      "Porque impede relacionamento entre tabelas.",
+      "Porque transforma tudo em texto."
+    ],
+    correct: 1,
+    explanation: "Fato guarda eventos e medidas; dimensão descreve contexto de análise."
+  },
+  {
+    area: "Lógica de dados",
+    level: "Avançado",
+    concept: "Duplicidade em JOIN",
+    question: "Ao juntar pedidos e itens, o total de receita ficou dobrado. O que deve ser verificado primeiro?",
+    options: [
+      "A fonte da cor do dashboard.",
+      "A cardinalidade do JOIN e a granularidade das tabelas.",
+      "A ortografia dos nomes das colunas.",
+      "A posição do ORDER BY."
+    ],
+    correct: 1,
+    explanation: "Dobra de valores geralmente indica problema de cardinalidade ou granularidade."
   }
 ];
 
@@ -136,7 +238,7 @@ const challenges = [
     context: "Existem 5 clientes. Apenas 3 fizeram compra. Um deles fez 2 compras.",
     options: ["A) 3", "B) 5", "C) 6", "D) 7"],
     correct: 2,
-    explanation: "O LEFT JOIN mantém todos os clientes. Dois clientes sem compra geram 2 linhas com NULL, dois clientes com 1 compra geram 2 linhas e um cliente com 2 compras gera 2 linhas. Total: 6."
+    explanation: "O LEFT JOIN mantém todos os clientes. Nesse cenário, o total de linhas resultante é 6."
   },
   {
     category: "SQL Básico",
@@ -145,7 +247,7 @@ const challenges = [
     question: "Qual comando ordena o resultado de uma consulta?",
     options: ["ORDER BY", "GROUP BY", "WHERE", "JOIN"],
     correct: 0,
-    explanation: "ORDER BY define a ordenação final do resultado, seja crescente ou decrescente."
+    explanation: "ORDER BY define a ordenação final do resultado."
   },
   {
     category: "SQL Básico",
@@ -154,7 +256,7 @@ const challenges = [
     question: "Qual função soma valores numéricos em SQL?",
     options: ["COUNT", "SUM", "AVG", "MAX"],
     correct: 1,
-    explanation: "SUM soma valores. COUNT conta linhas ou valores não nulos, AVG calcula média e MAX retorna o maior valor."
+    explanation: "SUM soma valores; AVG calcula média; COUNT conta linhas/valores."
   },
   {
     category: "SQL Intermediário",
@@ -163,16 +265,16 @@ const challenges = [
     question: "Qual expressão evita contar o mesmo cliente mais de uma vez?",
     options: ["COUNT(cliente_id)", "COUNT(*)", "COUNT(DISTINCT cliente_id)", "SUM(cliente_id)"],
     correct: 2,
-    explanation: "COUNT(DISTINCT cliente_id) conta clientes únicos, útil quando a base tem múltiplas linhas por cliente."
+    explanation: "COUNT(DISTINCT) é usado para contagem de entidades únicas."
   },
   {
     category: "Excel e BI",
     level: "Intermediário",
     points: 15,
-    question: "Em Excel, qual função é mais adequada para buscar valor por chave em outra tabela?",
+    question: "Em Excel, qual função é adequada para buscar valor por chave em outra tabela?",
     options: ["SE", "PROCV ou PROCX", "SOMA", "CONT.SE sem critério"],
     correct: 1,
-    explanation: "PROCV/PROCX são funções de busca para relacionar uma chave com outro campo em uma tabela de apoio."
+    explanation: "PROCV/PROCX realizam busca por chave em tabela de apoio."
   },
   {
     category: "Estatística",
@@ -186,21 +288,21 @@ const challenges = [
       "Não existem valores extremos."
     ],
     correct: 1,
-    explanation: "A mediana é o ponto central da lista ordenada. Ela não exige que todos os valores sejam iguais."
+    explanation: "A mediana representa o ponto central da distribuição ordenada."
   },
   {
     category: "Estatística",
     level: "Intermediário",
     points: 15,
-    question: "Qual cuidado tomar ao ver uma correlação alta entre duas métricas?",
+    question: "Qual cuidado tomar ao ver correlação alta entre duas métricas?",
     options: [
       "Assumir causalidade imediata.",
-      "Investigar contexto, variáveis externas e hipótese de causalidade.",
+      "Investigar contexto e hipóteses de causalidade.",
       "Ignorar a relação.",
       "Trocar as métricas por texto."
     ],
     correct: 1,
-    explanation: "Correlação é um sinal para investigar. Ela não prova causalidade sozinha."
+    explanation: "Correlação é sinal de investigação, não prova de causa."
   },
   {
     category: "Indicadores e KPIs",
@@ -214,13 +316,13 @@ const challenges = [
       "Número de abas da planilha"
     ],
     correct: 1,
-    explanation: "A taxa por etapa mostra onde há perda no funil e orienta ações de melhoria."
+    explanation: "A taxa por etapa mostra onde concentrar ações de melhoria."
   },
   {
     category: "Raciocínio analítico",
     level: "Intermediário",
     points: 15,
-    question: "Uma campanha teve ROI maior, mas receita total menor. Qual hipótese deve ser verificada?",
+    question: "Uma campanha teve ROI maior, mas receita total menor. O que deve ser verificado?",
     options: [
       "Se o investimento foi menor e concentrou vendas mais eficientes.",
       "Se o dashboard está com fundo escuro.",
@@ -228,7 +330,7 @@ const challenges = [
       "Se as colunas foram congeladas."
     ],
     correct: 0,
-    explanation: "ROI mede eficiência relativa. Receita total pode cair mesmo com ROI maior se o investimento ou alcance forem menores."
+    explanation: "ROI é eficiência relativa; receita total depende também de volume/investimento."
   },
   {
     category: "Raciocínio analítico",
@@ -242,7 +344,7 @@ const challenges = [
       "Comparar apenas com a média global."
     ],
     correct: 0,
-    explanation: "Quando a queda está localizada, quebre por dimensões internas para encontrar a causa provável."
+    explanation: "A quebra por dimensão local aumenta a chance de achar a causa raiz."
   }
 ];
 
@@ -305,7 +407,7 @@ const areaGuides = {
   "Estatística": {
     track: "Estatística para Dados",
     next: "mediana, dispersão, correlação e leitura de distribuição",
-    why: "Estatística ajuda a não tirar conclusões frágeis a partir de médias ou variações isoladas."
+    why: "Estatística ajuda a não tirar conclusões frágeis com base em médias isoladas."
   },
   Excel: {
     track: "Excel e BI Aplicado",

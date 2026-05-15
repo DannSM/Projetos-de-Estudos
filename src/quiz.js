@@ -3,6 +3,9 @@ const resultSection = document.querySelector("#resultado");
 const resultMount = document.querySelector("#resultMount");
 const areaList = document.querySelector("#areaList");
 
+const QUESTIONS_PER_LEVEL = 5;
+const RESULT_RENDER_DELAY_MS = 1700;
+
 const diagnosticLevels = [
   {
     name: "Básico",
@@ -30,39 +33,36 @@ const diagnosticLevels = [
   questions: diagnosticQuestions.filter((question) => question.level === level.name)
 }));
 
-function renderAreaList() {
-  areaList.innerHTML = areaGoals.map((area) => `
-    <div class="area-pill">
-      <strong>${area}</strong>
-      <span>0/${countQuestionsByArea(area)}</span>
-    </div>
-  `).join("");
+function shuffleArray(values) {
+  const shuffled = [...values];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }
 
-function countQuestionsByArea(area) {
-  return diagnosticQuestions.filter((question) => question.area === area).length;
+function pickRandomQuestions(questions, quantity) {
+  return shuffleArray(questions).slice(0, Math.min(quantity, questions.length));
 }
 
-function resetDiagnostic() {
-  state.currentQuestion = 0;
-  state.currentLevelIndex = 0;
-  state.diagnosticStarted = false;
-  state.selectedDiagnosticAnswer = null;
-  state.diagnosticAnswers = [];
-  state.levelResults = [];
-  state.diagnosticStoppedAtLevel = null;
-  state.areaScore = areaGoals.reduce((scores, area) => {
-    scores[area] = { correct: 0, total: 0, misses: [], hits: [] };
-    return scores;
-  }, {});
-  resultSection.classList.add("hidden");
-  resultMount.innerHTML = "";
-  renderAreaProgress();
-  renderDiagnosticIntro();
+function getDefaultSessionQuestionCount() {
+  return diagnosticLevels.reduce((total, level) => total + Math.min(QUESTIONS_PER_LEVEL, level.questions.length), 0);
 }
 
 function getCurrentLevel() {
   return diagnosticLevels[state.currentLevelIndex];
+}
+
+function getCurrentLevelQuestions() {
+  return state.diagnosticQuestionSets[state.currentLevelIndex] || [];
+}
+
+function getSessionQuestionCount() {
+  if (!state.diagnosticQuestionSets.length) {
+    return getDefaultSessionQuestionCount();
+  }
+  return state.diagnosticQuestionSets.reduce((total, questions) => total + questions.length, 0);
 }
 
 function getTotalAnswered() {
@@ -73,10 +73,29 @@ function getTotalCorrect() {
   return state.diagnosticAnswers.filter((answer) => answer.correct).length;
 }
 
+function countQuestionsByArea(area, sessionOnly = false) {
+  const source = sessionOnly && state.diagnosticQuestionSets.length
+    ? state.diagnosticQuestionSets.flat()
+    : diagnosticQuestions;
+
+  return source.filter((question) => question.area === area).length;
+}
+
+function renderAreaList() {
+  areaList.innerHTML = areaGoals.map((area) => `
+    <div class="area-pill">
+      <strong>${area}</strong>
+      <span>0/${countQuestionsByArea(area)}</span>
+    </div>
+  `).join("");
+}
+
 function renderAreaProgress() {
+  const useSessionQuestions = state.diagnosticQuestionSets.length > 0;
+
   areaList.innerHTML = areaGoals.map((area) => {
     const score = state.areaScore[area];
-    const expected = countQuestionsByArea(area);
+    const expected = countQuestionsByArea(area, useSessionQuestions);
     const percent = score.total ? Math.round((score.correct / score.total) * 100) : 0;
     const answered = score.hits.length + score.misses.length;
     const statusClass = answered === 0 ? "" : percent >= 75 ? "is-strong" : percent >= 45 ? "is-medium" : "is-low";
@@ -88,6 +107,32 @@ function renderAreaProgress() {
       </div>
     `;
   }).join("");
+}
+
+function resetDiagnostic() {
+  if (state.resultRenderTimer) {
+    clearTimeout(state.resultRenderTimer);
+    state.resultRenderTimer = null;
+  }
+
+  state.currentQuestion = 0;
+  state.currentLevelIndex = 0;
+  state.diagnosticStarted = false;
+  state.diagnosticQuestionSets = [];
+  state.selectedDiagnosticAnswer = null;
+  state.diagnosticAnswers = [];
+  state.levelResults = [];
+  state.diagnosticStoppedAtLevel = null;
+  state.areaScore = areaGoals.reduce((scores, area) => {
+    scores[area] = { correct: 0, total: 0, misses: [], hits: [] };
+    return scores;
+  }, {});
+
+  resultSection.classList.add("hidden");
+  resultMount.innerHTML = "";
+
+  renderAreaProgress();
+  renderDiagnosticIntro();
 }
 
 function renderLevelRoadmap() {
@@ -110,21 +155,23 @@ function renderLevelRoadmap() {
 }
 
 function renderDiagnosticIntro() {
+  const totalQuestions = getDefaultSessionQuestionCount();
+
   quizMount.innerHTML = `
     <div class="diagnostic-intro quiz-step">
       <span class="section-kicker">Diagnóstico por níveis</span>
-      <h3 class="question-title">Comece pelo básico e avance conforme seu desempenho.</h3>
+      <h3 class="question-title">Responda 5 perguntas por nível com ordem aleatória.</h3>
       <p class="question-meta">
-        São ${diagnosticQuestions.length} perguntas no total. Você avança para o próximo nível ao atingir 75% no nível atual.
+        Banco atual com ${diagnosticQuestions.length} questões. A cada tentativa, a plataforma sorteia ${QUESTIONS_PER_LEVEL} perguntas por nível.
       </p>
       ${renderLevelRoadmap()}
       <div class="diagnostic-summary">
-        <span>10 perguntas</span>
-        <span>3 níveis</span>
+        <span>${QUESTIONS_PER_LEVEL} por nível</span>
+        <span>${totalQuestions} por sessão</span>
         <span>Confirmação antes de responder</span>
       </div>
       <p class="explanation">
-        A avaliação começa no básico. Se a base ainda precisar de reforço, o diagnóstico para ali e recomenda o próximo estudo.
+        Você avança para o próximo nível ao atingir 75% no nível atual.
       </p>
       <button class="submit-button" id="startDiagnostic">Iniciar diagnóstico</button>
     </div>
@@ -138,13 +185,40 @@ function startDiagnostic() {
   state.currentLevelIndex = 0;
   state.currentQuestion = 0;
   state.selectedDiagnosticAnswer = null;
+  state.diagnosticQuestionSets = diagnosticLevels.map((level) => pickRandomQuestions(level.questions, QUESTIONS_PER_LEVEL));
+
+  const emptyLevels = diagnosticLevels.filter((_, index) => state.diagnosticQuestionSets[index].length === 0);
+  if (emptyLevels.length > 0) {
+    quizMount.innerHTML = `
+      <div class="feedback-box error quiz-step">
+        <strong>Não foi possível iniciar o diagnóstico.</strong>
+        <p class="explanation">Algum nível está sem perguntas cadastradas. Complete o banco para continuar.</p>
+        <button class="restart-button" id="restartDiagnostic">Tentar novamente</button>
+      </div>
+    `;
+    document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
+    return;
+  }
+
+  renderAreaProgress();
   renderQuestion();
 }
 
 function renderQuestion() {
   const level = getCurrentLevel();
-  const question = level.questions[state.currentQuestion];
-  const progress = (getTotalAnswered() / diagnosticQuestions.length) * 100;
+  const levelQuestions = getCurrentLevelQuestions();
+  const question = levelQuestions[state.currentQuestion];
+
+  if (!question) {
+    completeCurrentLevel();
+    return;
+  }
+
+  const answered = getTotalAnswered();
+  const totalQuestions = getSessionQuestionCount();
+  const correct = getTotalCorrect();
+  const wrong = answered - correct;
+  const progress = totalQuestions ? (answered / totalQuestions) * 100 : 0;
   const percentLabel = Math.round(progress);
 
   quizMount.innerHTML = `
@@ -154,8 +228,12 @@ function renderQuestion() {
         <span style="width: ${progress}%"></span>
       </div>
       <div class="quiz-top">
-        <span>${level.label} - pergunta ${state.currentQuestion + 1} de ${level.questions.length}</span>
-        <span>${percentLabel}% do diagnóstico</span>
+        <span>${level.label} - pergunta ${state.currentQuestion + 1} de ${levelQuestions.length}</span>
+        <span>${percentLabel}% concluído</span>
+      </div>
+      <div class="quiz-top quiz-top-secondary">
+        <span>Acertos até agora: ${correct}</span>
+        <span>Erros até agora: ${wrong}</span>
       </div>
       <div class="concept-row">
         <span class="concept-tag">${question.concept}</span>
@@ -193,8 +271,8 @@ function confirmDiagnosticAnswer() {
   const selectedIndex = state.selectedDiagnosticAnswer;
   if (selectedIndex === null || selectedIndex === undefined) return;
 
-  const level = getCurrentLevel();
-  const question = level.questions[state.currentQuestion];
+  const levelQuestions = getCurrentLevelQuestions();
+  const question = levelQuestions[state.currentQuestion];
   const isCorrect = selectedIndex === question.correct;
   const buttons = quizMount.querySelectorAll("[data-answer]");
   const confirmButton = document.querySelector("#confirmDiagnosticAnswer");
@@ -217,6 +295,7 @@ function confirmDiagnosticAnswer() {
   state.areaScore[question.area].total += 1;
 
   state.diagnosticAnswers.push({
+    order: state.diagnosticAnswers.length + 1,
     area: question.area,
     level: question.level,
     concept: question.concept,
@@ -244,16 +323,17 @@ function confirmDiagnosticAnswer() {
 }
 
 function getNextButtonLabel() {
+  const levelQuestions = getCurrentLevelQuestions();
+  if (state.currentQuestion < levelQuestions.length - 1) return "Próxima pergunta";
   const level = getCurrentLevel();
-  if (state.currentQuestion < level.questions.length - 1) return "Próxima pergunta";
   if (level.minPercent === null) return "Ver resultado";
   return "Ver desempenho do nível";
 }
 
 function advanceDiagnostic() {
-  const level = getCurrentLevel();
+  const levelQuestions = getCurrentLevelQuestions();
 
-  if (state.currentQuestion < level.questions.length - 1) {
+  if (state.currentQuestion < levelQuestions.length - 1) {
     state.currentQuestion += 1;
     state.selectedDiagnosticAnswer = null;
     renderQuestion();
@@ -274,7 +354,7 @@ function completeCurrentLevel() {
 
   if (!passed) {
     state.diagnosticStoppedAtLevel = levelResult;
-    showResult({ blocked: true });
+    showResultLoading({ blocked: true });
     return;
   }
 
@@ -283,7 +363,7 @@ function completeCurrentLevel() {
     return;
   }
 
-  showResult({ blocked: false });
+  showResultLoading({ blocked: false });
 }
 
 function showLevelTransition(levelResult) {
@@ -309,9 +389,33 @@ function showLevelTransition(levelResult) {
   });
 }
 
+function showResultLoading({ blocked }) {
+  if (state.resultRenderTimer) {
+    clearTimeout(state.resultRenderTimer);
+  }
+
+  quizMount.innerHTML = `
+    <div class="feedback-box quiz-step diagnostic-loading" role="status" aria-live="polite">
+      <div class="loading-dots" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <strong>Gerando seu diagnóstico final...</strong>
+      <p class="explanation">Estamos consolidando o desempenho por nível, área e pergunta.</p>
+    </div>
+  `;
+
+  state.resultRenderTimer = setTimeout(() => {
+    state.resultRenderTimer = null;
+    showResult({ blocked });
+  }, RESULT_RENDER_DELAY_MS);
+}
+
 function showResult({ blocked } = { blocked: false }) {
   const totalCorrect = getTotalCorrect();
   const answered = getTotalAnswered();
+  const totalWrong = answered - totalCorrect;
   const percent = answered ? totalCorrect / answered : 0;
   const profile = getProfile(percent, state.areaScore);
   const insights = buildAreaInsights(state.areaScore);
@@ -354,16 +458,16 @@ function showResult({ blocked } = { blocked: false }) {
 
       <div class="result-metrics">
         <div class="metric-card">
-          <strong>${totalCorrect}/${answered}</strong>
-          <span>acertos respondidos</span>
+          <strong>${totalCorrect}</strong>
+          <span>acertos</span>
+        </div>
+        <div class="metric-card">
+          <strong>${totalWrong}</strong>
+          <span>erros</span>
         </div>
         <div class="metric-card">
           <strong>${strongest.area}</strong>
-          <span>área mais forte agora</span>
-        </div>
-        <div class="metric-card">
-          <strong>${blocked ? stopped.label : weakest.area}</strong>
-          <span>prioridade de estudo</span>
+          <span>área mais forte</span>
         </div>
       </div>
 
@@ -400,6 +504,20 @@ function showResult({ blocked } = { blocked: false }) {
             <p><strong>Próximo desafio:</strong> ${item.next}</p>
           </article>
         `).join("")}
+      </div>
+
+      <div class="result-block">
+        <h3>Histórico por pergunta</h3>
+        <div class="question-review-list">
+          ${state.diagnosticAnswers.map((item) => `
+            <article class="review-card question-review-card ${item.correct ? "is-hit" : "is-miss"}">
+              <span class="question-review-status">${item.correct ? "Acerto" : "Erro"} - Q${item.order}</span>
+              <h4>${item.question}</h4>
+              <p><strong>Sua resposta:</strong> ${item.selected}</p>
+              <p><strong>Resposta correta:</strong> ${item.correctAnswer}</p>
+            </article>
+          `).join("")}
+        </div>
       </div>
 
       <div class="result-block">

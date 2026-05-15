@@ -206,6 +206,11 @@
   font-weight: 600;
 }
 
+.quiz-top-secondary {
+  margin-top: -0.65rem;
+  margin-bottom: 1rem;
+}
+
 .concept-row {
   display: flex;
   flex-wrap: wrap;
@@ -333,6 +338,35 @@
 
 .feedback-box.success strong { color: var(--color-success); }
 .feedback-box.error strong { color: var(--color-error); }
+
+.diagnostic-loading {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.55rem;
+}
+
+.loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.loading-dots span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: loadingPulse 900ms ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 130ms;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 260ms;
+}
 
 .submit-button,
 .restart-button {
@@ -530,11 +564,34 @@
   gap: 0.9rem;
 }
 
+.question-review-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
 .review-card {
   padding: 1rem;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+}
+
+.question-review-card {
+  border-left: 4px solid var(--color-border);
+}
+
+.question-review-card.is-hit {
+  border-left-color: var(--color-success);
+}
+
+.question-review-card.is-miss {
+  border-left-color: var(--color-error);
+}
+
+.question-review-status {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .review-card h4 {
@@ -614,6 +671,20 @@
 
 .challenge-card h3 {
   min-height: 2.8rem;
+}
+
+@keyframes loadingPulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
 .app-footer {
