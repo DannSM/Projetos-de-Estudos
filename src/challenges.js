@@ -35,7 +35,7 @@ function renderChallenges(filter) {
             </button>
           `).join("")}
         </div>
-        <div class="question-meta">Pontuaï¿½ï¿½o: ${challenge.points} pontos</div>
+        <div class="question-meta">Pontuacao: ${challenge.points} pontos</div>
         <button class="submit-button" data-submit-challenge="${id}" ${answered ? "disabled" : ""}>Responder</button>
         <div id="challengeFeedback${id}"></div>
       </article>
@@ -101,7 +101,7 @@ function handleChallengeAnswer(challengeIndex) {
 
   feedbackMount.innerHTML = `
     <div class="feedback-box ${isCorrect ? "success" : "error"}">
-      <strong>${isCorrect ? "Excelente! Resposta correta." : "Boa tentativa. Veja a explicaï¿½ï¿½o."}</strong>
+      <strong>${isCorrect ? "Excelente! Resposta correta." : "Boa tentativa. Veja a explicacao."}</strong>
       <p class="explanation">${challenge.explanation}</p>
     </div>
   `;
@@ -110,5 +110,5 @@ function handleChallengeAnswer(challengeIndex) {
 }
 
 function updateChallengeScore() {
-  challengeScore.textContent = `Pontuaï¿½ï¿½o dos desafios: ${state.challengeScore}`;
+  challengeScore.textContent = `Pontuacao dos desafios: ${state.challengeScore}`;
 }

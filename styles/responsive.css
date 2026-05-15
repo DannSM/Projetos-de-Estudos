@@ -1,10 +1,46 @@
 @media (max-width: 900px) {
   .app-header {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr auto;
   }
 
   .section-shell {
     scroll-margin-top: 144px;
+  }
+
+  .has-sidebar {
+    margin-left: 0;
+  }
+
+  .app-sidebar {
+    position: sticky;
+    top: 143px;
+    bottom: auto;
+    flex-direction: row;
+    gap: 0.7rem;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0.7rem 1rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .app-sidebar a {
+    min-width: max-content;
+  }
+
+  .sidebar-section {
+    display: flex;
+    align-items: center;
+    min-width: max-content;
+  }
+
+  .sidebar-label,
+  .sidebar-panel {
+    display: none;
+  }
+
+  .header-context {
+    display: none;
   }
 
   .top-nav {
@@ -30,9 +66,11 @@
   }
 
   .track-grid,
+  .home-journey-grid,
   .recommendation-grid,
   .result-metrics,
   .diagnostic-summary,
+  .diagnostic-side-grid,
   .level-roadmap,
   .level-summary,
   .insight-grid {
@@ -59,6 +97,10 @@
 
   .section-shell {
     scroll-margin-top: 172px;
+  }
+
+  .app-sidebar {
+    top: 156px;
   }
 
   .header-cta {
@@ -88,6 +130,7 @@
   }
 
   .track-grid,
+  .home-journey-grid,
   .recommendation-grid,
   .result-metrics,
   .insight-grid,

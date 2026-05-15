@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="app-header">
-    <a class="brand" href="index.html#home" aria-label="Data Study Map">
+    <a class="brand" href="index.html" aria-label="Data Study Map">
       <span class="brand-logo-wrap" aria-hidden="true">
         <img class="brand-logo" src="assets/logo.png" alt="">
       </span>
@@ -22,23 +22,49 @@
       </span>
     </a>
 
-    <nav class="top-nav" aria-label="Navegacao principal">
-      <a href="diagnostico.html">Diagnostico</a>
-      <a href="index.html#trilhas">Trilhas</a>
-      <a href="index.html#desafios">Desafios</a>
-    </nav>
-
-    <a class="header-cta" href="index.html#desafios">Desafios</a>
+    <div class="header-context">Diagnostico em etapas para mapear seu nivel com criterio claro.</div>
+    <a class="header-cta" href="index.html#desafios">Praticar</a>
   </header>
 
-  <main class="diagnostic-page">
+  <aside class="app-sidebar" aria-label="Navegacao lateral">
+    <div class="sidebar-section">
+      <span class="sidebar-label">Navegacao</span>
+      <a href="index.html">Inicio</a>
+      <a class="active" href="diagnostico.html">Diagnostico</a>
+      <a href="index.html#trilhas">Trilhas</a>
+      <a href="index.html#desafios">Desafios</a>
+    </div>
+    <div class="sidebar-section sidebar-panel">
+      <span class="sidebar-label">Criterio</span>
+      <strong>75% para avancar</strong>
+      <p>Se nao atingir a meta, o diagnostico para no nivel atual e prioriza reforco direcionado.</p>
+    </div>
+  </aside>
+
+  <main class="diagnostic-page has-sidebar">
     <section class="section-shell diagnostic-shell">
       <div class="section-intro diagnostic-intro-panel">
         <span class="section-kicker">Diagnostico adaptativo</span>
-        <h1>Responda por niveis, sem precisar rolar a home.</h1>
-        <p>
-          O diagnostico comeca no basico, avanca para intermediario e termina no avancado. Para liberar o proximo nivel, voce precisa atingir 75% no nivel atual.
-        </p>
+        <h1>Mapa objetivo do seu nivel em dados.</h1>
+        <p>Cada etapa testa fundamentos e libera a proxima somente quando sua base estiver consistente.</p>
+        <div class="diagnostic-side-grid" aria-label="Resumo do diagnostico">
+          <div>
+            <strong>10</strong>
+            <span>perguntas</span>
+          </div>
+          <div>
+            <strong>3</strong>
+            <span>niveis</span>
+          </div>
+          <div>
+            <strong>75%</strong>
+            <span>para avancar</span>
+          </div>
+        </div>
+        <div class="diagnostic-note">
+          <strong>Leitura do resultado</strong>
+          <p>Voce recebe desempenho por nivel, analise por area e recomendacao do proximo foco para estudo pratico.</p>
+        </div>
         <div class="area-list" id="areaList"></div>
       </div>
 
