@@ -1,6 +1,23 @@
 
 const challengeMount = document.querySelector("#challengeMount");
 const challengeScore = document.querySelector("#challengeScore");
+
+function getAnonymousUserId() {
+  if (state.anonymousUserId) return state.anonymousUserId;
+  if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
+    state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();
+    return state.anonymousUserId;
+  }
+  return "anonymous";
+}
+
+function persistChallengeAttemptRecord(payload) {
+  if (!window.supabaseDataService || typeof window.supabaseDataService.saveChallengeAttempt !== "function") {
+    return;
+  }
+  void window.supabaseDataService.saveChallengeAttempt(payload);
+}
+
 function bindFilters() {
   document.querySelectorAll(".filter-button").forEach((button) => {
     button.addEventListener("click", () => {
@@ -83,6 +100,7 @@ function handleChallengeAnswer(challengeIndex) {
   const card = document.querySelector(`[data-challenge-card="${challengeIndex}"]`);
   const buttons = card.querySelectorAll("[data-option]");
   const isCorrect = selectedIndex === challenge.correct;
+  const answeredAt = new Date().toISOString();
 
   buttons.forEach((button) => {
     const optionIndex = Number(button.dataset.option);
@@ -98,6 +116,22 @@ function handleChallengeAnswer(challengeIndex) {
     state.challengeScore += challenge.points;
     state.completedChallenges.add(challengeIndex);
   }
+
+  persistChallengeAttemptRecord({
+    attempt_id: window.supabaseDataService && typeof window.supabaseDataService.createAttemptId === "function"
+      ? window.supabaseDataService.createAttemptId("challenge")
+      : `challenge_${Date.now()}`,
+    anonymous_user_id: getAnonymousUserId(),
+    answered_at: answeredAt,
+    challenge_index: challengeIndex,
+    challenge_theme: challenge.category,
+    challenge_level: challenge.level,
+    question: challenge.question,
+    selected_answer: challenge.options[selectedIndex],
+    correct_answer: challenge.options[challenge.correct],
+    is_correct: isCorrect,
+    points: challenge.points
+  });
 
   feedbackMount.innerHTML = `
     <div class="feedback-box ${isCorrect ? "success" : "error"}">

@@ -5,6 +5,7 @@ const areaList = document.querySelector("#areaList");
 
 const QUESTIONS_PER_LEVEL = 5;
 const RESULT_RENDER_DELAY_MS = 1700;
+const DATA_AREAS = areaGoals.slice(2);
 
 const diagnosticLevels = [
   {
@@ -32,6 +33,67 @@ const diagnosticLevels = [
   ...level,
   questions: diagnosticQuestions.filter((question) => question.level === level.name)
 }));
+
+function getAnonymousUserId() {
+  if (state.anonymousUserId) {
+    return state.anonymousUserId;
+  }
+
+  if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
+    state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();
+    return state.anonymousUserId;
+  }
+
+  return "anonymous";
+}
+
+function getAreaPercentScore(area) {
+  const score = state.areaScore[area];
+  if (!score || !score.total) return 0;
+  return score.correct / score.total;
+}
+
+function mapPercentToLevel(percent) {
+  if (percent >= 0.75) return "Avancado";
+  if (percent >= 0.45) return "Intermediario";
+  return "Basico";
+}
+
+function getDataAreaLevel() {
+  const scores = DATA_AREAS.map((area) => getAreaPercentScore(area)).filter((value) => Number.isFinite(value));
+  if (!scores.length) return "Basico";
+  const average = scores.reduce((total, value) => total + value, 0) / scores.length;
+  return mapPercentToLevel(average);
+}
+
+function buildAreaScoreSnapshot() {
+  return areaGoals.map((area) => {
+    const score = state.areaScore[area];
+    const percent = score.total ? Math.round((score.correct / score.total) * 100) : 0;
+    return {
+      area,
+      correct: score.correct,
+      total: score.total,
+      percent,
+      hits: score.hits,
+      misses: score.misses
+    };
+  });
+}
+
+function persistDiagnosticAnswerRecord(payload) {
+  if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticAnswer !== "function") {
+    return;
+  }
+  void window.supabaseDataService.saveDiagnosticAnswer(payload);
+}
+
+function persistDiagnosticSessionRecord(payload) {
+  if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticSession !== "function") {
+    return;
+  }
+  void window.supabaseDataService.saveDiagnosticSession(payload);
+}
 
 function shuffleArray(values) {
   const shuffled = [...values];
@@ -118,6 +180,7 @@ function resetDiagnostic() {
   state.currentQuestion = 0;
   state.currentLevelIndex = 0;
   state.diagnosticStarted = false;
+  state.currentDiagnosticAttemptId = null;
   state.diagnosticQuestionSets = [];
   state.selectedDiagnosticAnswer = null;
   state.diagnosticAnswers = [];
@@ -184,6 +247,9 @@ function startDiagnostic() {
   state.diagnosticStarted = true;
   state.currentLevelIndex = 0;
   state.currentQuestion = 0;
+  state.currentDiagnosticAttemptId = window.supabaseDataService && typeof window.supabaseDataService.createAttemptId === "function"
+    ? window.supabaseDataService.createAttemptId("diag")
+    : `diag_${Date.now()}`;
   state.selectedDiagnosticAnswer = null;
   state.diagnosticQuestionSets = diagnosticLevels.map((level) => pickRandomQuestions(level.questions, QUESTIONS_PER_LEVEL));
 
@@ -293,8 +359,8 @@ function confirmDiagnosticAnswer() {
     state.areaScore[question.area].misses.push(question.concept);
   }
   state.areaScore[question.area].total += 1;
-
-  state.diagnosticAnswers.push({
+  const answeredAt = new Date().toISOString();
+  const answerRecord = {
     order: state.diagnosticAnswers.length + 1,
     area: question.area,
     level: question.level,
@@ -303,8 +369,26 @@ function confirmDiagnosticAnswer() {
     selected: question.options[selectedIndex],
     correctAnswer: question.options[question.correct],
     correct: isCorrect,
-    explanation: question.explanation
+    explanation: question.explanation,
+    answeredAt
+  };
+
+  state.diagnosticAnswers.push(answerRecord);
+
+  persistDiagnosticAnswerRecord({
+    attempt_id: state.currentDiagnosticAttemptId,
+    anonymous_user_id: getAnonymousUserId(),
+    answered_at: answeredAt,
+    order_index: answerRecord.order,
+    area: answerRecord.area,
+    level: answerRecord.level,
+    concept: answerRecord.concept,
+    question: answerRecord.question,
+    selected_answer: answerRecord.selected,
+    correct_answer: answerRecord.correctAnswer,
+    is_correct: answerRecord.correct
   });
+
   renderAreaProgress();
 
   document.querySelector("#feedbackMount").innerHTML = `
@@ -413,6 +497,7 @@ function showResultLoading({ blocked }) {
 }
 
 function showResult({ blocked } = { blocked: false }) {
+  const finishedAt = new Date().toISOString();
   const totalCorrect = getTotalCorrect();
   const answered = getTotalAnswered();
   const totalWrong = answered - totalCorrect;
@@ -424,6 +509,29 @@ function showResult({ blocked } = { blocked: false }) {
   const weakest = [...insights].reverse()[0];
   const missedAnswers = state.diagnosticAnswers.filter((answer) => !answer.correct);
   const stopped = state.diagnosticStoppedAtLevel;
+  const sqlLevel = mapPercentToLevel(getAreaPercentScore("SQL"));
+  const statisticsLevel = mapPercentToLevel(getAreaPercentScore(areaGoals[1]));
+  const dataLevel = getDataAreaLevel();
+
+  persistDiagnosticSessionRecord({
+    attempt_id: state.currentDiagnosticAttemptId,
+    anonymous_user_id: getAnonymousUserId(),
+    finished_at: finishedAt,
+    total_questions_answered: answered,
+    total_correct: totalCorrect,
+    total_wrong: totalWrong,
+    score_percent: Math.round(percent * 100),
+    sql_level: sqlLevel,
+    statistics_level: statisticsLevel,
+    data_level: dataLevel,
+    overall_level: profile.name,
+    identified_profile: profile.name,
+    study_recommendation: recommendations.priority.title,
+    priority_text: recommendations.priority.text,
+    stopped_at_level: stopped ? stopped.name : null,
+    level_results: state.levelResults,
+    area_score_snapshot: buildAreaScoreSnapshot()
+  });
 
   quizMount.innerHTML = `
     <div class="feedback-box ${blocked ? "error" : "success"} quiz-step">

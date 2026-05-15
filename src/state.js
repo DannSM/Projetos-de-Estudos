@@ -12,6 +12,8 @@ const state = {
   challengeScore: 0,
   completedChallenges: new Set(),
   selectedChallengeOptions: {},
+  anonymousUserId: null,
+  currentDiagnosticAttemptId: null,
   heroPreviewIndex: 0,
   heroPreviewTimer: null,
   heroPreviewTransitioning: false

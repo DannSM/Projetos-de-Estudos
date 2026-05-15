@@ -33,6 +33,9 @@ function renderIcons() {
 function init() {
   bindHeaderHeightSync();
   renderIcons();
+  if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
+    state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();
+  }
 
   if (document.querySelector("#heroPreviewQuestion")) {
     renderHeroPreview();
