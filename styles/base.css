@@ -118,7 +118,7 @@ input {
   display: inline-flex;
   align-items: baseline;
   gap: 0.22rem;
-  color: var(--color-text-primary);
+  color: var(--color-primary);
   font-size: 1.42rem;
   font-weight: 900;
   letter-spacing: 0;
@@ -126,24 +126,28 @@ input {
 }
 
 .brand-name strong {
-  color: var(--color-primary);
+  color: inherit;
   font-weight: 900;
 }
 
+.brand-name span:nth-child(1) {
+  color: #2563eb;
+}
+
 .brand-name span:nth-child(2) {
-  color: var(--color-success);
+  color: #1d9bf0;
 }
 
 .brand-name span:nth-child(2) strong {
-  color: var(--color-success);
+  color: inherit;
 }
 
 .brand-name span:nth-child(3) {
-  color: var(--color-warning);
+  color: #06b6d4;
 }
 
 .brand-name span:nth-child(3) strong {
-  color: var(--color-warning);
+  color: inherit;
 }
 
 .top-nav {
