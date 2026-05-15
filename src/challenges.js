@@ -1,7 +1,5 @@
 const challengeMount = document.querySelector("#challengeMount");
 const challengeScore = document.querySelector("#challengeScore");
-const challengeSatisfactionMount = document.querySelector("#challengeSatisfactionMount");
-
 const CHALLENGE_SURVEY_MIN_ATTEMPTS = 3;
 
 function getAnonymousUserId() {
@@ -23,6 +21,26 @@ function getChallengeSessionId() {
     : `challenge_session_${Date.now()}`;
 
   return state.currentChallengeSessionId;
+}
+
+function getChallengeFeedbackStorageKey(challengeId) {
+  return `dataSkillMap_feedback_challenge_${challengeId}_${getAnonymousUserId()}`;
+}
+
+function hasChallengeFeedbackFlag(challengeId) {
+  try {
+    return Boolean(window.localStorage.getItem(getChallengeFeedbackStorageKey(challengeId)));
+  } catch (error) {
+    return false;
+  }
+}
+
+function setChallengeFeedbackFlag(challengeId, status) {
+  try {
+    window.localStorage.setItem(getChallengeFeedbackStorageKey(challengeId), status);
+  } catch (error) {
+    // localStorage indisponivel: segue o fluxo sem persistencia do flag
+  }
 }
 
 function persistChallengeAttemptRecord(payload) {
@@ -93,7 +111,6 @@ function renderChallenges(filter) {
   });
 
   updateChallengeScore();
-  renderChallengeSatisfactionState();
 }
 
 function selectChallengeAnswer(challengeIndex, selectedIndex) {
@@ -102,6 +119,57 @@ function selectChallengeAnswer(challengeIndex, selectedIndex) {
 
   card.querySelectorAll("[data-option]").forEach((button) => {
     button.classList.toggle("selected", Number(button.dataset.option) === selectedIndex);
+  });
+}
+
+function maybeOpenChallengeSatisfactionModal(challengeIndex) {
+  if (state.challengeSurveySubmitted || hasChallengeFeedbackFlag(challengeIndex)) {
+    return;
+  }
+
+  if (state.challengeAnsweredCount < CHALLENGE_SURVEY_MIN_ATTEMPTS) {
+    return;
+  }
+
+  if (!window.feedbackModal || typeof window.feedbackModal.open !== "function") {
+    return;
+  }
+
+  const scorePercent = state.challengeAnsweredCount
+    ? Math.round((state.challengeCorrectCount / state.challengeAnsweredCount) * 100)
+    : 0;
+
+  window.feedbackModal.open({
+    title: "Pesquisa de satisfação",
+    question: "Como foi sua experiência com este desafio?",
+    scaleAriaLabel: "Nota de satisfação dos desafios",
+    commentLabel: "Detalhe sua nota (opcional)",
+    commentPlaceholder: "Compartilhe sua percepção da experiência.",
+    submitLabel: "Enviar avaliação",
+    skipLabel: "Agora não",
+    successTitle: "Avaliação enviada.",
+    successText: "Obrigado por ajudar a melhorar os desafios.",
+    onSubmit: async ({ rating, comment }) => {
+      const payload = {
+        attempt_id: getChallengeSessionId(),
+        anonymous_user_id: getAnonymousUserId(),
+        context: "desafios_sessao",
+        rating,
+        comment,
+        score_percent: scorePercent,
+        blocked_at_level: false
+      };
+
+      const result = await persistSatisfactionFeedbackRecord(payload);
+      if (result && result.ok) {
+        state.challengeSurveySubmitted = true;
+        setChallengeFeedbackFlag(challengeIndex, "submitted");
+      }
+      return result;
+    },
+    onSkip: () => {
+      setChallengeFeedbackFlag(challengeIndex, "dismissed");
+    }
   });
 }
 
@@ -168,116 +236,7 @@ function handleChallengeAnswer(challengeIndex) {
   `;
 
   updateChallengeScore();
-  renderChallengeSatisfactionState();
-}
-
-function renderChallengeSatisfactionState() {
-  if (!challengeSatisfactionMount) return;
-
-  if (state.challengeSurveySubmitted) {
-    challengeSatisfactionMount.innerHTML = `
-      <div class="satisfaction-block">
-        <h3>Pesquisa de satisfação</h3>
-        <div class="feedback-box success">
-          <strong>Avaliacao enviada.</strong>
-          <p class="question-meta">Obrigado por compartilhar sua percepção sobre os desafios.</p>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
-  if (state.challengeAnsweredCount < CHALLENGE_SURVEY_MIN_ATTEMPTS) {
-    challengeSatisfactionMount.innerHTML = "";
-    return;
-  }
-
-  challengeSatisfactionMount.innerHTML = `
-    <div class="satisfaction-block">
-      <h3>Pesquisa de satisfação</h3>
-      <p class="question-meta">Quão satisfeita(o) você ficou com a experiência nos desafios?</p>
-      <div class="satisfaction-scale" role="radiogroup" aria-label="Nota de satisfação dos desafios">
-        ${[1, 2, 3, 4, 5].map((rating) => `
-          <button type="button" class="satisfaction-rating-button" data-challenge-satisfaction-rating="${rating}" aria-label="Nota ${rating}">
-            ${rating}
-          </button>
-        `).join("")}
-      </div>
-      <label class="satisfaction-label" for="challengeSatisfactionComment">Detalhe sua nota (opcional)</label>
-      <textarea
-        id="challengeSatisfactionComment"
-        class="satisfaction-textarea"
-        maxlength="240"
-        placeholder="Compartilhe sua percepção da experiência."
-      ></textarea>
-      <button class="submit-button" id="sendChallengeSatisfactionFeedback" disabled>Enviar avaliacao</button>
-      <div id="challengeSatisfactionFeedbackMount"></div>
-    </div>
-  `;
-
-  bindChallengeSatisfactionSurvey();
-}
-
-function bindChallengeSatisfactionSurvey() {
-  const feedbackMount = document.querySelector("#challengeSatisfactionFeedbackMount");
-  const sendButton = document.querySelector("#sendChallengeSatisfactionFeedback");
-  const commentField = document.querySelector("#challengeSatisfactionComment");
-  const ratingButtons = document.querySelectorAll("[data-challenge-satisfaction-rating]");
-
-  if (!feedbackMount || !sendButton || !commentField || !ratingButtons.length) {
-    return;
-  }
-
-  let selectedRating = null;
-  let isSubmitting = false;
-
-  ratingButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      if (isSubmitting) return;
-      selectedRating = Number(button.dataset.challengeSatisfactionRating);
-      ratingButtons.forEach((item) => {
-        item.classList.toggle("selected", Number(item.dataset.challengeSatisfactionRating) === selectedRating);
-      });
-      sendButton.disabled = false;
-    });
-  });
-
-  sendButton.addEventListener("click", async () => {
-    if (!selectedRating || isSubmitting) return;
-
-    isSubmitting = true;
-    sendButton.disabled = true;
-
-    const payload = {
-      attempt_id: getChallengeSessionId(),
-      anonymous_user_id: getAnonymousUserId(),
-      context: "desafios_sessao",
-      rating: selectedRating,
-      comment: commentField.value.trim() || null,
-      score_percent: state.challengeAnsweredCount
-        ? Math.round((state.challengeCorrectCount / state.challengeAnsweredCount) * 100)
-        : 0,
-      blocked_at_level: false
-    };
-
-    const result = await persistSatisfactionFeedbackRecord(payload);
-
-    if (result && result.ok) {
-      state.challengeSurveySubmitted = true;
-      renderChallengeSatisfactionState();
-      return;
-    }
-
-    feedbackMount.innerHTML = `
-      <div class="feedback-box error">
-        <strong>Não foi possível enviar agora.</strong>
-        <p class="question-meta">Você pode tentar novamente em instantes.</p>
-      </div>
-    `;
-
-    isSubmitting = false;
-    sendButton.disabled = false;
-  });
+  maybeOpenChallengeSatisfactionModal(challengeIndex);
 }
 
 function updateChallengeScore() {

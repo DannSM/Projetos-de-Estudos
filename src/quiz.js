@@ -6,6 +6,7 @@ const areaList = document.querySelector("#areaList");
 const QUESTIONS_PER_LEVEL = 5;
 const RESULT_RENDER_DELAY_MS = 1700;
 const DATA_AREAS = areaGoals.slice(2);
+const DIAGNOSTIC_FEEDBACK_STORAGE_PREFIX = "dataSkillMap_feedback_diagnostic";
 
 const diagnosticLevels = [
   {
@@ -102,91 +103,61 @@ function persistSatisfactionFeedbackRecord(payload) {
   return window.supabaseDataService.saveSatisfactionFeedback(payload);
 }
 
-function renderSatisfactionSurveyBlock() {
-  return `
-    <div class="result-block satisfaction-block">
-      <h3>Pesquisa de satisfacao</h3>
-      <p class="question-meta">Quao satisfeita(o) voce ficou com esta experiencia?</p>
-      <div class="satisfaction-scale" role="radiogroup" aria-label="Nota de satisfacao">
-        ${[1, 2, 3, 4, 5].map((rating) => `
-          <button type="button" class="satisfaction-rating-button" data-satisfaction-rating="${rating}" aria-label="Nota ${rating}">
-            ${rating}
-          </button>
-        `).join("")}
-      </div>
-      <label class="satisfaction-label" for="satisfactionComment">Detalhe sua nota (opcional)</label>
-      <textarea
-        id="satisfactionComment"
-        class="satisfaction-textarea"
-        maxlength="240"
-        placeholder="Compartilhe sua percepcao da experiencia."
-      ></textarea>
-      <button class="submit-button" id="sendSatisfactionFeedback" disabled>Enviar avaliacao</button>
-      <div id="satisfactionFeedbackMount"></div>
-    </div>
-  `;
+function getDiagnosticFeedbackStorageKey() {
+  const attemptId = state.currentDiagnosticAttemptId || "no_attempt";
+  return `${DIAGNOSTIC_FEEDBACK_STORAGE_PREFIX}_${getAnonymousUserId()}_${attemptId}`;
 }
 
-function bindSatisfactionSurvey({ scorePercent, blocked }) {
-  const feedbackMount = document.querySelector("#satisfactionFeedbackMount");
-  const sendButton = document.querySelector("#sendSatisfactionFeedback");
-  const commentField = document.querySelector("#satisfactionComment");
-  const ratingButtons = document.querySelectorAll("[data-satisfaction-rating]");
-  let selectedRating = null;
-  let isSubmitting = false;
+function hasDiagnosticFeedbackFlag() {
+  try {
+    return Boolean(window.localStorage.getItem(getDiagnosticFeedbackStorageKey()));
+  } catch (error) {
+    return false;
+  }
+}
 
-  ratingButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      if (isSubmitting) return;
-      selectedRating = Number(button.dataset.satisfactionRating);
-      ratingButtons.forEach((item) => {
-        item.classList.toggle("selected", Number(item.dataset.satisfactionRating) === selectedRating);
-      });
-      sendButton.disabled = false;
-    });
-  });
+function setDiagnosticFeedbackFlag(status) {
+  try {
+    window.localStorage.setItem(getDiagnosticFeedbackStorageKey(), status);
+  } catch (error) {
+    // localStorage indisponivel: segue fluxo sem persistir flag
+  }
+}
 
-  sendButton.addEventListener("click", async () => {
-    if (!selectedRating || isSubmitting) return;
+function openDiagnosticSatisfactionModal({ scorePercent, blocked }) {
+  if (!window.feedbackModal || typeof window.feedbackModal.open !== "function") return;
+  if (hasDiagnosticFeedbackFlag()) return;
 
-    isSubmitting = true;
-    sendButton.disabled = true;
+  window.feedbackModal.open({
+    title: "Pesquisa de satisfação",
+    question: "Como foi sua experiência com este diagnóstico?",
+    scaleAriaLabel: "Nota de satisfação do diagnóstico",
+    commentLabel: "Detalhe sua nota (opcional)",
+    commentPlaceholder: "Compartilhe sua percepção da experiência.",
+    submitLabel: "Enviar avaliação",
+    skipLabel: "Agora não",
+    successTitle: "Avaliação enviada.",
+    successText: "Obrigado por ajudar a melhorar o diagnóstico.",
+    onSubmit: async ({ rating, comment }) => {
+      const payload = {
+        attempt_id: state.currentDiagnosticAttemptId,
+        anonymous_user_id: getAnonymousUserId(),
+        context: "diagnostico_resultado",
+        rating,
+        comment,
+        score_percent: scorePercent,
+        blocked_at_level: blocked
+      };
 
-    const payload = {
-      attempt_id: state.currentDiagnosticAttemptId,
-      anonymous_user_id: getAnonymousUserId(),
-      context: "diagnostico_resultado",
-      rating: selectedRating,
-      comment: commentField.value.trim() || null,
-      score_percent: scorePercent,
-      blocked_at_level: blocked
-    };
-
-    const result = await persistSatisfactionFeedbackRecord(payload);
-
-    if (result && result.ok) {
-      feedbackMount.innerHTML = `
-        <div class="feedback-box success">
-          <strong>Avaliacao enviada.</strong>
-          <p class="question-meta">Obrigado por contribuir com a evolucao da plataforma.</p>
-        </div>
-      `;
-      commentField.disabled = true;
-      ratingButtons.forEach((button) => {
-        button.disabled = true;
-      });
-      return;
+      const result = await persistSatisfactionFeedbackRecord(payload);
+      if (result && result.ok) {
+        setDiagnosticFeedbackFlag("submitted");
+      }
+      return result;
+    },
+    onSkip: () => {
+      setDiagnosticFeedbackFlag("dismissed");
     }
-
-    feedbackMount.innerHTML = `
-      <div class="feedback-box error">
-        <strong>Nao foi possivel enviar agora.</strong>
-        <p class="question-meta">Voce pode tentar novamente em instantes.</p>
-      </div>
-    `;
-
-    isSubmitting = false;
-    sendButton.disabled = false;
   });
 }
 
@@ -740,11 +711,10 @@ function showResult({ blocked } = { blocked: false }) {
         ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
       </div>
 
-      ${renderSatisfactionSurveyBlock()}
     </article>
   `;
 
-  bindSatisfactionSurvey({ scorePercent: Math.round(percent * 100), blocked });
+  openDiagnosticSatisfactionModal({ scorePercent: Math.round(percent * 100), blocked });
   resultSection.classList.remove("hidden");
   resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }

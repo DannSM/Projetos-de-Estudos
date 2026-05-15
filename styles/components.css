@@ -623,53 +623,93 @@
   color: var(--color-text-secondary);
 }
 
-.satisfaction-block {
+.feedback-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
   padding: 1rem;
-  background: var(--color-surface-muted);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.feedback-modal-open {
+  overflow: hidden;
+}
+
+.feedback-modal-sheet {
+  width: min(30rem, calc(100% - 2rem));
+  background: #ffffff;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.22);
 }
 
-.satisfaction-block .question-meta {
-  margin-bottom: 0.45rem;
+.feedback-modal-content {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
 }
 
-.satisfaction-scale {
+.feedback-modal-header h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.08rem;
+}
+
+.feedback-modal-header p {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+.feedback-modal-scale {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.55rem;
-  margin-bottom: 0.75rem;
+  gap: 0.6rem;
 }
 
-.satisfaction-rating-button {
-  min-height: 2.5rem;
-  font-weight: 800;
+.feedback-rating-chip {
+  min-height: 2.9rem;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--color-text-primary);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-weight: 800;
 }
 
-.satisfaction-rating-button:hover:not(:disabled),
-.satisfaction-rating-button:focus-visible,
-.satisfaction-rating-button.selected {
+.feedback-rating-chip span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+}
+
+.feedback-rating-chip:hover:not(:disabled),
+.feedback-rating-chip:focus-visible,
+.feedback-rating-chip.selected {
   color: var(--color-primary-hover);
   border-color: rgba(6, 182, 212, 0.38);
   background: linear-gradient(135deg, var(--color-primary-light), rgba(6, 182, 212, 0.14));
 }
 
-.satisfaction-rating-button:disabled {
-  cursor: default;
+.feedback-rating-chip:focus-visible {
+  outline: 2px solid rgba(6, 182, 212, 0.4);
+  outline-offset: 2px;
 }
 
-.satisfaction-label {
-  display: block;
-  margin-bottom: 0.45rem;
+.feedback-modal-label {
   color: var(--color-text-secondary);
   font-size: 0.86rem;
   font-weight: 700;
 }
 
-.satisfaction-textarea {
+.feedback-modal-textarea {
   width: 100%;
   min-height: 6.2rem;
   resize: vertical;
@@ -683,9 +723,44 @@
   line-height: 1.45;
 }
 
-.satisfaction-textarea:focus-visible {
+.feedback-modal-textarea:focus-visible {
   border-color: rgba(6, 182, 212, 0.42);
   outline: none;
+}
+
+.feedback-modal-actions {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.feedback-modal-actions .submit-button {
+  margin-top: 0;
+}
+
+.feedback-skip-button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  font-weight: 700;
+}
+
+.feedback-skip-button:hover,
+.feedback-skip-button:focus-visible {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.feedback-skip-button:focus-visible {
+  outline: 2px solid rgba(6, 182, 212, 0.35);
+  outline-offset: 2px;
+}
+
+.feedback-modal-header-success {
+  text-align: center;
+  padding: 0.45rem 0.25rem;
 }
 
 .action-list {
@@ -745,14 +820,6 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
-}
-
-.challenge-satisfaction-wrap {
-  margin-top: 1rem;
-}
-
-.challenge-satisfaction-wrap .satisfaction-block {
-  max-width: 46rem;
 }
 
 .challenge-card {
