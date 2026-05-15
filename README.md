@@ -5,6 +5,7 @@ Aplicacao web estatica para diagnostico de conhecimentos em dados, trilhas suger
 ## Estrutura
 
 - `index.html`: pagina principal.
+- `diagnostico.html`: pagina do diagnostico adaptativo por niveis.
 - `style.css`: ponto de entrada dos estilos.
 - `styles/`: estilos separados por base, layout, componentes e responsividade.
 - `src/`: codigo JavaScript modularizado.

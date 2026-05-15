@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostico - Data Study Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="index.html#home" aria-label="Data Study Map">
+      <span class="brand-logo-wrap" aria-hidden="true">
+        <img class="brand-logo" src="assets/logo.png" alt="">
+      </span>
+      <span class="brand-name">
+        <span><strong>D</strong>ata</span>
+        <span><strong>S</strong>tudy</span>
+        <span><strong>M</strong>ap</span>
+      </span>
+    </a>
+
+    <nav class="top-nav" aria-label="Navegacao principal">
+      <a href="diagnostico.html">Diagnostico</a>
+      <a href="index.html#trilhas">Trilhas</a>
+      <a href="index.html#desafios">Desafios</a>
+    </nav>
+
+    <a class="header-cta" href="index.html#desafios">Desafios</a>
+  </header>
+
+  <main class="diagnostic-page">
+    <section class="section-shell diagnostic-shell">
+      <div class="section-intro diagnostic-intro-panel">
+        <span class="section-kicker">Diagnostico adaptativo</span>
+        <h1>Responda por niveis, sem precisar rolar a home.</h1>
+        <p>
+          O diagnostico comeca no basico, avanca para intermediario e termina no avancado. Para liberar o proximo nivel, voce precisa atingir 75% no nivel atual.
+        </p>
+        <div class="area-list" id="areaList"></div>
+      </div>
+
+      <div class="quiz-card diagnostic-card">
+        <div id="quizMount"></div>
+      </div>
+    </section>
+
+    <section id="resultado" class="section-shell result-section hidden">
+      <div id="resultMount"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Data Study Map</span>
+    <span>Diagnostico por niveis.</span>
+  </footer>
+
+  <script src="src/data/content.js"></script>
+  <script src="src/state.js"></script>
+  <script src="src/recommendations.js"></script>
+  <script src="src/quiz.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

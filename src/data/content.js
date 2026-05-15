@@ -1,196 +1,135 @@
 const diagnosticQuestions = [
   {
     area: "SQL",
-    level: "Básico",
+    level: "Basico",
     concept: "SELECT e filtros",
-    question: "Qual cláusula é usada para filtrar linhas antes de uma agregação?",
+    question: "Qual clausula filtra linhas antes de uma agregacao?",
     options: ["WHERE", "HAVING", "ORDER BY", "GROUP BY"],
     correct: 0,
-    explanation: "WHERE filtra linhas antes do agrupamento. HAVING entra depois, quando a agregação já foi calculada."
+    explanation: "WHERE filtra linhas antes do agrupamento. HAVING filtra depois que a agregacao ja foi calculada."
   },
   {
     area: "SQL",
-    level: "Básico",
+    level: "Basico",
     concept: "COUNT e valores nulos",
-    question: "Qual a diferença prática entre COUNT(*) e COUNT(coluna)?",
+    question: "Qual diferenca pratica existe entre COUNT(*) e COUNT(coluna)?",
     options: [
-      "COUNT(*) conta linhas; COUNT(coluna) conta valores não nulos.",
+      "COUNT(*) conta linhas; COUNT(coluna) conta valores nao nulos.",
       "COUNT(*) ignora duplicados; COUNT(coluna) conta duplicados.",
-      "COUNT(*) só funciona com JOIN.",
-      "Não existe diferença."
+      "COUNT(*) so funciona com JOIN.",
+      "Nao existe diferenca."
     ],
     correct: 0,
-    explanation: "COUNT(*) conta todas as linhas retornadas. COUNT(coluna) ignora as linhas em que aquela coluna está NULL."
+    explanation: "COUNT(*) conta todas as linhas retornadas. COUNT(coluna) ignora linhas em que aquela coluna esta NULL."
+  },
+  {
+    area: "Estatistica",
+    level: "Basico",
+    concept: "Tendencia central",
+    question: "Qual medida costuma ser mais resistente a valores extremos?",
+    options: ["Media", "Mediana", "Amplitude", "Soma"],
+    correct: 1,
+    explanation: "A mediana usa a posicao central dos dados ordenados, entao sofre menos impacto de valores muito altos ou baixos."
+  },
+  {
+    area: "Logica de dados",
+    level: "Basico",
+    concept: "Tipos de dados",
+    question: "Por que diferenciar texto, numero e data em uma base?",
+    options: [
+      "Porque muda apenas a cor das celulas.",
+      "Porque calculos, filtros e ordenacoes dependem do tipo correto.",
+      "Porque todo dado precisa virar texto.",
+      "Porque datas nao podem ser analisadas."
+    ],
+    correct: 1,
+    explanation: "Tipos corretos evitam filtros errados, calculos invalidos e ordenacoes enganosas."
   },
   {
     area: "SQL",
-    level: "Intermediário",
+    level: "Intermediario",
     concept: "JOINs e cardinalidade",
-    question: "Em um LEFT JOIN entre clientes e compras, o que acontece com clientes que não possuem compras?",
+    question: "Em um LEFT JOIN entre clientes e compras, o que acontece com clientes sem compras?",
     options: [
-      "Eles são removidos do resultado.",
+      "Eles sao removidos do resultado.",
       "Eles aparecem uma vez, com NULL nos campos da tabela de compras.",
-      "Eles aparecem apenas se houver uma chave duplicada.",
-      "Eles são contados somente com COUNT(coluna)."
+      "Eles aparecem apenas se houver chave duplicada.",
+      "Eles sao contados somente com COUNT(coluna)."
     ],
     correct: 1,
-    explanation: "O LEFT JOIN preserva a tabela da esquerda. Quando não há correspondência, os campos da tabela da direita ficam NULL."
+    explanation: "O LEFT JOIN preserva a tabela da esquerda. Sem correspondencia, os campos da tabela da direita ficam NULL."
   },
   {
-    area: "Estatística",
-    level: "Básico",
-    concept: "Medidas de tendência central",
-    question: "Qual medida costuma ser mais resistente a valores extremos?",
-    options: ["Média", "Mediana", "Amplitude", "Soma"],
-    correct: 1,
-    explanation: "A mediana usa a posição central dos dados ordenados, então sofre menos impacto de valores muito altos ou muito baixos."
-  },
-  {
-    area: "Estatística",
-    level: "Básico",
-    concept: "Variabilidade",
-    question: "Dois produtos possuem a mesma média de avaliação. O que o desvio padrão ajuda a comparar?",
-    options: [
-      "A quantidade de colunas da base.",
-      "A dispersão das avaliações em torno da média.",
-      "O nome mais frequente dos clientes.",
-      "O total de categorias disponíveis."
-    ],
-    correct: 1,
-    explanation: "Médias iguais podem esconder comportamentos diferentes. O desvio padrão mostra o quanto os valores variam em torno da média."
-  },
-  {
-    area: "Estatística",
-    level: "Intermediário",
-    concept: "Correlação",
-    question: "Se duas métricas têm correlação positiva, qual leitura é mais adequada?",
-    options: [
-      "Quando uma aumenta, a outra tende a aumentar também.",
-      "Uma causa obrigatoriamente a outra.",
-      "As duas sempre terão o mesmo valor.",
-      "Não existe relação possível entre elas."
-    ],
-    correct: 0,
-    explanation: "Correlação indica associação, não causalidade. Ela sugere movimento conjunto, mas não prova que uma métrica causa a outra."
-  },
-  {
-    area: "Excel/BI",
-    level: "Básico",
-    concept: "Segmentação e filtros",
-    question: "Em um dashboard de vendas, qual recurso ajuda o usuário a analisar por região, produto ou período?",
-    options: ["Segmentador de dados", "Formatação condicional apenas", "Mesclar células", "Congelar painéis"],
-    correct: 0,
-    explanation: "Segmentadores e filtros permitem recortar os dados por dimensões relevantes, tornando a análise mais exploratória."
-  },
-  {
-    area: "Excel/BI",
-    level: "Intermediário",
-    concept: "Modelo de dados",
-    question: "Em BI, por que separar tabelas fato e dimensão costuma ajudar?",
-    options: [
-      "Porque elimina a necessidade de validar dados.",
-      "Porque organiza métricas e contextos de análise, facilitando filtros e agregações.",
-      "Porque impede o uso de relacionamentos.",
-      "Porque transforma todos os dados em texto."
-    ],
-    correct: 1,
-    explanation: "Tabelas fato guardam eventos e medidas. Dimensões descrevem contextos como produto, cliente e tempo."
-  },
-  {
-    area: "Excel/BI",
-    level: "Intermediário",
-    concept: "Leitura de dashboard",
-    question: "Qual prática melhora a leitura de um dashboard executivo?",
-    options: [
-      "Usar o maior número possível de gráficos.",
-      "Destacar KPIs principais, contexto e filtros importantes.",
-      "Remover títulos para economizar espaço.",
-      "Usar apenas tabelas longas."
-    ],
-    correct: 1,
-    explanation: "Um dashboard precisa orientar decisão. KPIs claros, contexto e filtros relevantes ajudam a pessoa a entender o que mudou e onde agir."
-  },
-  {
-    area: "Lógica de dados",
-    level: "Básico",
-    concept: "Tipos de dados",
-    question: "Por que é importante diferenciar texto, número e data em uma base?",
-    options: [
-      "Porque muda a cor automática das células.",
-      "Porque cálculos, filtros e ordenações dependem do tipo correto.",
-      "Porque todo dado deve virar texto.",
-      "Porque datas não podem ser analisadas."
-    ],
-    correct: 1,
-    explanation: "Tipos corretos evitam filtros errados, cálculos inválidos e ordenações enganosas, principalmente em datas e valores monetários."
-  },
-  {
-    area: "Lógica de dados",
-    level: "Intermediário",
+    area: "Logica de dados",
+    level: "Intermediario",
     concept: "Granularidade",
-    question: "Uma tabela possui uma linha por item comprado. Qual cuidado é essencial ao calcular pedidos únicos?",
+    question: "Uma tabela tem uma linha por item comprado. Qual cuidado e essencial ao contar pedidos unicos?",
     options: [
-      "Somar todos os preços sem agrupar.",
+      "Somar todos os precos sem agrupar.",
       "Contar as linhas da tabela.",
       "Contar IDs de pedido distintos.",
       "Ordenar os itens por nome."
     ],
     correct: 2,
-    explanation: "Se cada pedido pode ter vários itens, contar linhas mede itens, não pedidos. Para pedidos únicos, use COUNT(DISTINCT id_pedido)."
+    explanation: "Se cada pedido pode ter varios itens, contar linhas mede itens. Para pedidos unicos, use IDs distintos."
   },
   {
-    area: "Lógica de dados",
-    level: "Intermediário",
-    concept: "Qualidade dos dados",
-    question: "Qual sinal costuma indicar problema de qualidade em uma base de clientes?",
+    area: "Estatistica",
+    level: "Intermediario",
+    concept: "Correlacao",
+    question: "Se duas metricas tem correlacao positiva, qual leitura e mais adequada?",
     options: [
-      "IDs únicos e datas completas.",
-      "Campos obrigatórios preenchidos.",
-      "Clientes duplicados com e-mails diferentes ou datas inválidas.",
-      "Nomes padronizados por categoria."
+      "Quando uma aumenta, a outra tende a aumentar tambem.",
+      "Uma causa obrigatoriamente a outra.",
+      "As duas sempre terao o mesmo valor.",
+      "Nao existe relacao possivel entre elas."
+    ],
+    correct: 0,
+    explanation: "Correlacao indica associacao, nao causalidade. Ela sugere movimento conjunto, mas nao prova causa."
+  },
+  {
+    area: "Excel/BI",
+    level: "Intermediario",
+    concept: "Modelo de dados",
+    question: "Em BI, por que separar tabelas fato e dimensao costuma ajudar?",
+    options: [
+      "Porque elimina a necessidade de validar dados.",
+      "Porque organiza metricas e contextos de analise, facilitando filtros e agregacoes.",
+      "Porque impede o uso de relacionamentos.",
+      "Porque transforma todos os dados em texto."
+    ],
+    correct: 1,
+    explanation: "Tabelas fato guardam eventos e medidas. Dimensoes descrevem contextos como produto, cliente e tempo."
+  },
+  {
+    area: "Indicadores",
+    level: "Avancado",
+    concept: "Diagnostico de performance",
+    question: "Um KPI caiu apenas em uma regiao. Qual investigacao tende a ser mais util primeiro?",
+    options: [
+      "Alterar a meta de todas as regioes.",
+      "Comparar canal, produto e periodo dentro dessa regiao.",
+      "Parar de medir o indicador.",
+      "Olhar apenas a media global."
+    ],
+    correct: 1,
+    explanation: "Quando a queda esta localizada, quebras por dimensoes internas ajudam a encontrar a causa provavel."
+  },
+  {
+    area: "SQL",
+    level: "Avancado",
+    concept: "Analise por janela",
+    question: "Qual recurso ajuda a ranquear vendas por cliente sem perder o detalhe das linhas?",
+    options: [
+      "WHERE",
+      "ORDER BY simples no resultado final",
+      "Funcao de janela como ROW_NUMBER() OVER(PARTITION BY cliente ORDER BY valor DESC)",
+      "COUNT(*) sem agrupamento"
     ],
     correct: 2,
-    explanation: "Duplicidades, datas inválidas e campos inconsistentes afetam contagens, segmentações e conclusões de negócio."
-  },
-  {
-    area: "Interpretação de indicadores",
-    level: "Básico",
-    concept: "KPIs e contexto",
-    question: "A taxa de conversão caiu, mas o volume de visitantes dobrou. Qual análise é mais adequada?",
-    options: [
-      "Concluir que o negócio piorou sem olhar receita.",
-      "Avaliar conversões absolutas, receita, origem do tráfego e mudanças no público.",
-      "Ignorar a queda porque visitantes aumentaram.",
-      "Trocar o KPI imediatamente."
-    ],
-    correct: 1,
-    explanation: "Indicadores precisam de contexto. Uma queda percentual pode conviver com aumento absoluto de conversões."
-  },
-  {
-    area: "Interpretação de indicadores",
-    level: "Intermediário",
-    concept: "Variação percentual",
-    question: "Receita saiu de R$ 100 mil para R$ 120 mil. Qual foi a variação percentual?",
-    options: ["10%", "20%", "25%", "120%"],
-    correct: 1,
-    explanation: "A variação é (120 - 100) / 100 = 0,20. Portanto, a receita cresceu 20%."
-  },
-  {
-    area: "Interpretação de indicadores",
-    level: "Intermediário",
-    concept: "Diagnóstico de performance",
-    question: "Um KPI piorou em maio. Qual é a primeira investigação mais útil?",
-    options: [
-      "Trocar todas as metas do ano.",
-      "Comparar por canal, produto, região e período para localizar a origem da queda.",
-      "Apagar o mês do relatório.",
-      "Olhar apenas a média anual."
-    ],
-    correct: 1,
-    explanation: "Antes de agir, é preciso localizar onde a mudança aconteceu. Quebras por dimensão ajudam a transformar sintoma em hipótese."
+    explanation: "Funcoes de janela calculam rankings e acumulados mantendo o detalhe das linhas, diferente de um GROUP BY tradicional."
   }
 ];
-
 const challenges = [
   {
     category: "SQL Intermediário",
@@ -359,32 +298,32 @@ const heroPreviewChallenges = [
   }
 ];
 
-const areaGoals = ["SQL", "Estatística", "Excel/BI", "Lógica de dados", "Interpretação de indicadores"];
+const areaGoals = ["SQL", "Estatistica", "Excel/BI", "Logica de dados", "Indicadores"];
 
 const areaGuides = {
   SQL: {
-    track: "SQL Essencial -> SQL Intermediário",
-    next: "COUNT(DISTINCT), JOINs e consultas com GROUP BY",
-    why: "SQL é a base para buscar, combinar e validar dados com autonomia."
+    track: "SQL Essencial -> SQL Intermediario",
+    next: "COUNT(DISTINCT), JOINs, funcoes de janela e consultas com GROUP BY",
+    why: "SQL e a base para buscar, combinar e validar dados com autonomia."
   },
-  "Estatística": {
-    track: "Estatística para Dados",
-    next: "mediana, dispersão, correlação e leitura de distribuição",
-    why: "Estatística ajuda a não tirar conclusões frágeis a partir de médias ou variações isoladas."
+  Estatistica: {
+    track: "Estatistica para Dados",
+    next: "mediana, dispersao, correlacao e leitura de distribuicao",
+    why: "Estatistica ajuda a nao tirar conclusoes frageis a partir de medias ou variacoes isoladas."
   },
   "Excel/BI": {
     track: "BI e Dashboards",
-    next: "segmentadores, modelo fato/dimensão e leitura executiva",
-    why: "BI transforma dados em uma interface de decisão clara e fácil de consultar."
+    next: "segmentadores, modelo fato/dimensao e leitura executiva",
+    why: "BI transforma dados em uma interface de decisao clara e facil de consultar."
   },
-  "Lógica de dados": {
+  "Logica de dados": {
     track: "Fundamentos de Dados",
     next: "granularidade, tipos de dados e qualidade da base",
-    why: "A lógica da base evita contagens erradas e interpretações distorcidas."
+    why: "A logica da base evita contagens erradas e interpretacoes distorcidas."
   },
-  "Interpretação de indicadores": {
+  Indicadores: {
     track: "Indicadores e KPIs",
-    next: "contexto, variação percentual, metas e diagnóstico por dimensão",
-    why: "Interpretar KPIs é o que conecta cálculo técnico com decisão de negócio."
+    next: "contexto, variacao percentual, metas e diagnostico por dimensao",
+    why: "Interpretar KPIs conecta calculo tecnico com decisao de negocio."
   }
 };

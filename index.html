@@ -23,12 +23,12 @@
     </a>
 
     <nav class="top-nav" aria-label="Navegação principal">
-      <a href="#diagnostico">Diagnóstico</a>
+      <a href="diagnostico.html">Diagnóstico</a>
       <a href="#trilhas">Trilhas</a>
       <a href="#desafios">Desafios</a>
     </nav>
 
-    <a class="header-cta" href="#diagnostico">Começar</a>
+    <a class="header-cta" href="diagnostico.html">Começar</a>
   </header>
 
   <main>
@@ -41,12 +41,12 @@
           Descubra seu nível, responda desafios e receba uma trilha personalizada para evoluir em análise de dados.
         </p>
         <div class="hero-actions">
-          <a class="button button-primary" href="#diagnostico">Começar diagnóstico</a>
+          <a class="button button-primary" href="diagnostico.html">Começar diagnóstico</a>
           <a class="button button-secondary" href="#trilhas">Ver trilhas</a>
         </div>
         <div class="hero-metrics" aria-label="Resumo da experiência">
           <div>
-            <strong>15</strong>
+            <strong>10</strong>
             <span>perguntas no diagnóstico</span>
           </div>
           <div>
@@ -82,26 +82,6 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
         <div class="preview-controls" id="heroPreviewControls" aria-label="Alternar desafio em destaque"></div>
       </aside>
     </section>
-
-    <section id="diagnostico" class="section-shell two-column">
-      <div class="section-intro">
-        <span class="section-kicker">Diagnóstico de perfil</span>
-        <h2>Mapeie seus pontos fortes e lacunas de conhecimento.</h2>
-        <p>
-          Responda um conjunto curto de perguntas. Ao final, a plataforma calcula seu perfil e sugere uma trilha de estudo.
-        </p>
-        <div class="area-list" id="areaList"></div>
-      </div>
-
-      <div class="quiz-card">
-        <div id="quizMount"></div>
-      </div>
-    </section>
-
-    <section id="resultado" class="section-shell result-section hidden">
-      <div id="resultMount"></div>
-    </section>
-
     <section id="trilhas" class="section-shell">
       <div class="section-heading">
         <div>
@@ -174,9 +154,7 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
   </footer>
   <script src="src/data/content.js"></script>
   <script src="src/state.js"></script>
-  <script src="src/recommendations.js"></script>
   <script src="src/hero-preview.js"></script>
-  <script src="src/quiz.js"></script>
   <script src="src/challenges.js"></script>
   <script src="src/app.js"></script>
 </body>

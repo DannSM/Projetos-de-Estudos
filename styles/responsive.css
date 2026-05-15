@@ -16,8 +16,13 @@
 
   .hero,
   .two-column,
+  .diagnostic-shell,
   .challenge-grid {
     grid-template-columns: 1fr;
+  }
+
+  .diagnostic-intro-panel {
+    position: static;
   }
 
   .hero {
@@ -27,6 +32,9 @@
   .track-grid,
   .recommendation-grid,
   .result-metrics,
+  .diagnostic-summary,
+  .level-roadmap,
+  .level-summary,
   .insight-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -83,6 +91,8 @@
   .recommendation-grid,
   .result-metrics,
   .insight-grid,
+  .level-roadmap,
+  .level-summary,
   .hero-metrics,
   .preview-options {
     grid-template-columns: 1fr;

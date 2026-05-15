@@ -13,6 +13,27 @@
   min-height: calc(100vh - 72px);
 }
 
+.diagnostic-page {
+  min-height: calc(100vh - 82px);
+}
+
+.diagnostic-shell {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 0.88fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+.diagnostic-intro-panel {
+  position: sticky;
+  top: 112px;
+}
+
+.diagnostic-card {
+  min-height: min(42rem, calc(100vh - 150px));
+}
+
 h1,
 h2,
 h3,
@@ -321,6 +342,18 @@ h3 {
   from {
     opacity: 0;
     transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes quizStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
 
   to {
