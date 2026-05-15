@@ -4,7 +4,7 @@ window.DATA_SKILL_MAP_SUPABASE = {
   tables: {
     diagnosticSessions: "diagnostic_sessions",
     diagnosticAnswers: "diagnostic_answers",
-    challengeAttempts: "challenge_attempts"
+    challengeAttempts: "challenge_attempts",
+    satisfactionFeedback: "satisfaction_feedback"
   }
 };
-

@@ -95,6 +95,101 @@ function persistDiagnosticSessionRecord(payload) {
   void window.supabaseDataService.saveDiagnosticSession(payload);
 }
 
+function persistSatisfactionFeedbackRecord(payload) {
+  if (!window.supabaseDataService || typeof window.supabaseDataService.saveSatisfactionFeedback !== "function") {
+    return Promise.resolve({ ok: false, skipped: true });
+  }
+  return window.supabaseDataService.saveSatisfactionFeedback(payload);
+}
+
+function renderSatisfactionSurveyBlock() {
+  return `
+    <div class="result-block satisfaction-block">
+      <h3>Pesquisa de satisfacao</h3>
+      <p class="question-meta">Quao satisfeita(o) voce ficou com esta experiencia?</p>
+      <div class="satisfaction-scale" role="radiogroup" aria-label="Nota de satisfacao">
+        ${[1, 2, 3, 4, 5].map((rating) => `
+          <button type="button" class="satisfaction-rating-button" data-satisfaction-rating="${rating}" aria-label="Nota ${rating}">
+            ${rating}
+          </button>
+        `).join("")}
+      </div>
+      <label class="satisfaction-label" for="satisfactionComment">Detalhe sua nota (opcional)</label>
+      <textarea
+        id="satisfactionComment"
+        class="satisfaction-textarea"
+        maxlength="240"
+        placeholder="Compartilhe sua percepcao da experiencia."
+      ></textarea>
+      <button class="submit-button" id="sendSatisfactionFeedback" disabled>Enviar avaliacao</button>
+      <div id="satisfactionFeedbackMount"></div>
+    </div>
+  `;
+}
+
+function bindSatisfactionSurvey({ scorePercent, blocked }) {
+  const feedbackMount = document.querySelector("#satisfactionFeedbackMount");
+  const sendButton = document.querySelector("#sendSatisfactionFeedback");
+  const commentField = document.querySelector("#satisfactionComment");
+  const ratingButtons = document.querySelectorAll("[data-satisfaction-rating]");
+  let selectedRating = null;
+  let isSubmitting = false;
+
+  ratingButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (isSubmitting) return;
+      selectedRating = Number(button.dataset.satisfactionRating);
+      ratingButtons.forEach((item) => {
+        item.classList.toggle("selected", Number(item.dataset.satisfactionRating) === selectedRating);
+      });
+      sendButton.disabled = false;
+    });
+  });
+
+  sendButton.addEventListener("click", async () => {
+    if (!selectedRating || isSubmitting) return;
+
+    isSubmitting = true;
+    sendButton.disabled = true;
+
+    const payload = {
+      attempt_id: state.currentDiagnosticAttemptId,
+      anonymous_user_id: getAnonymousUserId(),
+      context: "diagnostico_resultado",
+      rating: selectedRating,
+      comment: commentField.value.trim() || null,
+      score_percent: scorePercent,
+      blocked_at_level: blocked
+    };
+
+    const result = await persistSatisfactionFeedbackRecord(payload);
+
+    if (result && result.ok) {
+      feedbackMount.innerHTML = `
+        <div class="feedback-box success">
+          <strong>Avaliacao enviada.</strong>
+          <p class="question-meta">Obrigado por contribuir com a evolucao da plataforma.</p>
+        </div>
+      `;
+      commentField.disabled = true;
+      ratingButtons.forEach((button) => {
+        button.disabled = true;
+      });
+      return;
+    }
+
+    feedbackMount.innerHTML = `
+      <div class="feedback-box error">
+        <strong>Nao foi possivel enviar agora.</strong>
+        <p class="question-meta">Voce pode tentar novamente em instantes.</p>
+      </div>
+    `;
+
+    isSubmitting = false;
+    sendButton.disabled = false;
+  });
+}
+
 function shuffleArray(values) {
   const shuffled = [...values];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -644,9 +739,12 @@ function showResult({ blocked } = { blocked: false }) {
           </div>
         ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
       </div>
+
+      ${renderSatisfactionSurveyBlock()}
     </article>
   `;
 
+  bindSatisfactionSurvey({ scorePercent: Math.round(percent * 100), blocked });
   resultSection.classList.remove("hidden");
   resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }

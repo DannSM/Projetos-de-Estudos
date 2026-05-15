@@ -104,13 +104,18 @@
     return safeInsert(tables.challengeAttempts, payload);
   }
 
+  async function saveSatisfactionFeedback(payload) {
+    const tables = getConfig().tables || {};
+    return safeInsert(tables.satisfactionFeedback, payload);
+  }
+
   globalScope.supabaseDataService = {
     isSupabaseConfigured,
     getAnonymousUserId,
     createAttemptId,
     saveDiagnosticSession,
     saveDiagnosticAnswer,
-    saveChallengeAttempt
+    saveChallengeAttempt,
+    saveSatisfactionFeedback
   };
 })(window);
-

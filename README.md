@@ -38,6 +38,7 @@ Os servicos usam por padrao:
 - `diagnostic_sessions`
 - `diagnostic_answers`
 - `challenge_attempts`
+- `satisfaction_feedback`
 
 Se quiser outro nome, ajuste em `src/supabase-config.js` no bloco `tables`.
 Existe um schema inicial em `docs/supabase-schema.sql`.
@@ -48,6 +49,7 @@ Existe um schema inicial em `docs/supabase-schema.sql`.
 - dados consolidados do diagnostico
 - respostas individuais do diagnostico
 - tentativas de desafios (tema, nivel, acerto/erro, pontos, horario)
+- pesquisa de satisfacao (nota de 1 a 5 e comentario opcional)
 
 ### 4) Comportamento de falha
 
