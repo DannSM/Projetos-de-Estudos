@@ -12,7 +12,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body class="analytics-auth-locked">
   <header class="app-header">
     <a class="brand" href="index.html" aria-label="Data Skill Map">
       <span class="brand-logo-wrap" aria-hidden="true">
@@ -28,20 +28,28 @@
     <div class="header-context">Painel interno com acesso autenticado e dados agregados.</div>
     <a class="header-cta" href="index.html">
       <i data-lucide="home" aria-hidden="true"></i>
-      <span>Inicio</span>
+      <span>Início</span>
     </a>
   </header>
 
-  <aside class="app-sidebar" aria-label="Navegacao lateral">
+  <aside class="app-sidebar" aria-label="Navegação lateral">
     <div class="sidebar-section">
-      <span class="sidebar-label">Navegacao</span>
+      <span class="sidebar-label">Navegação</span>
       <a href="index.html">
         <i class="nav-icon" data-lucide="home" aria-hidden="true"></i>
-        <span>Inicio</span>
+        <span>Início</span>
       </a>
       <a href="diagnostico.html">
         <i class="nav-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
-        <span>Diagnostico</span>
+        <span>Diagnóstico</span>
+      </a>
+      <a href="index.html#trilhas">
+        <i class="nav-icon" data-lucide="route" aria-hidden="true"></i>
+        <span>Trilhas</span>
+      </a>
+      <a href="index.html#desafios">
+        <i class="nav-icon" data-lucide="target" aria-hidden="true"></i>
+        <span>Desafios</span>
       </a>
       <a class="active" href="analytics.html">
         <i class="nav-icon" data-lucide="bar-chart-3" aria-hidden="true"></i>
@@ -50,8 +58,8 @@
     </div>
     <div class="sidebar-section sidebar-panel">
       <span class="sidebar-label">Acesso</span>
-      <strong>Area admin autenticada</strong>
-      <p>Login obrigatorio para consulta segura de analytics via camada RPC.</p>
+      <strong>Área administrativa</strong>
+      <p>Faça login para visualizar os indicadores da plataforma.</p>
     </div>
   </aside>
 
@@ -59,7 +67,7 @@
     <section class="section-shell analytics-hero">
       <span class="section-kicker">Analytics interno</span>
       <h1>Analytics - Data Skill Map</h1>
-      <p class="analytics-hero-copy">Acompanhamento de atividade, qualidade e satisfacao com base em views agregadas aprovadas.</p>
+      <p class="analytics-hero-copy">Acompanhamento de atividade, qualidade e satisfação com base em views agregadas aprovadas.</p>
     </section>
 
     <section class="section-shell analytics-shell">
@@ -67,7 +75,7 @@
       <div id="analyticsContent" class="analytics-content hidden">
         <article class="analytics-panel analytics-filters-panel">
           <div class="analytics-filters-top">
-            <h2>Filtro de periodo</h2>
+            <h2>Filtro de período</h2>
             <button id="adminLogoutButton" type="button" class="filter-button">
               <i data-lucide="log-out" aria-hidden="true"></i>
               <span>Sair</span>
@@ -75,11 +83,11 @@
           </div>
           <div class="analytics-filters-grid">
             <label>
-              Periodo rapido
+              Período rápido
               <select id="periodPresetSelect">
-                <option value="7">Ultimos 7 dias</option>
-                <option value="30" selected>Ultimos 30 dias</option>
-                <option value="90">Ultimos 90 dias</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
               </select>
             </label>
             <label>
@@ -91,79 +99,79 @@
               <input id="endDateInput" type="date">
             </label>
             <label>
-              Usuario anonimo (opcional)
+              Usuário anônimo (opcional)
               <input id="userFilterInput" type="text" placeholder="Ex: 4ce66c...">
             </label>
           </div>
           <div class="analytics-filters-actions">
             <button id="applyFiltersButton" type="button" class="submit-button">Atualizar painel</button>
           </div>
-          <p class="analytics-note">Escopo: apenas views agregadas aprovadas via RPC segura. Comentarios textuais nao sao exibidos.</p>
+          <p class="analytics-note">Os dados exibidos são resumidos e atualizados conforme o período selecionado.</p>
         </article>
 
-        <article id="analyticsStatus" class="analytics-panel analytics-status" aria-live="polite"></article>
+        <article id="analyticsStatus" class="analytics-panel analytics-status hidden" aria-live="polite"></article>
 
-        <section class="analytics-section" aria-label="Visao da plataforma">
+        <section class="analytics-section" aria-label="Visão da plataforma">
           <div class="section-heading compact">
             <div>
               <span class="section-kicker">Dashboard 1</span>
-              <h2>Visao da Plataforma</h2>
+              <h2>Visão da Plataforma</h2>
             </div>
           </div>
           <div id="platformKpis" class="analytics-kpi-grid"></div>
           <div class="analytics-grid-two">
             <article class="analytics-panel">
-              <h3>Evolucao diaria da atividade</h3>
+              <h3>Evolução diária da atividade</h3>
               <div id="activityTrendChart"></div>
             </article>
             <article class="analytics-panel">
-              <h3>Resumo de acuracia</h3>
+              <h3>Resumo de acurácia</h3>
               <div id="accuracySummary"></div>
             </article>
           </div>
         </section>
 
-        <section class="analytics-section" aria-label="Atividade por usuario">
+        <section class="analytics-section" aria-label="Atividade por usuário">
           <div class="section-heading compact">
             <div>
               <span class="section-kicker">Dashboard 2</span>
-              <h2>Atividade por Usuario</h2>
+              <h2>Atividade por Usuário</h2>
             </div>
           </div>
           <article class="analytics-panel">
             <div id="userActivityTableWrap"></div>
             <div class="analytics-pagination">
               <button id="usersPrevButton" type="button" class="filter-button">Anterior</button>
-              <span id="usersPageInfo">Pagina 1</span>
-              <button id="usersNextButton" type="button" class="filter-button">Proxima</button>
+              <span id="usersPageInfo">Página 1</span>
+              <button id="usersNextButton" type="button" class="filter-button">Próxima</button>
             </div>
           </article>
         </section>
 
-        <section class="analytics-section" aria-label="Qualidade de experiencia">
+        <section class="analytics-section" aria-label="Qualidade de experiência">
           <div class="section-heading compact">
             <div>
               <span class="section-kicker">Dashboard 3</span>
-              <h2>Qualidade de Experiencia</h2>
+              <h2>Qualidade de Experiência</h2>
             </div>
           </div>
           <div class="analytics-grid-two">
             <article class="analytics-panel">
-              <h3>Satisfacao media por dia</h3>
+              <h3>Satisfação média por dia</h3>
               <div id="satisfactionTrendChart"></div>
             </article>
             <article class="analytics-panel">
-              <h3>Distribuicao de notas 1 a 5</h3>
+              <h3>Distribuição de notas 1 a 5</h3>
               <div id="ratingDistribution"></div>
             </article>
           </div>
           <div class="analytics-grid-two">
             <article class="analytics-panel">
-              <h3>Satisfacao por contexto</h3>
+              <h3>Satisfação por contexto</h3>
               <div id="satisfactionByContext"></div>
             </article>
             <article class="analytics-panel">
-              <h3>Satisfacao por desafio ou diagnostico</h3>
+              <h3>Satisfação por desafio ou diagnóstico</h3>
               <div id="satisfactionByTarget"></div>
             </article>
           </div>

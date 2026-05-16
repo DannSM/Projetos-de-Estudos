@@ -106,21 +106,21 @@ begin
 
   return query
   select
-    v.activity_date,
-    v.active_users,
-    v.diagnostics_count,
-    v.diagnostic_avg_score_percent,
-    v.diagnostic_answers_count,
-    v.diagnostic_answers_correct,
-    v.diagnostic_answers_accuracy_percent,
-    v.challenge_attempts_count,
-    v.challenge_correct_count,
-    v.challenge_accuracy_percent,
-    v.satisfaction_count,
-    v.satisfaction_comments_count,
-    v.satisfaction_avg_rating,
-    v.satisfaction_diagnostic_avg_rating,
-    v.satisfaction_challenge_avg_rating
+    v.activity_date::date,
+    coalesce(v.active_users, 0)::bigint,
+    coalesce(v.diagnostics_count, 0)::bigint,
+    coalesce(v.diagnostic_avg_score_percent, 0)::numeric,
+    coalesce(v.diagnostic_answers_count, 0)::bigint,
+    coalesce(v.diagnostic_answers_correct, 0)::bigint,
+    coalesce(v.diagnostic_answers_accuracy_percent, 0)::numeric,
+    coalesce(v.challenge_attempts_count, 0)::bigint,
+    coalesce(v.challenge_correct_count, 0)::bigint,
+    coalesce(v.challenge_accuracy_percent, 0)::numeric,
+    coalesce(v.satisfaction_count, 0)::bigint,
+    coalesce(v.satisfaction_comments_count, 0)::bigint,
+    coalesce(v.satisfaction_avg_rating, 0)::numeric,
+    coalesce(v.satisfaction_diagnostic_avg_rating, 0)::numeric,
+    coalesce(v.satisfaction_challenge_avg_rating, 0)::numeric
   from public.vw_platform_activity_daily v
   where (p_start_date is null or v.activity_date >= p_start_date)
     and (p_end_date is null or v.activity_date <= p_end_date)
@@ -176,21 +176,21 @@ begin
 
   return query
   select
-    v.activity_date,
+    v.activity_date::date,
     v.anonymous_user_id,
-    v.diagnostics_count,
-    v.diagnostic_avg_score_percent,
-    v.diagnostic_answers_count,
-    v.diagnostic_answers_correct,
-    v.diagnostic_answers_accuracy_percent,
-    v.challenge_attempts_count,
-    v.challenge_correct_count,
-    v.challenge_accuracy_percent,
-    v.satisfaction_count,
-    v.satisfaction_comments_count,
-    v.satisfaction_avg_rating,
-    v.satisfaction_diagnostic_avg_rating,
-    v.satisfaction_challenge_avg_rating
+    coalesce(v.diagnostics_count, 0)::bigint,
+    coalesce(v.diagnostic_avg_score_percent, 0)::numeric,
+    coalesce(v.diagnostic_answers_count, 0)::bigint,
+    coalesce(v.diagnostic_answers_correct, 0)::bigint,
+    coalesce(v.diagnostic_answers_accuracy_percent, 0)::numeric,
+    coalesce(v.challenge_attempts_count, 0)::bigint,
+    coalesce(v.challenge_correct_count, 0)::bigint,
+    coalesce(v.challenge_accuracy_percent, 0)::numeric,
+    coalesce(v.satisfaction_count, 0)::bigint,
+    coalesce(v.satisfaction_comments_count, 0)::bigint,
+    coalesce(v.satisfaction_avg_rating, 0)::numeric,
+    coalesce(v.satisfaction_diagnostic_avg_rating, 0)::numeric,
+    coalesce(v.satisfaction_challenge_avg_rating, 0)::numeric
   from public.vw_user_activity_daily v
   where (p_start_date is null or v.activity_date >= p_start_date)
     and (p_end_date is null or v.activity_date <= p_end_date)
@@ -241,18 +241,18 @@ begin
 
   return query
   select
-    v.activity_date,
+    v.activity_date::date,
     v.context_type,
     v.challenge_id,
     v.diagnostic_id,
-    v.total_feedbacks,
-    v.avg_rating,
-    v.rating_1,
-    v.rating_2,
-    v.rating_3,
-    v.rating_4,
-    v.rating_5,
-    v.comments_count
+    coalesce(v.total_feedbacks, 0)::bigint,
+    coalesce(v.avg_rating, 0)::numeric,
+    coalesce(v.rating_1, 0)::bigint,
+    coalesce(v.rating_2, 0)::bigint,
+    coalesce(v.rating_3, 0)::bigint,
+    coalesce(v.rating_4, 0)::bigint,
+    coalesce(v.rating_5, 0)::bigint,
+    coalesce(v.comments_count, 0)::bigint
   from public.vw_satisfaction_feedback_daily v
   where (p_start_date is null or v.activity_date >= p_start_date)
     and (p_end_date is null or v.activity_date <= p_end_date)

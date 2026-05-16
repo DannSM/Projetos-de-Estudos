@@ -80,34 +80,53 @@
   function setAuthenticatedState(dom, isAuthenticated) {
     dom.gate.classList.toggle("hidden", isAuthenticated);
     dom.content.classList.toggle("hidden", !isAuthenticated);
+    dom.gate.setAttribute("aria-hidden", String(isAuthenticated));
+    dom.content.setAttribute("aria-hidden", String(!isAuthenticated));
+    document.body.classList.toggle("analytics-auth-locked", !isAuthenticated);
   }
 
   function renderAccessGate(dom, options = {}) {
     const mode = options.mode || "login";
     const message = options.message || "";
 
-    let helperText = "Entre com usuario admin cadastrado no Supabase Auth.";
+    let helperText = "Entre com seu usuário administrador.";
     if (mode === "forbidden") {
-      helperText = "Usuario autenticado sem permissao admin para analytics.";
+      helperText = "Usuário autenticado sem permissão admin para analytics.";
     }
 
     dom.gate.innerHTML = `
-      <article class="analytics-panel analytics-gate-card" role="dialog" aria-labelledby="analyticsGateTitle">
-        <h2 id="analyticsGateTitle">Acesso admin</h2>
-        <p>${helperText}</p>
-        <form id="adminAccessForm" class="analytics-gate-form">
-          <label for="adminEmailInput">E-mail admin</label>
-          <input id="adminEmailInput" type="email" autocomplete="username" required ${mode === "forbidden" ? "disabled" : ""}>
-          <label for="adminPasswordInput">Senha</label>
-          <input id="adminPasswordInput" type="password" autocomplete="current-password" required ${mode === "forbidden" ? "disabled" : ""}>
-          <button type="submit" class="submit-button" ${mode === "forbidden" ? "disabled" : ""}>Entrar no painel</button>
-          <p class="analytics-gate-help">A autenticacao valida identidade e o backend RPC valida permissao admin antes de retornar dados.</p>
-          <p id="adminAccessError" class="analytics-error-text ${message ? "" : "hidden"}">${message || ""}</p>
-        </form>
-      </article>
+      <div class="analytics-gate-layout">
+        <article class="analytics-panel analytics-gate-visual" aria-hidden="true">
+          <div class="analytics-gate-visual-icon-wrap">
+            <i class="analytics-gate-visual-icon" data-lucide="shield-check"></i>
+          </div>
+          <h2>Ambiente protegido</h2>
+          <p>Visualize os principais indicadores da plataforma em um só lugar.</p>
+          <ul class="analytics-gate-bullets">
+            <li>Dados apresentados de forma resumida</li>
+            <li>Acompanhamento por período</li>
+            <li>Acesso exclusivo da administração</li>
+          </ul>
+        </article>
+
+        <article class="analytics-panel analytics-gate-card" role="dialog" aria-labelledby="analyticsGateTitle">
+          <h2 id="analyticsGateTitle">Acesso admin</h2>
+          <p>${helperText}</p>
+          <form id="adminAccessForm" class="analytics-gate-form">
+            <label for="adminEmailInput">E-mail admin</label>
+            <input id="adminEmailInput" type="email" autocomplete="username" required ${mode === "forbidden" ? "disabled" : ""}>
+            <label for="adminPasswordInput">Senha</label>
+            <input id="adminPasswordInput" type="password" autocomplete="current-password" required ${mode === "forbidden" ? "disabled" : ""}>
+            <button type="submit" class="submit-button" ${mode === "forbidden" ? "disabled" : ""}>Entrar no painel</button>
+            <p class="analytics-gate-help">Seu acesso será validado para liberar o painel.</p>
+            <p id="adminAccessError" class="analytics-error-text ${message ? "" : "hidden"}">${message || ""}</p>
+          </form>
+        </article>
+      </div>
     `;
 
     setAuthenticatedState(dom, false);
+    renderStatus(dom, "", "info");
     ensureIcons();
 
     if (mode === "forbidden") {
@@ -145,6 +164,11 @@
   }
 
   function renderStatus(dom, message, type) {
+    if (!message) {
+      dom.status.className = "analytics-panel analytics-status hidden";
+      dom.status.textContent = "";
+      return;
+    }
     const statusType = type || "info";
     dom.status.className = `analytics-panel analytics-status ${statusType}`;
     dom.status.textContent = message;
@@ -226,20 +250,20 @@
 
   function renderPlatformKpis(dom, metrics) {
     dom.platformKpis.innerHTML = `
-      <article class="analytics-kpi-card"><span>Usuarios ativos (ultimo dia)</span><strong>${formatNumber(metrics.activeUsersLatest)}</strong></article>
-      <article class="analytics-kpi-card"><span>Diagnosticos realizados</span><strong>${formatNumber(metrics.diagnosticsTotal)}</strong></article>
+      <article class="analytics-kpi-card"><span>Usuários ativos (último dia)</span><strong>${formatNumber(metrics.activeUsersLatest)}</strong></article>
+      <article class="analytics-kpi-card"><span>Diagnósticos realizados</span><strong>${formatNumber(metrics.diagnosticsTotal)}</strong></article>
       <article class="analytics-kpi-card"><span>Desafios respondidos</span><strong>${formatNumber(metrics.challengesTotal)}</strong></article>
-      <article class="analytics-kpi-card"><span>Acuracia diagnostico</span><strong>${formatPercent(metrics.diagnosticAccuracy)}</strong></article>
-      <article class="analytics-kpi-card"><span>Acuracia desafios</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></article>
-      <article class="analytics-kpi-card"><span>Satisfacao media</span><strong>${formatRating(metrics.satisfactionAverage)}</strong></article>
-      <article class="analytics-kpi-card"><span>Total de avaliacoes</span><strong>${formatNumber(metrics.feedbackTotal)}</strong></article>
-      <article class="analytics-kpi-card"><span>Comentarios preenchidos</span><strong>${formatNumber(metrics.commentsTotal)}</strong></article>
+      <article class="analytics-kpi-card"><span>Acurácia diagnóstico</span><strong>${formatPercent(metrics.diagnosticAccuracy)}</strong></article>
+      <article class="analytics-kpi-card"><span>Acurácia desafios</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></article>
+      <article class="analytics-kpi-card"><span>Satisfação média</span><strong>${formatRating(metrics.satisfactionAverage)}</strong></article>
+      <article class="analytics-kpi-card"><span>Total de avaliações</span><strong>${formatNumber(metrics.feedbackTotal)}</strong></article>
+      <article class="analytics-kpi-card"><span>Comentários preenchidos</span><strong>${formatNumber(metrics.commentsTotal)}</strong></article>
     `;
   }
 
   function renderActivityTrend(dom, rows) {
     if (!rows.length) {
-      dom.activityTrendChart.innerHTML = `<p class="analytics-empty">Sem dados para o periodo selecionado.</p>`;
+      dom.activityTrendChart.innerHTML = `<p class="analytics-empty">Sem dados para o período selecionado.</p>`;
       return;
     }
 
@@ -268,22 +292,23 @@
       `;
     }).join("");
 
+    const sparseClass = lastRows.length <= 7 ? " sparse" : "";
     dom.activityTrendChart.innerHTML = `
       <div class="analytics-chart-legend">
-        <span><i class="dot diagnostics"></i>Diagnosticos</span>
+        <span><i class="dot diagnostics"></i>Diagnósticos</span>
         <span><i class="dot challenges"></i>Desafios</span>
         <span><i class="dot feedback"></i>Avaliacoes</span>
       </div>
-      <div class="analytics-chart-scroll"><div class="analytics-chart-track">${bars}</div></div>
+      <div class="analytics-chart-scroll"><div class="analytics-chart-track${sparseClass}">${bars}</div></div>
     `;
   }
 
   function renderAccuracySummary(dom, metrics) {
     dom.accuracySummary.innerHTML = `
       <div class="analytics-stat-list">
-        <div><span>Acuracia media de diagnostico</span><strong>${formatPercent(metrics.diagnosticAccuracy)}</strong></div>
-        <div><span>Acuracia media de desafios</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></div>
-        <div><span>Nota media de satisfacao</span><strong>${formatRating(metrics.satisfactionAverage)}</strong></div>
+        <div><span>Acurácia média de diagnóstico</span><strong>${formatPercent(metrics.diagnosticAccuracy)}</strong></div>
+        <div><span>Acurácia média de desafios</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></div>
+        <div><span>Nota média de satisfação</span><strong>${formatRating(metrics.satisfactionAverage)}</strong></div>
       </div>
     `;
   }
@@ -329,8 +354,8 @@
   function renderUserTable(dom) {
     const totalItems = uiState.aggregatedUsers.length;
     if (!totalItems) {
-      dom.userTableWrap.innerHTML = `<p class="analytics-empty">Nenhum usuario encontrado no recorte selecionado.</p>`;
-      dom.usersPageInfo.textContent = "Pagina 0 de 0";
+      dom.userTableWrap.innerHTML = `<p class="analytics-empty">Nenhum usuário encontrado no recorte selecionado.</p>`;
+      dom.usersPageInfo.textContent = "Página 0 de 0";
       dom.usersPrevButton.disabled = true;
       dom.usersNextButton.disabled = true;
       return;
@@ -354,18 +379,18 @@
     `).join("");
 
     dom.userTableWrap.innerHTML = `
-      ${uiState.rawUserRowsTruncated ? `<p class="analytics-warning">Amostra limitada por volume. Reduza periodo ou filtre usuario.</p>` : ""}
+      ${uiState.rawUserRowsTruncated ? `<p class="analytics-warning">Amostra limitada por volume. Reduza período ou filtre usuário.</p>` : ""}
       <div class="analytics-table-scroll">
         <table class="analytics-table">
           <thead>
             <tr>
               <th>anonymous_user_id</th>
-              <th>Diagnosticos</th>
+              <th>Diagnósticos</th>
               <th>Desafios</th>
-              <th>Acuracia diag.</th>
-              <th>Acuracia desaf.</th>
-              <th>Satisfacao</th>
-              <th>Ultima atividade</th>
+              <th>Acurácia diag.</th>
+              <th>Acurácia desaf.</th>
+              <th>Satisfação</th>
+              <th>Última atividade</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
@@ -373,14 +398,14 @@
       </div>
     `;
 
-    dom.usersPageInfo.textContent = `Pagina ${uiState.currentPage} de ${totalPages}`;
+    dom.usersPageInfo.textContent = `Página ${uiState.currentPage} de ${totalPages}`;
     dom.usersPrevButton.disabled = uiState.currentPage <= 1;
     dom.usersNextButton.disabled = uiState.currentPage >= totalPages;
   }
 
   function renderSatisfactionTrend(dom, rows) {
     if (!rows.length) {
-      dom.satisfactionTrendChart.innerHTML = `<p class="analytics-empty">Sem dados de satisfacao no periodo.</p>`;
+      dom.satisfactionTrendChart.innerHTML = `<p class="analytics-empty">Sem dados de satisfação no período.</p>`;
       return;
     }
     const groupedByDate = new Map();
@@ -400,14 +425,15 @@
     const points = timeline.map((item) => {
       const height = Math.max((item.avgRating / 5) * 100, item.avgRating > 0 ? 6 : 0);
       return `
-        <div class="analytics-chart-group" title="${item.activityDate} | Nota media ${item.avgRating.toFixed(2)}">
+        <div class="analytics-chart-group" title="${item.activityDate} | Nota média ${item.avgRating.toFixed(2)}">
           <div class="analytics-chart-bars single"><span class="analytics-bar rating" style="height:${height}%"></span></div>
           <span class="analytics-chart-label">${item.activityDate.slice(5)}</span>
         </div>
       `;
     }).join("");
 
-    dom.satisfactionTrendChart.innerHTML = `<div class="analytics-chart-scroll"><div class="analytics-chart-track">${points}</div></div>`;
+    const sparseClass = timeline.length <= 7 ? " sparse" : "";
+    dom.satisfactionTrendChart.innerHTML = `<div class="analytics-chart-scroll"><div class="analytics-chart-track${sparseClass}">${points}</div></div>`;
   }
 
   function renderRatingDistribution(dom, rows) {
@@ -422,7 +448,7 @@
       totals.comments += normalizeNumber(row.comments_count);
     });
     if (!totals.total) {
-      dom.ratingDistribution.innerHTML = `<p class="analytics-empty">Sem avaliacoes no periodo.</p>`;
+      dom.ratingDistribution.innerHTML = `<p class="analytics-empty">Sem avaliações no período.</p>`;
       return;
     }
 
@@ -442,8 +468,8 @@
 
     dom.ratingDistribution.innerHTML = `
       <div class="analytics-stat-list compact">
-        <div><span>Total de avaliacoes</span><strong>${formatNumber(totals.total)}</strong></div>
-        <div><span>Comentarios preenchidos</span><strong>${formatNumber(totals.comments)}</strong></div>
+        <div><span>Total de avaliações</span><strong>${formatNumber(totals.total)}</strong></div>
+        <div><span>Comentários preenchidos</span><strong>${formatNumber(totals.comments)}</strong></div>
       </div>
       <div class="analytics-progress-list">${rowsHtml}</div>
     `;
@@ -451,7 +477,7 @@
 
   function renderSatisfactionByContext(dom, rows) {
     if (!rows.length) {
-      dom.satisfactionByContext.innerHTML = `<p class="analytics-empty">Sem dados de contexto para o periodo.</p>`;
+      dom.satisfactionByContext.innerHTML = `<p class="analytics-empty">Sem dados de contexto para o período.</p>`;
       return;
     }
     const contextMap = new Map();
@@ -480,7 +506,7 @@
           <div>
             <span>${item.context}</span>
             <strong>${formatRating(item.avg)} (n=${formatNumber(item.total)})</strong>
-            <small>${formatNumber(item.comments)} comentarios preenchidos</small>
+            <small>${formatNumber(item.comments)} comentários preenchidos</small>
           </div>
         `).join("")}
       </div>
@@ -489,14 +515,14 @@
 
   function renderSatisfactionByTarget(dom, rows) {
     if (!rows.length) {
-      dom.satisfactionByTarget.innerHTML = `<p class="analytics-empty">Sem dados de desafio/diagnostico no periodo.</p>`;
+      dom.satisfactionByTarget.innerHTML = `<p class="analytics-empty">Sem dados de desafio/diagnóstico no período.</p>`;
       return;
     }
     const targetMap = new Map();
     rows.forEach((row) => {
       const targetId = row.challenge_id || row.diagnostic_id;
       if (!targetId) return;
-      const targetType = row.challenge_id ? "Desafio" : "Diagnostico";
+      const targetType = row.challenge_id ? "Desafio" : "Diagnóstico";
       const key = `${targetType}:${targetId}`;
       if (!targetMap.has(key)) targetMap.set(key, { targetType, targetId, total: 0, weightedSum: 0, comments: 0 });
       const current = targetMap.get(key);
@@ -511,7 +537,7 @@
       .slice(0, 12);
 
     if (!targets.length) {
-      dom.satisfactionByTarget.innerHTML = `<p class="analytics-empty">Sem identificadores de desafio/diagnostico no periodo.</p>`;
+      dom.satisfactionByTarget.innerHTML = `<p class="analytics-empty">Sem identificadores de desafio/diagnóstico no período.</p>`;
       return;
     }
 
@@ -532,9 +558,9 @@
             <tr>
               <th>Tipo</th>
               <th>Identificador</th>
-              <th>Avaliacoes</th>
-              <th>Nota media</th>
-              <th>Comentarios (contagem)</th>
+              <th>Avaliações</th>
+              <th>Nota média</th>
+              <th>Comentários (contagem)</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
@@ -545,17 +571,17 @@
 
   async function loadAnalyticsData(dom) {
     if (!globalScope.analyticsService) {
-      renderStatus(dom, "Servico de analytics indisponivel.", "error");
+      renderStatus(dom, "Serviço de analytics indisponível.", "error");
       return;
     }
     const filters = getFilterState(dom);
     uiState.lastFilters = filters;
     if (!isValidDateRange(filters)) {
-      renderStatus(dom, "Periodo invalido. Ajuste data inicial e data final.", "error");
+      renderStatus(dom, "Período inválido. Ajuste data inicial e data final.", "error");
       return;
     }
 
-    renderStatus(dom, "Carregando dados analiticos...", "loading");
+    renderStatus(dom, "Carregando dados analíticos...", "loading");
 
     const [platformResult, userResult, satisfactionResult] = await Promise.all([
       globalScope.analyticsService.fetchPlatformDaily({ startDate: filters.startDate, endDate: filters.endDate }),
@@ -606,7 +632,7 @@
     dom.logoutButton.addEventListener("click", async () => {
       await globalScope.analyticsService.signOutAdmin();
       uiState.currentAdminEmail = null;
-      renderAccessGate(dom, { mode: "login", message: "Sessao encerrada." });
+      renderAccessGate(dom, { mode: "login", message: "Sessão encerrada." });
     });
 
     dom.usersPrevButton.addEventListener("click", () => {
@@ -640,7 +666,7 @@
       await globalScope.analyticsService.signOutAdmin();
       renderAccessGate(dom, {
         mode: "login",
-        message: "Usuario autenticado sem permissao admin para analytics."
+        message: "Usuário autenticado sem permissão admin para analytics."
       });
       return;
     }
@@ -653,7 +679,7 @@
     const dom = getDomRefs();
     if (!dom.gate || !dom.content) return;
     if (!globalScope.analyticsService) {
-      renderAccessGate(dom, { mode: "login", message: "Servico de autenticacao nao inicializado." });
+      renderAccessGate(dom, { mode: "login", message: "Serviço de autenticação não inicializado." });
       return;
     }
 
