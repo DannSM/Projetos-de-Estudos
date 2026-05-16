@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - Data Skill Map</title>
+  <meta name="description" content="Data Skill Map: painel interno de analytics com acesso autenticado e leitura segura de dados agregados.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="Data Skill Map">
+      <span class="brand-logo-wrap" aria-hidden="true">
+        <img class="brand-logo" src="assets/logo.png" alt="Data Skill Map">
+      </span>
+      <span class="brand-name">
+        <span><strong>D</strong>ata</span>
+        <span><strong>S</strong>kill</span>
+        <span><strong>M</strong>ap</span>
+      </span>
+    </a>
+
+    <div class="header-context">Painel interno com acesso autenticado e dados agregados.</div>
+    <a class="header-cta" href="index.html">
+      <i data-lucide="home" aria-hidden="true"></i>
+      <span>Inicio</span>
+    </a>
+  </header>
+
+  <aside class="app-sidebar" aria-label="Navegacao lateral">
+    <div class="sidebar-section">
+      <span class="sidebar-label">Navegacao</span>
+      <a href="index.html">
+        <i class="nav-icon" data-lucide="home" aria-hidden="true"></i>
+        <span>Inicio</span>
+      </a>
+      <a href="diagnostico.html">
+        <i class="nav-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
+        <span>Diagnostico</span>
+      </a>
+      <a class="active" href="analytics.html">
+        <i class="nav-icon" data-lucide="bar-chart-3" aria-hidden="true"></i>
+        <span>Analytics</span>
+      </a>
+    </div>
+    <div class="sidebar-section sidebar-panel">
+      <span class="sidebar-label">Acesso</span>
+      <strong>Area admin autenticada</strong>
+      <p>Login obrigatorio para consulta segura de analytics via camada RPC.</p>
+    </div>
+  </aside>
+
+  <main class="has-sidebar analytics-page">
+    <section class="section-shell analytics-hero">
+      <span class="section-kicker">Analytics interno</span>
+      <h1>Analytics - Data Skill Map</h1>
+      <p class="analytics-hero-copy">Acompanhamento de atividade, qualidade e satisfacao com base em views agregadas aprovadas.</p>
+    </section>
+
+    <section class="section-shell analytics-shell">
+      <div id="adminAccessGate" class="analytics-gate hidden" aria-live="polite"></div>
+      <div id="analyticsContent" class="analytics-content hidden">
+        <article class="analytics-panel analytics-filters-panel">
+          <div class="analytics-filters-top">
+            <h2>Filtro de periodo</h2>
+            <button id="adminLogoutButton" type="button" class="filter-button">
+              <i data-lucide="log-out" aria-hidden="true"></i>
+              <span>Sair</span>
+            </button>
+          </div>
+          <div class="analytics-filters-grid">
+            <label>
+              Periodo rapido
+              <select id="periodPresetSelect">
+                <option value="7">Ultimos 7 dias</option>
+                <option value="30" selected>Ultimos 30 dias</option>
+                <option value="90">Ultimos 90 dias</option>
+              </select>
+            </label>
+            <label>
+              Data inicial
+              <input id="startDateInput" type="date">
+            </label>
+            <label>
+              Data final
+              <input id="endDateInput" type="date">
+            </label>
+            <label>
+              Usuario anonimo (opcional)
+              <input id="userFilterInput" type="text" placeholder="Ex: 4ce66c...">
+            </label>
+          </div>
+          <div class="analytics-filters-actions">
+            <button id="applyFiltersButton" type="button" class="submit-button">Atualizar painel</button>
+          </div>
+          <p class="analytics-note">Escopo: apenas views agregadas aprovadas via RPC segura. Comentarios textuais nao sao exibidos.</p>
+        </article>
+
+        <article id="analyticsStatus" class="analytics-panel analytics-status" aria-live="polite"></article>
+
+        <section class="analytics-section" aria-label="Visao da plataforma">
+          <div class="section-heading compact">
+            <div>
+              <span class="section-kicker">Dashboard 1</span>
+              <h2>Visao da Plataforma</h2>
+            </div>
+          </div>
+          <div id="platformKpis" class="analytics-kpi-grid"></div>
+          <div class="analytics-grid-two">
+            <article class="analytics-panel">
+              <h3>Evolucao diaria da atividade</h3>
+              <div id="activityTrendChart"></div>
+            </article>
+            <article class="analytics-panel">
+              <h3>Resumo de acuracia</h3>
+              <div id="accuracySummary"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="analytics-section" aria-label="Atividade por usuario">
+          <div class="section-heading compact">
+            <div>
+              <span class="section-kicker">Dashboard 2</span>
+              <h2>Atividade por Usuario</h2>
+            </div>
+          </div>
+          <article class="analytics-panel">
+            <div id="userActivityTableWrap"></div>
+            <div class="analytics-pagination">
+              <button id="usersPrevButton" type="button" class="filter-button">Anterior</button>
+              <span id="usersPageInfo">Pagina 1</span>
+              <button id="usersNextButton" type="button" class="filter-button">Proxima</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="analytics-section" aria-label="Qualidade de experiencia">
+          <div class="section-heading compact">
+            <div>
+              <span class="section-kicker">Dashboard 3</span>
+              <h2>Qualidade de Experiencia</h2>
+            </div>
+          </div>
+          <div class="analytics-grid-two">
+            <article class="analytics-panel">
+              <h3>Satisfacao media por dia</h3>
+              <div id="satisfactionTrendChart"></div>
+            </article>
+            <article class="analytics-panel">
+              <h3>Distribuicao de notas 1 a 5</h3>
+              <div id="ratingDistribution"></div>
+            </article>
+          </div>
+          <div class="analytics-grid-two">
+            <article class="analytics-panel">
+              <h3>Satisfacao por contexto</h3>
+              <div id="satisfactionByContext"></div>
+            </article>
+            <article class="analytics-panel">
+              <h3>Satisfacao por desafio ou diagnostico</h3>
+              <div id="satisfactionByTarget"></div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Data Skill Map</span>
+    <span>Analytics interno seguro.</span>
+  </footer>
+
+  <script src="src/state.js"></script>
+  <script src="src/supabase-config.js"></script>
+  <script src="src/analytics-service.js"></script>
+  <script src="src/analytics-admin.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

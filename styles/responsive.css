@@ -53,6 +53,9 @@
   .hero,
   .two-column,
   .diagnostic-shell,
+  .analytics-grid-two,
+  .analytics-filters-grid,
+  .analytics-kpi-grid,
   .challenge-grid {
     grid-template-columns: 1fr;
   }
@@ -90,7 +93,8 @@
   .diagnostic-side-grid,
   .level-roadmap,
   .level-summary,
-  .insight-grid {
+  .insight-grid,
+  .analytics-kpi-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -101,6 +105,10 @@
 
   .feedback-modal-sheet {
     width: min(32rem, calc(100% - 1.5rem));
+  }
+
+  .analytics-table {
+    min-width: 38rem;
   }
 }
 
@@ -194,8 +202,26 @@
   .level-roadmap,
   .level-summary,
   .hero-metrics,
-  .preview-options {
+  .preview-options,
+  .analytics-kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .analytics-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-filters-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analytics-pagination {
+    justify-content: space-between;
+  }
+
+  .analytics-table {
+    min-width: 34rem;
   }
 
   .quiz-top {

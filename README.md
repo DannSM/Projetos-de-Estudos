@@ -50,6 +50,18 @@ Plano e scripts da camada analitica externa (Metabase Cloud):
 - `docs/supabase-permissions-bi.sql`
 - `docs/supabase-validation-checklist.sql`
 
+## Analytics interno (temporario)
+
+- Rota: `analytics.html`
+- Documentacao: `docs/admin-analytics.md`
+- SQL temporario de permissao (frontend): `docs/supabase-permissions-analytics-frontend-temp.sql`
+- SQL de hardening (producao): `docs/supabase-analytics-hardening.sql`
+- SQL de permissoes de producao: `docs/supabase-permissions-analytics-prod.sql`
+- Usa apenas views agregadas aprovadas:
+  - `vw_platform_activity_daily`
+  - `vw_user_activity_daily`
+  - `vw_satisfaction_feedback_daily`
+
 ### 3) O que ja esta sendo enviado
 
 - `anonymous_user_id` (persistido em `localStorage`)
