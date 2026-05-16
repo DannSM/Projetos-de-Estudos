@@ -633,6 +633,10 @@
   background: rgba(15, 23, 42, 0.45);
 }
 
+.feedback-modal-overlay.hidden {
+  display: none;
+}
+
 .feedback-modal-open {
   overflow: hidden;
 }
@@ -848,6 +852,10 @@
   transform: translate(-50%, 0.8rem);
   opacity: 0;
   transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.feedback-toast.hidden {
+  display: none;
 }
 
 .feedback-toast strong {
