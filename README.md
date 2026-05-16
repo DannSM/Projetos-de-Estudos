@@ -42,6 +42,13 @@ Os servicos usam por padrao:
 
 Se quiser outro nome, ajuste em `src/supabase-config.js` no bloco `tables`.
 Existe um schema inicial em `docs/supabase-schema.sql`.
+As views de acompanhamento estao em `docs/supabase-views.sql`.
+Plano e scripts da camada analitica externa (Metabase Cloud):
+
+- `docs/dashboard-metabase-supabase-plan.md`
+- `docs/supabase-views.sql`
+- `docs/supabase-permissions-bi.sql`
+- `docs/supabase-validation-checklist.sql`
 
 ### 3) O que ja esta sendo enviado
 
