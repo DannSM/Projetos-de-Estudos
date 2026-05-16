@@ -934,6 +934,46 @@
 
 .analytics-page {
   min-height: calc(100vh - var(--header-height));
+  --analytics-gap-xs: 0.45rem;
+  --analytics-gap-sm: 0.72rem;
+  --analytics-gap-md: 0.95rem;
+  --analytics-gap-lg: 1.18rem;
+  --analytics-gap-xl: 1.45rem;
+}
+
+.analytics-ui .app-header {
+  background: rgba(255, 255, 255, 0.62);
+  border-bottom-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.analytics-ui .app-sidebar {
+  background: rgba(255, 255, 255, 0.58);
+  border-right-color: rgba(148, 163, 184, 0.26);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.analytics-ui .app-sidebar a {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid transparent;
+}
+
+.analytics-ui .app-sidebar a:hover,
+.analytics-ui .app-sidebar a.active {
+  background: rgba(219, 234, 254, 0.58);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+.analytics-ui .sidebar-panel {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.analytics-ui .app-footer {
+  background: rgba(255, 255, 255, 0.55);
+  border-top-color: rgba(148, 163, 184, 0.3);
+  backdrop-filter: blur(14px) saturate(135%);
 }
 
 body.analytics-auth-locked .analytics-page {
@@ -962,7 +1002,7 @@ body.analytics-auth-locked {
 
 .analytics-shell {
   display: grid;
-  gap: 1.2rem;
+  gap: var(--analytics-gap-lg);
   padding-top: 0.55rem;
 }
 
@@ -994,27 +1034,32 @@ body.analytics-auth-locked .analytics-hero-copy {
 .analytics-content,
 .analytics-section {
   display: grid;
-  gap: 0.95rem;
+  gap: var(--analytics-gap-md);
 }
 
 .analytics-section .section-heading.compact {
-  margin-bottom: 0.3rem;
+  margin-bottom: var(--analytics-gap-xs);
 }
 
 .analytics-section .section-heading h2 {
   margin-bottom: 0;
 }
 
+#analyticsContent > .analytics-section + .analytics-section {
+  margin-top: var(--analytics-gap-xs);
+}
+
 .analytics-panel {
   padding: clamp(1rem, 2vw, 1.25rem);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px) saturate(140%);
 }
 
 .analytics-panel h3 {
-  margin-bottom: 0.9rem;
+  margin-bottom: var(--analytics-gap-sm);
   font-size: 1.05rem;
 }
 
@@ -1050,9 +1095,10 @@ body.analytics-auth-locked .analytics-hero-copy {
   min-height: 2.6rem;
   padding: 0.55rem 0.65rem;
   color: var(--color-text-primary);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px) saturate(130%);
 }
 
 .analytics-filters-grid input:focus-visible,
@@ -1083,26 +1129,26 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .analytics-status.loading {
   color: var(--color-primary);
-  background: var(--color-primary-light);
-  border-color: rgba(37, 99, 235, 0.22);
+  background: rgba(219, 234, 254, 0.72);
+  border-color: rgba(37, 99, 235, 0.32);
 }
 
 .analytics-status.success {
   color: var(--color-success);
-  background: var(--color-success-light);
-  border-color: rgba(22, 163, 74, 0.24);
+  background: rgba(220, 252, 231, 0.72);
+  border-color: rgba(22, 163, 74, 0.32);
 }
 
 .analytics-status.error {
   color: var(--color-error);
-  background: var(--color-error-light);
-  border-color: rgba(220, 38, 38, 0.24);
+  background: rgba(254, 226, 226, 0.75);
+  border-color: rgba(220, 38, 38, 0.34);
 }
 
 .analytics-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.9rem;
+  gap: var(--analytics-gap-md);
 }
 
 .analytics-kpi-card {
@@ -1112,8 +1158,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   gap: 0.45rem;
   min-height: 5.1rem;
   padding: 0.95rem 0.98rem 0.9rem;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
+  background: rgba(248, 250, 252, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -1134,6 +1180,11 @@ body.analytics-auth-locked .analytics-hero-copy {
   font-size: 0.84rem;
   font-weight: 700;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .analytics-kpi-card strong {
@@ -1146,7 +1197,12 @@ body.analytics-auth-locked .analytics-hero-copy {
 .analytics-grid-two {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.1rem;
+  gap: var(--analytics-gap-lg);
+  align-items: stretch;
+}
+
+.analytics-grid-two > .analytics-panel {
+  height: 100%;
 }
 
 .analytics-chart-legend {
@@ -1229,6 +1285,13 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-template-columns: 1fr;
 }
 
+.analytics-chart-density-note {
+  margin: var(--analytics-gap-sm) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .analytics-bar {
   width: 100%;
   border-radius: 8px 8px 2px 2px;
@@ -1249,9 +1312,11 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   gap: 0.2rem;
   padding: 0.8rem;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
+  background: rgba(248, 250, 252, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: var(--radius-md);
+  min-height: 4.65rem;
+  align-content: center;
 }
 
 .analytics-stat-list span {
@@ -1325,6 +1390,12 @@ body.analytics-auth-locked .analytics-hero-copy {
   min-width: 44rem;
 }
 
+.analytics-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .analytics-table th,
 .analytics-table td {
   padding: 0.72rem 0.72rem;
@@ -1336,7 +1407,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .analytics-table th {
   color: var(--color-text-secondary);
   font-weight: 800;
-  background: var(--color-surface-muted);
+  background: rgba(248, 250, 252, 0.82);
 }
 
 .analytics-table td code {
@@ -1345,8 +1416,12 @@ body.analytics-auth-locked .analytics-hero-copy {
   font-size: 0.8rem;
 }
 
+.analytics-table tbody tr:nth-child(even) {
+  background: rgba(148, 163, 184, 0.11);
+}
+
 .analytics-pagination {
-  margin-top: 0.8rem;
+  margin-top: var(--analytics-gap-sm);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1399,7 +1474,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   align-content: center;
   gap: 0.75rem;
-  background: linear-gradient(135deg, #eaf2ff, #f7fbff 60%);
+  background: linear-gradient(135deg, rgba(234, 242, 255, 0.7), rgba(247, 251, 255, 0.5) 60%);
 }
 
 .analytics-gate-visual-icon-wrap {
@@ -1475,8 +1550,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 .analytics-gate-form input {
   min-height: 2.7rem;
   padding: 0.55rem 0.72rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(255, 255, 255, 0.62);
   border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px) saturate(130%);
 }
 
 .analytics-gate-form .submit-button {
@@ -1518,4 +1595,206 @@ body.analytics-auth-locked .analytics-hero-copy {
   color: var(--color-text-secondary);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+}
+
+.analytics-ui .analytics-page .submit-button,
+.analytics-ui .analytics-page .filter-button {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.analytics-ui .analytics-page .filter-button {
+  color: #475569;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.analytics-ui .analytics-page .filter-button:hover,
+.analytics-ui .analytics-page .filter-button:focus-visible,
+.analytics-ui .analytics-page .filter-button.active {
+  color: #1d4ed8;
+  background: rgba(219, 234, 254, 0.68);
+  border-color: rgba(37, 99, 235, 0.34);
+}
+
+.analytics-ui .analytics-page .submit-button {
+  color: #ffffff;
+  background: linear-gradient(120deg, rgba(37, 99, 235, 0.9), rgba(6, 182, 212, 0.9));
+  border-color: rgba(96, 165, 250, 0.42);
+}
+
+.analytics-ui .analytics-page .submit-button:hover,
+.analytics-ui .analytics-page .submit-button:focus-visible {
+  background: linear-gradient(120deg, rgba(29, 78, 216, 0.96), rgba(8, 145, 178, 0.96));
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+/* Analytics glassmorphism refinement (scoped) */
+.analytics-ui {
+  --analytics-glass-bg: rgba(255, 255, 255, 0.56);
+  --analytics-glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --analytics-glass-bg-soft: rgba(248, 250, 252, 0.58);
+  --analytics-glass-border: rgba(148, 163, 184, 0.28);
+  --analytics-glass-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
+  --analytics-glass-blur: blur(16px) saturate(145%);
+}
+
+.analytics-ui .analytics-page {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(248, 250, 252, 0.1)),
+    linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+  background-size: auto, 42px 42px, 42px 42px;
+}
+
+.analytics-ui .app-header,
+.analytics-ui .app-sidebar,
+.analytics-ui .app-footer,
+.analytics-ui .analytics-panel,
+.analytics-ui .analytics-kpi-card,
+.analytics-ui .analytics-stat-list div,
+.analytics-ui .analytics-table th,
+.analytics-ui .analytics-table td,
+.analytics-ui .analytics-filters-grid input,
+.analytics-ui .analytics-filters-grid select,
+.analytics-ui .analytics-gate-form input,
+.analytics-ui .analytics-page .submit-button,
+.analytics-ui .analytics-page .filter-button {
+  backdrop-filter: var(--analytics-glass-blur);
+  -webkit-backdrop-filter: var(--analytics-glass-blur);
+}
+
+.analytics-ui .app-header {
+  background: rgba(255, 255, 255, 0.62);
+  border-bottom-color: var(--analytics-glass-border);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.analytics-ui .app-sidebar {
+  background: rgba(255, 255, 255, 0.52);
+  border-right-color: var(--analytics-glass-border);
+}
+
+.analytics-ui .sidebar-panel {
+  background: rgba(255, 255, 255, 0.44);
+  border-color: var(--analytics-glass-border);
+}
+
+.analytics-ui .app-footer {
+  background: rgba(255, 255, 255, 0.56);
+  border-top-color: var(--analytics-glass-border);
+}
+
+.analytics-ui .analytics-panel {
+  background: var(--analytics-glass-bg);
+  border-color: var(--analytics-glass-border);
+  box-shadow: var(--analytics-glass-shadow);
+}
+
+.analytics-ui .analytics-kpi-card {
+  background: var(--analytics-glass-bg-soft);
+  border-color: var(--analytics-glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.analytics-ui .analytics-kpi-card::before {
+  height: 3px;
+  opacity: 0.68;
+}
+
+.analytics-ui .analytics-filters-grid input,
+.analytics-ui .analytics-filters-grid select,
+.analytics-ui .analytics-gate-form input {
+  background: var(--analytics-glass-bg-strong);
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.analytics-ui .analytics-filters-grid input:focus-visible,
+.analytics-ui .analytics-filters-grid select:focus-visible,
+.analytics-ui .analytics-gate-form input:focus-visible {
+  border-color: rgba(14, 165, 233, 0.48);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+  outline: none;
+}
+
+.analytics-ui .analytics-page .submit-button,
+.analytics-ui .analytics-page .filter-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.analytics-ui .analytics-page .submit-button::after,
+.analytics-ui .analytics-page .filter-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.analytics-ui .analytics-page .submit-button {
+  color: #ffffff;
+  border-color: rgba(125, 211, 252, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 24px rgba(30, 64, 175, 0.24);
+}
+
+.analytics-ui .analytics-page .submit-button:hover,
+.analytics-ui .analytics-page .submit-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 14px 30px rgba(30, 64, 175, 0.3);
+}
+
+.analytics-ui .analytics-page .submit-button:active {
+  transform: translateY(0);
+}
+
+.analytics-ui .analytics-page .filter-button {
+  color: #475569;
+  background: rgba(255, 255, 255, 0.64);
+  border-color: rgba(148, 163, 184, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68), 0 7px 18px rgba(15, 23, 42, 0.08);
+}
+
+.analytics-ui .analytics-page .filter-button:hover,
+.analytics-ui .analytics-page .filter-button:focus-visible,
+.analytics-ui .analytics-page .filter-button.active {
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 10px 22px rgba(37, 99, 235, 0.16);
+  transform: translateY(-1px);
+}
+
+.analytics-ui .analytics-page .filter-button:active {
+  transform: translateY(0);
+}
+
+.analytics-ui .analytics-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.analytics-ui .analytics-table th {
+  background: rgba(241, 245, 249, 0.7);
+  border-bottom-color: rgba(148, 163, 184, 0.32);
+}
+
+.analytics-ui .analytics-table td {
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.analytics-ui .analytics-table tbody tr:nth-child(even) td {
+  background: rgba(248, 250, 252, 0.5);
+}
+
+.analytics-ui .analytics-table tbody tr:hover td {
+  background: rgba(219, 234, 254, 0.36);
 }

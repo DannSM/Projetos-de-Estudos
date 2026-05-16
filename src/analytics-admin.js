@@ -293,6 +293,10 @@
     }).join("");
 
     const sparseClass = lastRows.length <= 7 ? " sparse" : "";
+    const densityNote = lastRows.length <= 7
+      ? `<p class="analytics-chart-density-note">Período com poucos dados (${lastRows.length} dia${lastRows.length > 1 ? "s" : ""}).</p>`
+      : "";
+
     dom.activityTrendChart.innerHTML = `
       <div class="analytics-chart-legend">
         <span><i class="dot diagnostics"></i>Diagnósticos</span>
@@ -300,6 +304,7 @@
         <span><i class="dot feedback"></i>Avaliacoes</span>
       </div>
       <div class="analytics-chart-scroll"><div class="analytics-chart-track${sparseClass}">${bars}</div></div>
+      ${densityNote}
     `;
   }
 
@@ -433,7 +438,10 @@
     }).join("");
 
     const sparseClass = timeline.length <= 7 ? " sparse" : "";
-    dom.satisfactionTrendChart.innerHTML = `<div class="analytics-chart-scroll"><div class="analytics-chart-track${sparseClass}">${points}</div></div>`;
+    const densityNote = timeline.length <= 7
+      ? `<p class="analytics-chart-density-note">Período com poucos dados (${timeline.length} dia${timeline.length > 1 ? "s" : ""}).</p>`
+      : "";
+    dom.satisfactionTrendChart.innerHTML = `<div class="analytics-chart-scroll"><div class="analytics-chart-track${sparseClass}">${points}</div></div>${densityNote}`;
   }
 
   function renderRatingDistribution(dom, rows) {
