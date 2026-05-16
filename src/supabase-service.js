@@ -109,6 +109,40 @@
     return safeInsert(tables.satisfactionFeedback, payload);
   }
 
+  async function fetchQuestionBankRows({ mode, activeOnly = true } = {}) {
+    const tables = getConfig().tables || {};
+    const tableName = tables.questionBank;
+    const client = getSupabaseClient();
+
+    if (!client || !tableName || !mode) {
+      return { ok: false, skipped: true, data: [] };
+    }
+
+    try {
+      let query = client
+        .from(tableName)
+        .select("*")
+        .eq("mode", mode)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (activeOnly) {
+        query = query.eq("is_active", true);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn(`[Supabase] Falha ao ler ${tableName}.`, error);
+        return { ok: false, error, data: [] };
+      }
+
+      return { ok: true, data: Array.isArray(data) ? data : [] };
+    } catch (error) {
+      console.warn(`[Supabase] Erro inesperado ao ler ${tableName}.`, error);
+      return { ok: false, error, data: [] };
+    }
+  }
+
   globalScope.supabaseDataService = {
     isSupabaseConfigured,
     getAnonymousUserId,
@@ -116,6 +150,7 @@
     saveDiagnosticSession,
     saveDiagnosticAnswer,
     saveChallengeAttempt,
-    saveSatisfactionFeedback
+    saveSatisfactionFeedback,
+    fetchQuestionBankRows
   };
 })(window);

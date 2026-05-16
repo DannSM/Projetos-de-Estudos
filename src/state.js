@@ -18,7 +18,15 @@ const state = {
   challengeSurveySubmitted: false,
   anonymousUserId: null,
   currentDiagnosticAttemptId: null,
+  diagnosticQuestionsRuntime: [],
+  challengesRuntime: [],
+  questionBankSource: {
+    diagnostico: "fallback_local",
+    desafio: "fallback_local"
+  },
   heroPreviewIndex: 0,
   heroPreviewTimer: null,
   heroPreviewTransitioning: false
 };
+
+window.state = state;

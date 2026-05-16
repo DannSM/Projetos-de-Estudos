@@ -8,7 +8,7 @@ const RESULT_RENDER_DELAY_MS = 1700;
 const DATA_AREAS = areaGoals.slice(2);
 const DIAGNOSTIC_FEEDBACK_STORAGE_PREFIX = "dataSkillMap_feedback_diagnostic";
 
-const diagnosticLevels = [
+const diagnosticLevelBlueprint = [
   {
     name: "Básico",
     label: "Nível básico",
@@ -30,10 +30,24 @@ const diagnosticLevels = [
     minPercent: null,
     description: "Leitura analítica mais madura para problemas próximos do trabalho real."
   }
-].map((level) => ({
-  ...level,
-  questions: diagnosticQuestions.filter((question) => question.level === level.name)
-}));
+];
+
+function getDiagnosticQuestionPool() {
+  if (Array.isArray(state.diagnosticQuestionsRuntime) && state.diagnosticQuestionsRuntime.length > 0) {
+    return state.diagnosticQuestionsRuntime;
+  }
+  return diagnosticQuestions;
+}
+
+function buildDiagnosticLevels() {
+  const questionPool = getDiagnosticQuestionPool();
+  return diagnosticLevelBlueprint.map((level) => ({
+    ...level,
+    questions: questionPool.filter((question) => question.level === level.name)
+  }));
+}
+
+let diagnosticLevels = buildDiagnosticLevels();
 
 function getAnonymousUserId() {
   if (state.anonymousUserId) {
@@ -204,7 +218,7 @@ function getTotalCorrect() {
 function countQuestionsByArea(area, sessionOnly = false) {
   const source = sessionOnly && state.diagnosticQuestionSets.length
     ? state.diagnosticQuestionSets.flat()
-    : diagnosticQuestions;
+    : getDiagnosticQuestionPool();
 
   return source.filter((question) => question.area === area).length;
 }
@@ -259,6 +273,7 @@ function resetDiagnostic() {
 
   resultSection.classList.add("hidden");
   resultMount.innerHTML = "";
+  diagnosticLevels = buildDiagnosticLevels();
 
   renderAreaProgress();
   renderDiagnosticIntro();
@@ -285,13 +300,14 @@ function renderLevelRoadmap() {
 
 function renderDiagnosticIntro() {
   const totalQuestions = getDefaultSessionQuestionCount();
+  const questionPool = getDiagnosticQuestionPool();
 
   quizMount.innerHTML = `
     <div class="diagnostic-intro quiz-step">
       <span class="section-kicker">Diagnóstico por níveis</span>
       <h3 class="question-title">Responda 5 perguntas por nível com ordem aleatória.</h3>
       <p class="question-meta">
-        Banco atual com ${diagnosticQuestions.length} questões. A cada tentativa, a plataforma sorteia ${QUESTIONS_PER_LEVEL} perguntas por nível.
+        Banco atual com ${questionPool.length} questões. A cada tentativa, a plataforma sorteia ${QUESTIONS_PER_LEVEL} perguntas por nível.
       </p>
       ${renderLevelRoadmap()}
       <div class="diagnostic-summary">

@@ -30,11 +30,15 @@ function renderIcons() {
   }
 }
 
-function init() {
+async function init() {
   bindHeaderHeightSync();
   renderIcons();
   if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
     state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();
+  }
+
+  if (window.questionBankService && typeof window.questionBankService.loadQuestionContent === "function") {
+    await window.questionBankService.loadQuestionContent();
   }
 
   if (document.querySelector("#heroPreviewQuestion")) {
@@ -49,8 +53,7 @@ function init() {
 
   if (document.querySelector("#challengeMount")) {
     renderChallenges("Todos");
-    bindFilters();
   }
 }
 
-init();
+void init();

@@ -425,3 +425,6 @@ const areaGuides = {
     why: "Interpretar KPIs conecta cálculo técnico com decisão de negócio."
   }
 };
+
+window.diagnosticQuestions = diagnosticQuestions;
+window.challenges = challenges;

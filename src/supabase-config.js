@@ -5,6 +5,7 @@ window.DATA_SKILL_MAP_SUPABASE = {
     diagnosticSessions: "diagnostic_sessions",
     diagnosticAnswers: "diagnostic_answers",
     challengeAttempts: "challenge_attempts",
-    satisfactionFeedback: "satisfaction_feedback"
+    satisfactionFeedback: "satisfaction_feedback",
+    questionBank: "question_bank"
   }
 };

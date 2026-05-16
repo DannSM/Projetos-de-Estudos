@@ -16,6 +16,9 @@ revoke all on public.vw_satisfaction_feedback_daily from authenticated;
 revoke all on public.vw_satisfaction_comments_admin from authenticated;
 
 -- Tabelas base continuam bloqueadas para anon/authenticated
+-- ATENCAO: este bloco desativa a coleta publica do app (diagnostico/desafios/CSAT).
+-- Se precisar manter a coleta ativa, execute depois:
+-- docs/supabase-restore-public-write.sql
 revoke all on public.diagnostic_sessions from anon, authenticated;
 revoke all on public.diagnostic_answers from anon, authenticated;
 revoke all on public.challenge_attempts from anon, authenticated;

@@ -73,3 +73,21 @@ Plano e scripts da camada analitica externa (Metabase Cloud):
 ### 4) Comportamento de falha
 
 Todas as funcoes de persistencia usam fallback seguro. Erros de rede, chave invalida, tabela ausente ou indisponibilidade do Supabase nao interrompem a experiencia do usuario.
+
+## Banco de perguntas (question_bank)
+
+Agora as perguntas de diagnostico e desafios podem ser lidas da tabela unica `question_bank`, com fallback local temporario.
+
+Passos rapidos:
+
+1. Execute `docs/supabase-question-bank.sql` no SQL Editor do Supabase.
+2. Execute `docs/supabase-question-bank-seed.sql` para migrar o conteudo hardcoded atual.
+3. Abra a aplicacao e valide no console:
+   - `state.questionBankSource.diagnostico`
+   - `state.questionBankSource.desafio`
+
+Referencias:
+
+- Guia completo: `docs/question-bank.md`
+- Criacao da tabela e seguranca: `docs/supabase-question-bank.sql`
+- Seed idempotente: `docs/supabase-question-bank-seed.sql`

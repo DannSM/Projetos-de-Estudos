@@ -1,5 +1,6 @@
 const challengeMount = document.querySelector("#challengeMount");
 const challengeScore = document.querySelector("#challengeScore");
+const challengeToolbar = document.querySelector(".challenge-toolbar");
 const CHALLENGE_SURVEY_MIN_ATTEMPTS = 3;
 
 function getAnonymousUserId() {
@@ -21,6 +22,29 @@ function getChallengeSessionId() {
     : `challenge_session_${Date.now()}`;
 
   return state.currentChallengeSessionId;
+}
+
+function getChallengePool() {
+  if (Array.isArray(state.challengesRuntime) && state.challengesRuntime.length > 0) {
+    return state.challengesRuntime;
+  }
+  return challenges;
+}
+
+function normalizeChallengeCategory(category) {
+  if (typeof category !== "string" || !category.trim()) {
+    return "Geral";
+  }
+  return category.trim();
+}
+
+function getChallengeCategories(questionPool) {
+  const categories = new Set();
+  questionPool.forEach((challenge) => {
+    categories.add(normalizeChallengeCategory(challenge.category));
+  });
+
+  return Array.from(categories).sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 function getChallengeFeedbackStorageKey(challengeId) {
@@ -58,27 +82,50 @@ function persistSatisfactionFeedbackRecord(payload) {
 }
 
 function bindFilters() {
-  document.querySelectorAll(".filter-button").forEach((button) => {
+  if (!challengeToolbar) return;
+
+  challengeToolbar.querySelectorAll(".filter-button").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll(".filter-button").forEach((item) => item.classList.remove("active"));
+      challengeToolbar.querySelectorAll(".filter-button").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
       renderChallenges(button.dataset.filter);
     });
   });
 }
 
-function renderChallenges(filter) {
-  const visibleChallenges = filter === "Todos"
-    ? challenges
-    : challenges.filter((challenge) => challenge.category === filter);
+function renderChallengeToolbar(activeFilter, categories) {
+  if (!challengeToolbar) return;
 
-  challengeMount.innerHTML = visibleChallenges.map((challenge) => {
-    const id = challenges.indexOf(challenge);
-    const answered = state.completedChallenges.has(id);
+  const filters = ["Todos", ...categories];
+  challengeToolbar.innerHTML = filters.map((label) => `
+    <button class="filter-button ${label === activeFilter ? "active" : ""}" data-filter="${label}">${label}</button>
+  `).join("");
+
+  bindFilters();
+}
+
+function renderChallenges(filter = "Todos") {
+  const questionPool = getChallengePool();
+  const categories = getChallengeCategories(questionPool);
+  const validFilters = new Set(["Todos", ...categories]);
+  const activeFilter = validFilters.has(filter) ? filter : "Todos";
+
+  renderChallengeToolbar(activeFilter, categories);
+
+  const visibleChallenges = questionPool
+    .map((challenge, index) => ({ challenge, index }))
+    .filter((entry) => {
+      if (activeFilter === "Todos") return true;
+      return normalizeChallengeCategory(entry.challenge.category) === activeFilter;
+    });
+
+  challengeMount.innerHTML = visibleChallenges.map(({ challenge, index }) => {
+    const answered = state.completedChallenges.has(index);
+    const challengeCategory = normalizeChallengeCategory(challenge.category);
     return `
-      <article class="challenge-card" data-challenge-card="${id}">
+      <article class="challenge-card" data-challenge-card="${index}">
         <div class="challenge-head">
-          <span class="category-tag ${challenge.category.includes("SQL") ? "badge-sql" : ""}">${challenge.category}</span>
+          <span class="category-tag ${challengeCategory.includes("SQL") ? "badge-sql" : ""}">${challengeCategory}</span>
           <span class="level-tag">${challenge.level}</span>
         </div>
         <h3>${challenge.question}</h3>
@@ -86,14 +133,14 @@ function renderChallenges(filter) {
         ${challenge.context ? `<p class="question-meta">${challenge.context}</p>` : ""}
         <div class="answer-list">
           ${challenge.options.map((option, optionIndex) => `
-            <button class="answer-button" data-challenge="${id}" data-option="${optionIndex}" ${answered ? "disabled" : ""}>
+            <button class="answer-button" data-challenge="${index}" data-option="${optionIndex}" ${answered ? "disabled" : ""}>
               ${option}
             </button>
           `).join("")}
         </div>
         <div class="question-meta">Pontuação: ${challenge.points} pontos</div>
-        <button class="submit-button" data-submit-challenge="${id}" ${answered ? "disabled" : ""}>Responder</button>
-        <div id="challengeFeedback${id}"></div>
+        <button class="submit-button" data-submit-challenge="${index}" ${answered ? "disabled" : ""}>Responder</button>
+        <div id="challengeFeedback${index}"></div>
       </article>
     `;
   }).join("");
@@ -116,6 +163,7 @@ function renderChallenges(filter) {
 function selectChallengeAnswer(challengeIndex, selectedIndex) {
   state.selectedChallengeOptions[challengeIndex] = selectedIndex;
   const card = document.querySelector(`[data-challenge-card="${challengeIndex}"]`);
+  if (!card) return;
 
   card.querySelectorAll("[data-option]").forEach((button) => {
     button.classList.toggle("selected", Number(button.dataset.option) === selectedIndex);
@@ -174,6 +222,10 @@ function maybeOpenChallengeSatisfactionModal(challengeIndex) {
 }
 
 function handleChallengeAnswer(challengeIndex) {
+  const questionPool = getChallengePool();
+  const challenge = questionPool[challengeIndex];
+  if (!challenge) return;
+
   const selectedIndex = state.selectedChallengeOptions[challengeIndex];
   const feedbackMount = document.querySelector(`#challengeFeedback${challengeIndex}`);
 
@@ -186,11 +238,12 @@ function handleChallengeAnswer(challengeIndex) {
     return;
   }
 
-  const challenge = challenges[challengeIndex];
   const card = document.querySelector(`[data-challenge-card="${challengeIndex}"]`);
+  if (!card) return;
   const buttons = card.querySelectorAll("[data-option]");
   const isCorrect = selectedIndex === challenge.correct;
   const answeredAt = new Date().toISOString();
+  const challengeCategory = normalizeChallengeCategory(challenge.category);
 
   buttons.forEach((button) => {
     const optionIndex = Number(button.dataset.option);
@@ -219,7 +272,7 @@ function handleChallengeAnswer(challengeIndex) {
     anonymous_user_id: getAnonymousUserId(),
     answered_at: answeredAt,
     challenge_index: challengeIndex,
-    challenge_theme: challenge.category,
+    challenge_theme: challengeCategory,
     challenge_level: challenge.level,
     question: challenge.question,
     selected_answer: challenge.options[selectedIndex],
