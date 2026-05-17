@@ -7,6 +7,8 @@ const QUESTIONS_PER_LEVEL = 5;
 const RESULT_RENDER_DELAY_MS = 1700;
 const DATA_AREAS = areaGoals.slice(2);
 const DIAGNOSTIC_FEEDBACK_STORAGE_PREFIX = "dataSkillMap_feedback_diagnostic";
+const DIAGNOSTIC_RECENT_QUESTIONS_STORAGE_KEY = "dataSkillMap_diag_recent_questions";
+const DIAGNOSTIC_RECENT_WINDOW_DAYS = 7;
 
 const diagnosticLevelBlueprint = [
   {
@@ -48,6 +50,16 @@ function buildDiagnosticLevels() {
 }
 
 let diagnosticLevels = buildDiagnosticLevels();
+
+function cleanText(value) {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function cleanOptionList(options) {
+  if (!Array.isArray(options)) return [];
+  return options.map((option) => cleanText(option));
+}
 
 function getAnonymousUserId() {
   if (state.anonymousUserId) {
@@ -186,6 +198,34 @@ function shuffleArray(values) {
 
 function pickRandomQuestions(questions, quantity) {
   return shuffleArray(questions).slice(0, Math.min(quantity, questions.length));
+}
+
+function buildDiagnosticQuestionSets() {
+  const selector = window.questionSelector;
+  if (!selector || typeof selector.buildBalancedDiagnosticSets !== "function") {
+    state.diagnosticSelectionMeta = {
+      source: "legacy_random",
+      reason: "question_selector_indisponivel"
+    };
+    return diagnosticLevels.map((level) => pickRandomQuestions(level.questions, QUESTIONS_PER_LEVEL));
+  }
+
+  const questionPool = getDiagnosticQuestionPool();
+  const selection = selector.buildBalancedDiagnosticSets({
+    questions: questionPool,
+    levelBlueprint: diagnosticLevelBlueprint,
+    perLevelCount: QUESTIONS_PER_LEVEL,
+    mode: "diagnostico",
+    storageKeyBase: DIAGNOSTIC_RECENT_QUESTIONS_STORAGE_KEY,
+    anonymousUserId: getAnonymousUserId(),
+    windowDays: Number(state.diagnosticRecentWindowDays) || DIAGNOSTIC_RECENT_WINDOW_DAYS
+  });
+
+  state.diagnosticSelectionMeta = {
+    source: "smart_selector",
+    ...selection.meta
+  };
+  return selection.questionSets;
 }
 
 function getDefaultSessionQuestionCount() {
@@ -333,7 +373,7 @@ function startDiagnostic() {
     ? window.supabaseDataService.createAttemptId("diag")
     : `diag_${Date.now()}`;
   state.selectedDiagnosticAnswer = null;
-  state.diagnosticQuestionSets = diagnosticLevels.map((level) => pickRandomQuestions(level.questions, QUESTIONS_PER_LEVEL));
+  state.diagnosticQuestionSets = buildDiagnosticQuestionSets();
 
   const emptyLevels = diagnosticLevels.filter((_, index) => state.diagnosticQuestionSets[index].length === 0);
   if (emptyLevels.length > 0) {
@@ -364,10 +404,12 @@ function renderQuestion() {
 
   const answered = getTotalAnswered();
   const totalQuestions = getSessionQuestionCount();
-  const correct = getTotalCorrect();
-  const wrong = answered - correct;
   const progress = totalQuestions ? (answered / totalQuestions) * 100 : 0;
   const percentLabel = Math.round(progress);
+  const cleanOptions = cleanOptionList(question.options);
+  const cleanConcept = cleanText(question.concept);
+  const cleanArea = cleanText(question.area);
+  const cleanTitle = cleanText(question.question);
 
   quizMount.innerHTML = `
     <div class="quiz-step">
@@ -380,17 +422,17 @@ function renderQuestion() {
         <span>${percentLabel}% concluído</span>
       </div>
       <div class="quiz-top quiz-top-secondary">
-        <span>Acertos até agora: ${correct}</span>
-        <span>Erros até agora: ${wrong}</span>
+        <span>Respostas registradas: ${answered}</span>
+        <span>Total da sessão: ${totalQuestions}</span>
       </div>
       <div class="concept-row">
-        <span class="concept-tag">${question.concept}</span>
+        <span class="concept-tag">${cleanConcept}</span>
         <span class="level-tag">${level.shortLabel}</span>
-        <span class="category-tag">${question.area}</span>
+        <span class="category-tag">${cleanArea}</span>
       </div>
-      <h3 class="question-title">${question.question}</h3>
+      <h3 class="question-title">${cleanTitle}</h3>
       <div class="answer-list">
-        ${question.options.map((option, index) => `
+        ${cleanOptions.map((option, index) => `
           <button class="answer-button" data-answer="${index}">
             ${String.fromCharCode(65 + index)}) ${option}
           </button>
@@ -427,9 +469,7 @@ function confirmDiagnosticAnswer() {
 
   buttons.forEach((button, index) => {
     button.disabled = true;
-    button.classList.remove("selected");
-    if (index === question.correct) button.classList.add("correct");
-    if (index === selectedIndex && !isCorrect) button.classList.add("incorrect");
+    button.classList.toggle("selected", index === selectedIndex);
   });
 
   confirmButton.disabled = true;
@@ -442,16 +482,20 @@ function confirmDiagnosticAnswer() {
   }
   state.areaScore[question.area].total += 1;
   const answeredAt = new Date().toISOString();
+  const cleanOptions = cleanOptionList(question.options);
+  const cleanQuestion = cleanText(question.question);
+  const cleanConcept = cleanText(question.concept);
+  const cleanArea = cleanText(question.area);
   const answerRecord = {
     order: state.diagnosticAnswers.length + 1,
-    area: question.area,
-    level: question.level,
-    concept: question.concept,
-    question: question.question,
-    selected: question.options[selectedIndex],
-    correctAnswer: question.options[question.correct],
+    area: cleanArea,
+    level: cleanText(question.level),
+    concept: cleanConcept,
+    question: cleanQuestion,
+    selected: cleanOptions[selectedIndex],
+    correctAnswer: cleanOptions[question.correct],
     correct: isCorrect,
-    explanation: question.explanation,
+    explanation: cleanText(question.explanation),
     answeredAt
   };
 
@@ -474,11 +518,9 @@ function confirmDiagnosticAnswer() {
   renderAreaProgress();
 
   document.querySelector("#feedbackMount").innerHTML = `
-    <div class="feedback-box ${isCorrect ? "success" : "error"}">
-      <strong>${isCorrect ? "Correto. Você dominou este ponto." : "Ainda não. O ponto principal é este:"}</strong>
-      <p class="question-meta">Resposta correta: <strong>${String.fromCharCode(65 + question.correct)}) ${question.options[question.correct]}</strong></p>
-      <p class="explanation">${question.explanation}</p>
-      <p class="question-meta">Conceito avaliado: ${question.concept}</p>
+    <div class="feedback-box">
+      <strong>Resposta registrada.</strong>
+      <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
       <button class="submit-button" id="nextQuestion">
         ${getNextButtonLabel()}
       </button>

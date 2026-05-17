@@ -8,30 +8,39 @@ const heroPreviewOptions = document.querySelector("#heroPreviewOptions");
 const heroPreviewHint = document.querySelector("#heroPreviewHint");
 const heroPreviewControls = document.querySelector("#heroPreviewControls");
 const heroPreviewProgress = document.querySelector("#heroPreviewProgress");
+
+function cleanText(value) {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
 function renderHeroPreview(index = state.heroPreviewIndex) {
   if (!heroPreviewQuestion) return;
 
   const challenge = heroPreviewChallenges[index % heroPreviewChallenges.length];
   state.heroPreviewIndex = index % heroPreviewChallenges.length;
 
-  heroPreviewCategory.textContent = challenge.category;
-  heroPreviewCategory.className = `category-tag ${challenge.category.includes("SQL") ? "badge-sql" : ""}`;
-  heroPreviewLevel.textContent = challenge.level;
+  const challengeCategory = cleanText(challenge.category);
+  const challengeLevel = cleanText(challenge.level);
+
+  heroPreviewCategory.textContent = challengeCategory;
+  heroPreviewCategory.className = `category-tag ${challengeCategory.includes("SQL") ? "badge-sql" : ""}`;
+  heroPreviewLevel.textContent = challengeLevel;
   heroPreviewPoints.textContent = `${challenge.points} pontos`;
-  heroPreviewQuestion.textContent = challenge.question;
-  heroPreviewHint.textContent = challenge.context || challenge.explanation;
+  heroPreviewQuestion.textContent = cleanText(challenge.question);
+  heroPreviewHint.textContent = cleanText(challenge.context) || cleanText(challenge.explanation);
   restartHeroPreviewProgress();
 
-  if (challenge.code) {
+  if (cleanText(challenge.code)) {
     heroPreviewCode.hidden = false;
-    heroPreviewCode.textContent = challenge.code;
+    heroPreviewCode.textContent = cleanText(challenge.code);
   } else {
     heroPreviewCode.hidden = true;
     heroPreviewCode.textContent = "";
   }
 
   heroPreviewOptions.innerHTML = challenge.options.map((option) => `
-    <span>${option}</span>
+    <span>${cleanText(option)}</span>
   `).join("");
 
   heroPreviewControls.innerHTML = heroPreviewChallenges.map((_, dotIndex) => `

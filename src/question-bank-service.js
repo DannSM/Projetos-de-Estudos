@@ -54,11 +54,14 @@
     return {
       valid: true,
       item: {
+        id: String(row && row.id ? row.id : "").trim() || null,
+        questionKey: String(row && row.question_key ? row.question_key : "").trim() || null,
+        mode,
         area,
         level,
         concept: normalizeText(row.concept),
         question,
-        options: [...options],
+        options: options.map((option) => normalizeText(option)),
         correct: correctIndex,
         explanation
       }
@@ -91,6 +94,9 @@
     return {
       valid: true,
       item: {
+        id: String(row && row.id ? row.id : "").trim() || null,
+        questionKey: String(row && row.question_key ? row.question_key : "").trim() || null,
+        mode,
         category: normalizedCategory,
         area: normalizeText(row.area) || normalizedCategory,
         level,
@@ -98,7 +104,7 @@
         question,
         code: normalizeText(row.code),
         context: normalizeText(row.context),
-        options: [...options],
+        options: options.map((option) => normalizeText(option)),
         correct: correctIndex,
         explanation
       }

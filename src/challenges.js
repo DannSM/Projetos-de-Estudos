@@ -3,6 +3,16 @@ const challengeScore = document.querySelector("#challengeScore");
 const challengeToolbar = document.querySelector(".challenge-toolbar");
 const CHALLENGE_SURVEY_MIN_ATTEMPTS = 3;
 
+function cleanText(value) {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function cleanOptionList(options) {
+  if (!Array.isArray(options)) return [];
+  return options.map((option) => cleanText(option));
+}
+
 function getAnonymousUserId() {
   if (state.anonymousUserId) return state.anonymousUserId;
   if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
@@ -122,17 +132,21 @@ function renderChallenges(filter = "Todos") {
   challengeMount.innerHTML = visibleChallenges.map(({ challenge, index }) => {
     const answered = state.completedChallenges.has(index);
     const challengeCategory = normalizeChallengeCategory(challenge.category);
+    const cleanedQuestion = cleanText(challenge.question);
+    const cleanedCode = cleanText(challenge.code);
+    const cleanedContext = cleanText(challenge.context);
+    const cleanedOptions = cleanOptionList(challenge.options);
     return `
       <article class="challenge-card" data-challenge-card="${index}">
         <div class="challenge-head">
           <span class="category-tag ${challengeCategory.includes("SQL") ? "badge-sql" : ""}">${challengeCategory}</span>
-          <span class="level-tag">${challenge.level}</span>
+          <span class="level-tag">${cleanText(challenge.level)}</span>
         </div>
-        <h3>${challenge.question}</h3>
-        ${challenge.code ? `<code class="code-block">${challenge.code}</code>` : ""}
-        ${challenge.context ? `<p class="question-meta">${challenge.context}</p>` : ""}
+        <h3>${cleanedQuestion}</h3>
+        ${cleanedCode ? `<code class="code-block">${cleanedCode}</code>` : ""}
+        ${cleanedContext ? `<p class="question-meta">${cleanedContext}</p>` : ""}
         <div class="answer-list">
-          ${challenge.options.map((option, optionIndex) => `
+          ${cleanedOptions.map((option, optionIndex) => `
             <button class="answer-button" data-challenge="${index}" data-option="${optionIndex}" ${answered ? "disabled" : ""}>
               ${option}
             </button>
@@ -275,8 +289,8 @@ function handleChallengeAnswer(challengeIndex) {
     challenge_theme: challengeCategory,
     challenge_level: challenge.level,
     question: challenge.question,
-    selected_answer: challenge.options[selectedIndex],
-    correct_answer: challenge.options[challenge.correct],
+    selected_answer: cleanText(challenge.options[selectedIndex]),
+    correct_answer: cleanText(challenge.options[challenge.correct]),
     is_correct: isCorrect,
     points: challenge.points
   });
@@ -284,7 +298,7 @@ function handleChallengeAnswer(challengeIndex) {
   feedbackMount.innerHTML = `
     <div class="feedback-box ${isCorrect ? "success" : "error"}">
       <strong>${isCorrect ? "Excelente! Resposta correta." : "Boa tentativa. Veja a explicação."}</strong>
-      <p class="explanation">${challenge.explanation}</p>
+      <p class="explanation">${cleanText(challenge.explanation)}</p>
     </div>
   `;
 

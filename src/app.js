@@ -30,6 +30,17 @@ function renderIcons() {
   }
 }
 
+function updateHomeChallengeCount() {
+  const challengeCountMount = document.querySelector("#homeChallengeCount");
+  if (!challengeCountMount) return;
+
+  const runtimeCount = Array.isArray(state.challengesRuntime) ? state.challengesRuntime.length : 0;
+  const fallbackCount = Array.isArray(window.challenges) ? window.challenges.length : 0;
+  const totalChallenges = runtimeCount || fallbackCount || 0;
+
+  challengeCountMount.textContent = totalChallenges > 0 ? String(totalChallenges) : "--";
+}
+
 async function init() {
   bindHeaderHeightSync();
   renderIcons();
@@ -40,6 +51,8 @@ async function init() {
   if (window.questionBankService && typeof window.questionBankService.loadQuestionContent === "function") {
     await window.questionBankService.loadQuestionContent();
   }
+
+  updateHomeChallengeCount();
 
   if (document.querySelector("#heroPreviewQuestion")) {
     renderHeroPreview();

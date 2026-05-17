@@ -33,6 +33,7 @@ Observação importante: perguntas com `is_active = true` ficam públicas para l
 
 1. Executar `docs/supabase-question-bank.sql`
 2. Executar `docs/supabase-question-bank-seed.sql`
+3. Executar `docs/supabase-question-bank-v2.sql` (metadados para seleção inteligente)
 
 O seed é idempotente via `question_key` (`INSERT ... ON CONFLICT DO UPDATE`).
 
@@ -56,6 +57,23 @@ Valores possíveis:
 
 - `supabase`
 - `fallback_local`
+
+Para diagnóstico, também é possível validar:
+
+- `state.diagnosticSelectionMeta`
+- `state.diagnosticRecentWindowDays`
+
+## Seleção inteligente do diagnóstico
+
+- A seleção do diagnóstico foi centralizada em `src/question-selector.js`.
+- Mantém 5 perguntas por nível.
+- Prioriza variedade por área dentro do nível.
+- Aplica anti-repetição local por 7 dias usando:
+  - `dataSkillMap_diag_recent_questions`
+- Fallback automático quando o estoque fresco não é suficiente:
+  1. pool fresco do mesmo nível;
+  2. reintrodução de recentes do mesmo nível;
+  3. fallback local existente quando Supabase falha.
 
 ## Checklist SQL de validação
 

@@ -60,6 +60,7 @@
         class="feedback-rating-chip"
         data-feedback-rating="${item.rating}"
         aria-label="Nota ${item.rating}"
+        aria-pressed="false"
       >
         <span class="feedback-rating-number">${item.rating}</span>
         <span class="feedback-rating-emoji" aria-hidden="true">${item.emoji}</span>
@@ -175,7 +176,9 @@
 
         selectedRating = Number(button.dataset.feedbackRating);
         ratingButtons.forEach((item) => {
-          item.classList.toggle("selected", Number(item.dataset.feedbackRating) === selectedRating);
+          const isSelected = Number(item.dataset.feedbackRating) === selectedRating;
+          item.classList.toggle("selected", isSelected);
+          item.setAttribute("aria-pressed", isSelected ? "true" : "false");
         });
         submitButton.disabled = false;
       });
@@ -228,12 +231,11 @@
     overlay.classList.remove("hidden");
     document.body.classList.add(OPEN_CLASS);
 
-    const firstButton = content.querySelector("[data-feedback-rating]");
-    if (firstButton) firstButton.focus();
+    const closeButtonFocusTarget = content.querySelector("#feedbackModalClose");
+    if (closeButtonFocusTarget) closeButtonFocusTarget.focus();
   }
 
   globalScope.feedbackModal = {
     open: openFeedbackModal
   };
 })(window);
-

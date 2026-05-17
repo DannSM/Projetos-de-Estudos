@@ -1,7 +1,7 @@
 .two-column {
   display: grid;
-  grid-template-columns: minmax(260px, 0.45fr) minmax(0, 0.8fr);
-  gap: clamp(1.5rem, 4vw, 3rem);
+  grid-template-columns: minmax(250px, 0.38fr) minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2.1rem);
   align-items: start;
 }
 
@@ -19,7 +19,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.7rem;
+  min-width: 0;
   min-height: 2.65rem;
   padding: 0.6rem 0.78rem;
   color: var(--color-text-secondary);
@@ -30,7 +31,14 @@
 }
 
 .area-pill strong {
+  min-width: 0;
   color: var(--color-text-primary);
+  overflow-wrap: break-word;
+}
+
+.area-pill span {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .area-pill.is-strong {
@@ -49,7 +57,7 @@
 }
 
 .quiz-card {
-  min-height: 30rem;
+  min-height: 0;
   padding: clamp(1.05rem, 2.6vw, 1.4rem);
 }
 
@@ -67,11 +75,12 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
+  align-items: stretch;
 }
 
 .level-step,
 .level-summary-item {
-  min-height: 4.2rem;
+  min-height: 3.9rem;
   padding: 0.75rem;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
@@ -120,6 +129,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
+  align-items: stretch;
 }
 
 .diagnostic-summary span {
@@ -142,6 +152,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
   margin: 0;
+  align-items: stretch;
 }
 
 .diagnostic-side-grid div {
@@ -200,6 +211,7 @@
 
 .progress-line {
   height: 0.55rem;
+  margin-top: 0.78rem;
   overflow: hidden;
   background: var(--color-bg-secondary);
   border-radius: 999px;
@@ -218,15 +230,15 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  margin: 0.85rem 0 1rem;
+  margin: 0.75rem 0 0.92rem;
   color: var(--color-text-secondary);
   font-size: 0.86rem;
   font-weight: 600;
 }
 
 .quiz-top-secondary {
-  margin-top: -0.45rem;
-  margin-bottom: 0.82rem;
+  margin-top: -0.25rem;
+  margin-bottom: 0.74rem;
 }
 
 .concept-row {
@@ -241,11 +253,13 @@
   display: inline-flex;
   width: fit-content;
   align-items: center;
+  vertical-align: middle;
   gap: 0.35rem;
   padding: 0.38rem 0.65rem;
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .concept-tag {
@@ -269,14 +283,17 @@
 }
 
 .question-title {
-  margin: 1rem 0;
+  margin: 0.85rem 0;
   font-size: clamp(1.08rem, 1.8vw, 1.35rem);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .code-block {
   display: block;
   overflow-x: auto;
-  margin: 1rem 0;
+  margin: 0.75rem 0;
   padding: 1rem 1.1rem;
   color: var(--color-text-primary);
   background: var(--color-surface-muted);
@@ -290,8 +307,8 @@
 
 .answer-list {
   display: grid;
-  gap: 0.62rem;
-  margin-top: 0.88rem;
+  gap: 0.56rem;
+  margin-top: 0.7rem;
 }
 
 .answer-button {
@@ -305,6 +322,7 @@
   border: 1px solid var(--color-border);
   line-height: 1.45;
   white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .answer-button:hover:not(:disabled),
@@ -404,8 +422,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
+  gap: clamp(0.9rem, 2.5vw, 1.6rem);
+  margin-bottom: 1.15rem;
 }
 
 .section-heading.compact {
@@ -421,7 +439,8 @@
 .recommendation-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .track-card,
@@ -429,12 +448,12 @@
 .challenge-card {
   display: flex;
   flex-direction: column;
-  padding: 1.35rem;
+  padding: clamp(1rem, 1.8vw, 1.2rem);
 }
 
 .track-number {
   display: inline-block;
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
   color: var(--color-primary);
   font-weight: 800;
 }
@@ -453,7 +472,7 @@
 
 .result-dashboard {
   display: grid;
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
 .profile-title {
@@ -476,11 +495,11 @@
 .result-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .metric-card {
-  padding: 1rem;
+  padding: 0.9rem;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -489,7 +508,7 @@
 .score-bars {
   display: grid;
   gap: 0.8rem;
-  margin: 1.25rem 0;
+  margin: 1rem 0;
 }
 
 .score-row {
@@ -519,7 +538,7 @@
 
 .result-block {
   display: grid;
-  gap: 0.72rem;
+  gap: 0.6rem;
 }
 
 .result-block h3 {
@@ -616,6 +635,7 @@
   margin: 0.7rem 0;
   font-size: 1rem;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .review-card p {
@@ -917,7 +937,7 @@
 
 .challenge-score {
   width: fit-content;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   padding: 0.55rem 0.8rem;
   color: var(--color-success);
   background: var(--color-success-light);
@@ -928,20 +948,42 @@
 .challenge-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .challenge-card {
-  gap: 0.8rem;
+  gap: 0.58rem;
   min-height: 100%;
 }
 
 .challenge-card h3 {
-  min-height: 2.8rem;
+  margin-bottom: 0.28rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.challenge-card .question-meta {
+  margin-bottom: 0.2rem;
+}
+
+.challenge-card .answer-list {
+  margin-top: 0.28rem;
+}
+
+.challenge-card .submit-button {
+  margin-top: 0.45rem;
+}
+
+.challenge-card .feedback-box {
+  margin-top: 0.6rem;
 }
 
 .analytics-page {
   min-height: calc(100vh - var(--header-height));
+  max-width: 100%;
+  overflow-x: hidden;
   --analytics-gap-xs: 0.45rem;
   --analytics-gap-sm: 0.72rem;
   --analytics-gap-md: 0.95rem;
@@ -1012,6 +1054,7 @@ body.analytics-auth-locked {
   display: grid;
   gap: var(--analytics-gap-lg);
   padding-top: 0.55rem;
+  max-width: 100%;
 }
 
 body.analytics-auth-locked .analytics-hero {
@@ -1043,6 +1086,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 .analytics-section {
   display: grid;
   gap: var(--analytics-gap-md);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .analytics-section .section-heading.compact {
@@ -1058,6 +1103,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .analytics-panel {
+  min-width: 0;
+  max-width: 100%;
   padding: clamp(1rem, 2vw, 1.25rem);
   background: rgba(255, 255, 255, 0.52);
   border: 1px solid rgba(148, 163, 184, 0.3);
@@ -1076,6 +1123,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
+  min-width: 0;
 }
 
 .analytics-filters-top h2 {
@@ -1093,6 +1141,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .analytics-filters-grid label {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
   color: var(--color-text-secondary);
   font-size: 0.86rem;
   font-weight: 700;
@@ -1100,6 +1149,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .analytics-filters-grid input,
 .analytics-filters-grid select {
+  width: 100%;
+  min-width: 0;
   min-height: 2.6rem;
   padding: 0.55rem 0.65rem;
   color: var(--color-text-primary);
@@ -1157,6 +1208,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--analytics-gap-md);
+  min-width: 0;
 }
 
 .analytics-kpi-card {
@@ -1165,6 +1217,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   align-content: space-between;
   gap: 0.45rem;
   min-height: 5.1rem;
+  min-width: 0;
   padding: 0.95rem 0.98rem 0.9rem;
   background: rgba(248, 250, 252, 0.62);
   border: 1px solid rgba(148, 163, 184, 0.3);
@@ -1207,6 +1260,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--analytics-gap-lg);
   align-items: stretch;
+  min-width: 0;
 }
 
 .analytics-grid-two > .analytics-panel {
@@ -1227,6 +1281,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .analytics-chart-legend .dot {
@@ -1255,7 +1310,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .analytics-chart-scroll {
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
 }
 
 .analytics-chart-track {
@@ -1325,6 +1383,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   border-radius: var(--radius-md);
   min-height: 4.65rem;
   align-content: center;
+  min-width: 0;
 }
 
 .analytics-stat-list span {
@@ -1360,6 +1419,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-template-columns: 4rem minmax(0, 1fr) 2.4rem;
   gap: 0.55rem;
   align-items: center;
+  min-width: 0;
 }
 
 .analytics-progress-row span {
@@ -1389,7 +1449,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .analytics-table-scroll {
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
 }
 
 .analytics-table {
@@ -1422,6 +1485,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   color: var(--color-primary);
   font-family: var(--font-code);
   font-size: 0.8rem;
+  overflow-wrap: anywhere;
 }
 
 .analytics-table tbody tr:nth-child(even) {
@@ -1473,7 +1537,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .analytics-gate-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
 }

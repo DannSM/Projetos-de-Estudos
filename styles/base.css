@@ -2,6 +2,7 @@
   --font-primary: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-code: "JetBrains Mono", "Fira Code", Consolas, monospace;
   --header-height: 82px;
+  --section-max-width: 1180px;
 
   --color-bg-primary: #f8fafc;
   --color-bg-secondary: #f1f5f9;
@@ -44,12 +45,16 @@
 }
 
 html {
+  max-width: 100%;
+  overflow-x: hidden;
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
   background:
     linear-gradient(rgba(37, 99, 235, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
@@ -69,8 +74,25 @@ a {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+main,
+section,
+article,
+aside,
+div {
+  min-width: 0;
+}
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
 }
 
 .app-header {
