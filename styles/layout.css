@@ -22,23 +22,33 @@ main > .section-shell:first-child {
 }
 
 .has-sidebar {
-  margin-left: 15.2rem;
+  margin-left: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .app-sidebar {
   position: fixed;
   top: var(--header-height);
-  bottom: 0;
   left: 0;
-  z-index: 8;
+  z-index: 22;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  width: 15.2rem;
-  padding: 1rem;
+  width: var(--sidebar-width-collapsed);
+  height: calc(100dvh - var(--header-height));
+  max-height: calc(100dvh - var(--header-height));
+  margin: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.8rem 0.55rem;
   background: rgba(255, 255, 255, 0.94);
   border-right: 1px solid var(--color-border);
+  border-top: 0;
   backdrop-filter: blur(12px);
+  box-shadow: 8px 0 24px rgba(15, 23, 42, 0.07);
+  scrollbar-gutter: stable;
+  transition: width 190ms ease, padding 190ms ease, box-shadow 190ms ease;
 }
 
 .sidebar-section {
@@ -47,27 +57,38 @@ main > .section-shell:first-child {
 }
 
 .sidebar-label {
-  margin: 0.2rem 0.35rem;
+  margin: 0;
   color: var(--color-text-muted);
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
+  opacity: 0;
+  visibility: hidden;
+  max-height: 0;
+  overflow: hidden;
+  transform: translateX(-6px);
+  transition: opacity 120ms ease, transform 120ms ease, max-height 120ms ease;
 }
 
 .app-sidebar a {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  justify-content: center;
+  gap: 0;
   min-height: 2.75rem;
-  padding: 0.72rem 0.85rem;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.72rem 0.6rem;
   color: var(--color-text-secondary);
   border-radius: var(--radius-sm);
   font-weight: 750;
+  border: 1px solid transparent;
 }
 
 .nav-icon {
-  width: 0.98rem;
-  height: 0.98rem;
+  width: 1.02rem;
+  height: 1.02rem;
+  flex: 0 0 auto;
   stroke-width: 2.2;
 }
 
@@ -75,10 +96,26 @@ main > .section-shell:first-child {
 .app-sidebar a.active {
   color: var(--color-primary);
   background: var(--color-primary-light);
+  border-color: rgba(37, 99, 235, 0.14);
+}
+
+.app-sidebar .mobile-menu-cta {
+  display: none;
+}
+
+.app-sidebar a span {
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  white-space: nowrap;
+  transform: translateX(-6px);
+  transition: opacity 140ms ease, transform 140ms ease, width 140ms ease;
 }
 
 .sidebar-panel {
-  margin-top: auto;
+  display: none;
+  margin-top: 0.55rem;
   padding: 0.85rem;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
@@ -104,6 +141,61 @@ main > .section-shell:first-child {
   background: linear-gradient(120deg, var(--color-primary), var(--color-accent)) !important;
 }
 
+@media (min-width: 901px) {
+  .has-sidebar {
+    margin-left: var(--sidebar-width-collapsed);
+  }
+}
+
+@media (min-width: 901px) and (hover: hover) and (pointer: fine) {
+  .app-sidebar {
+    pointer-events: auto;
+  }
+
+  .app-sidebar:hover,
+  .app-sidebar:focus-within {
+    width: var(--sidebar-width-expanded);
+    padding: 1rem;
+  }
+
+  .app-sidebar .sidebar-label {
+    margin: 0;
+  }
+
+  .app-sidebar a {
+    padding-inline: 0.6rem;
+  }
+
+  .app-sidebar:hover .sidebar-label,
+  .app-sidebar:focus-within .sidebar-label {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    max-height: 1.8rem;
+    margin: 0.2rem 0.35rem;
+  }
+
+  .app-sidebar:hover a,
+  .app-sidebar:focus-within a {
+    justify-content: flex-start;
+    gap: 0.55rem;
+    padding-inline: 0.85rem;
+  }
+
+  .app-sidebar:hover a span,
+  .app-sidebar:focus-within a span {
+    opacity: 1;
+    visibility: visible;
+    width: auto;
+    transform: translateX(0);
+  }
+
+  .app-sidebar:hover .sidebar-panel,
+  .app-sidebar:focus-within .sidebar-panel {
+    display: grid;
+  }
+}
+
 .diagnostic-hero {
   display: grid;
   gap: 0.55rem;
@@ -124,33 +216,36 @@ main > .section-shell:first-child {
 
 .diagnostic-shell {
   display: grid;
-  grid-template-columns: minmax(250px, 0.34fr) minmax(0, 1fr);
-  gap: clamp(0.95rem, 2.4vw, 1.65rem);
+  grid-template-columns: minmax(300px, 0.28fr) minmax(0, 1fr);
+  gap: clamp(1rem, 2.4vw, 1.85rem);
   align-items: start;
   padding-top: 0.35rem;
 }
 
 .diagnostic-overview {
   position: sticky;
-  top: calc(var(--header-height) + 18px);
+  top: calc(var(--header-height) + 0.85rem);
   display: grid;
-  gap: 0.85rem;
+  gap: 0.7rem;
+  align-self: start;
 }
 
 .diagnostic-overview-card {
-  padding: clamp(0.88rem, 1.6vw, 1.04rem);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  padding: clamp(0.78rem, 1.4vw, 0.96rem);
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(12px) saturate(132%);
 }
 
 .diagnostic-card {
-  min-height: 0;
+  min-height: clamp(29rem, calc(100vh - var(--header-height) - 8.5rem), 43rem);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1);
 }
 
 .diagnostic-shell .quiz-card {
-  padding: clamp(1rem, 2.4vw, 1.35rem);
+  padding: clamp(1.35rem, 2.6vw, 1.9rem);
 }
 
 h1,
@@ -167,7 +262,7 @@ h1 {
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: 0;
-  text-wrap: balance;
+  overflow-wrap: break-word;
 }
 
 h2 {
@@ -176,7 +271,7 @@ h2 {
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0;
-  text-wrap: balance;
+  overflow-wrap: break-word;
 }
 
 h3 {

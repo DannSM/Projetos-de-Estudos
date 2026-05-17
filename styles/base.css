@@ -2,6 +2,9 @@
   --font-primary: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-code: "JetBrains Mono", "Fira Code", Consolas, monospace;
   --header-height: 82px;
+  --sidebar-width-expanded: 15.2rem;
+  --sidebar-width-collapsed: 76px;
+  --sidebar-width: var(--sidebar-width-collapsed);
   --section-max-width: 1180px;
 
   --color-bg-primary: #f8fafc;
@@ -98,7 +101,7 @@ video {
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 30;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -223,10 +226,39 @@ video {
 .button .lucide,
 .submit-button .lucide,
 .restart-button .lucide,
-.sidebar-cta .lucide {
+.sidebar-cta .lucide,
+.sidebar-toggle .lucide {
   width: 1rem;
   height: 1rem;
   stroke-width: 2.2;
+}
+
+.sidebar-toggle {
+  display: none;
+  min-height: 2.7rem;
+  min-width: 2.7rem;
+  padding: 0.55rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+
+.sidebar-toggle:hover {
+  background: linear-gradient(135deg, #ffffff, rgba(6, 182, 212, 0.1));
+  border-color: rgba(6, 182, 212, 0.36);
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  background: rgba(15, 23, 42, 0.4);
+  opacity: 0;
+  transition: opacity 170ms ease;
+  pointer-events: none;
 }
 
 .header-cta,
