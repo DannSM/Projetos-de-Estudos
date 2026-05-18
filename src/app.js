@@ -30,61 +30,66 @@ function renderIcons() {
   }
 }
 
-function setupResponsiveSidebarNavigation() {
-  const header = document.querySelector(".app-header");
-  const sidebar = document.querySelector(".app-sidebar");
-  if (!header || !sidebar) {
+function getCurrentNavKey() {
+  const path = (window.location.pathname || "").toLowerCase();
+  const fileName = path.split("/").pop() || "index.html";
+  const hash = (window.location.hash || "").toLowerCase();
+
+  if (fileName === "diagnostico.html") {
+    return "diagnostico";
+  }
+
+  if (fileName === "analytics.html") {
+    return "analytics";
+  }
+
+  if (fileName === "index.html" || fileName === "" || path.endsWith("/")) {
+    if (hash === "#trilhas") {
+      return "trilhas";
+    }
+
+    if (hash === "#desafios") {
+      return "desafios";
+    }
+
+    return "home";
+  }
+
+  return "home";
+}
+
+function updateGlobalNavActiveState() {
+  const activeKey = getCurrentNavKey();
+  const navLinks = document.querySelectorAll("[data-nav-key]");
+  navLinks.forEach((link) => {
+    const isActive = link.dataset.navKey === activeKey;
+    link.classList.toggle("is-active", isActive);
+
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
+}
+
+function setupGlobalNavigation() {
+  const toggle = document.querySelector(".mobile-nav-toggle");
+  const panel = document.querySelector("#mobileGlobalNav");
+  const backdrop = document.querySelector(".mobile-nav-backdrop");
+  if (!toggle || !panel || !backdrop) {
+    updateGlobalNavActiveState();
     return;
   }
 
-  const mobileBreakpoint = 900;
-  let toggle = header.querySelector(".sidebar-toggle");
-  if (!toggle) {
-    toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "sidebar-toggle";
-    toggle.setAttribute("aria-controls", "mobileSidebar");
-    toggle.setAttribute("aria-expanded", "false");
-    toggle.setAttribute("aria-label", "Abrir menu");
-    toggle.innerHTML = '<i data-lucide="menu" aria-hidden="true"></i>';
-    header.append(toggle);
-  }
-
-  if (!sidebar.id) {
-    sidebar.id = "mobileSidebar";
-  }
-
-  let backdrop = document.querySelector(".sidebar-backdrop");
-  if (!backdrop) {
-    backdrop = document.createElement("button");
-    backdrop.type = "button";
-    backdrop.className = "sidebar-backdrop";
-    backdrop.setAttribute("aria-label", "Fechar menu");
-    backdrop.setAttribute("hidden", "");
-    document.body.append(backdrop);
-  }
-
-  const addMobileCta = () => {
-    const navSection = sidebar.querySelector(".sidebar-section");
-    const headerCta = header.querySelector(".header-cta");
-    if (!navSection || !headerCta || sidebar.querySelector(".mobile-menu-cta")) {
-      return;
-    }
-
-    const mobileCta = document.createElement("a");
-    mobileCta.className = "mobile-menu-cta";
-    mobileCta.href = headerCta.getAttribute("href") || "index.html";
-    mobileCta.innerHTML = `${headerCta.innerHTML}`;
-    navSection.append(mobileCta);
-  };
+  const mobileQuery = window.matchMedia("(max-width: 1024px)");
 
   const setMenuOpen = (isOpen) => {
-    const isMobileViewport = window.matchMedia(`(max-width: ${mobileBreakpoint}px)`).matches;
-    const shouldOpen = isMobileViewport && isOpen;
+    const shouldOpen = mobileQuery.matches && isOpen;
 
-    document.body.classList.toggle("nav-open", shouldOpen);
+    document.body.classList.toggle("menu-open", shouldOpen);
     toggle.setAttribute("aria-expanded", String(shouldOpen));
-    toggle.setAttribute("aria-label", shouldOpen ? "Fechar menu" : "Abrir menu");
+    toggle.setAttribute("aria-label", shouldOpen ? "Fechar menu de navegação" : "Abrir menu de navegação");
 
     if (shouldOpen) {
       backdrop.removeAttribute("hidden");
@@ -93,22 +98,38 @@ function setupResponsiveSidebarNavigation() {
     }
   };
 
-  addMobileCta();
   setMenuOpen(false);
+  updateGlobalNavActiveState();
 
   toggle.addEventListener("click", () => {
-    const isOpen = document.body.classList.contains("nav-open");
+    const isOpen = document.body.classList.contains("menu-open");
     setMenuOpen(!isOpen);
   });
 
-  backdrop.addEventListener("click", () => {
-    setMenuOpen(false);
-  });
+  backdrop.addEventListener("click", () => setMenuOpen(false));
 
-  sidebar.querySelectorAll("a").forEach((link) => {
+  panel.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", () => {
       setMenuOpen(false);
     });
+  });
+
+  document.querySelectorAll(".header-nav a, .mobile-nav-panel a").forEach((link) => {
+    link.addEventListener("click", () => {
+      window.setTimeout(updateGlobalNavActiveState, 0);
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!document.body.classList.contains("menu-open")) {
+      return;
+    }
+
+    const clickedInsideMenu = panel.contains(event.target);
+    const clickedToggle = toggle.contains(event.target);
+    if (!clickedInsideMenu && !clickedToggle) {
+      setMenuOpen(false);
+    }
   });
 
   window.addEventListener("keydown", (event) => {
@@ -117,8 +138,15 @@ function setupResponsiveSidebarNavigation() {
     }
   });
 
+  window.addEventListener("hashchange", updateGlobalNavActiveState);
+  window.addEventListener("popstate", updateGlobalNavActiveState);
   window.addEventListener("resize", () => {
-    if (window.innerWidth > mobileBreakpoint) {
+    if (window.innerWidth > 1024) {
+      setMenuOpen(false);
+    }
+  });
+  mobileQuery.addEventListener("change", (event) => {
+    if (!event.matches) {
       setMenuOpen(false);
     }
   });
@@ -137,7 +165,7 @@ function updateHomeChallengeCount() {
 
 async function init() {
   bindHeaderHeightSync();
-  setupResponsiveSidebarNavigation();
+  setupGlobalNavigation();
   renderIcons();
   if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
     state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();

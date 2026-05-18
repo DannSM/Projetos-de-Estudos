@@ -25,40 +25,40 @@
       </span>
     </a>
 
+    <nav class="header-nav" aria-label="Navegação principal">
+      <a data-nav-key="home" href="index.html">Início</a>
+      <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
+      <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
+      <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
+      <a data-nav-key="analytics" href="analytics.html">Analytics</a>
+    </nav>
+
     <div class="header-context">Diagnóstico em etapas para mapear seu nível com critério claro.</div>
     <a class="header-cta" href="index.html#desafios">
       <i data-lucide="target" aria-hidden="true"></i>
-      <span>Praticar</span>
+      <span class="header-cta-text">Praticar</span>
     </a>
+    <button
+      class="mobile-nav-toggle"
+      type="button"
+      aria-label="Abrir menu de navegação"
+      aria-expanded="false"
+      aria-controls="mobileGlobalNav"
+    >
+      <i data-lucide="menu" aria-hidden="true"></i>
+    </button>
   </header>
 
-  <aside class="app-sidebar" aria-label="Navegação lateral">
-    <div class="sidebar-section">
-      <span class="sidebar-label">Navegação</span>
-      <a href="index.html">
-        <i class="nav-icon" data-lucide="home" aria-hidden="true"></i>
-        <span>Início</span>
-      </a>
-      <a class="active" href="diagnostico.html">
-        <i class="nav-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
-        <span>Diagnóstico</span>
-      </a>
-      <a href="index.html#trilhas">
-        <i class="nav-icon" data-lucide="route" aria-hidden="true"></i>
-        <span>Trilhas</span>
-      </a>
-      <a href="index.html#desafios">
-        <i class="nav-icon" data-lucide="target" aria-hidden="true"></i>
-        <span>Desafios</span>
-      </a>
-      <a href="analytics.html">
-        <i class="nav-icon" data-lucide="bar-chart-3" aria-hidden="true"></i>
-        <span>Analytics</span>
-      </a>
-    </div>
-  </aside>
+  <div class="mobile-nav-backdrop" hidden></div>
+  <nav id="mobileGlobalNav" class="mobile-nav-panel" aria-label="Menu principal">
+    <a data-nav-key="home" href="index.html">Início</a>
+    <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
+    <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
+    <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
+    <a data-nav-key="analytics" href="analytics.html">Analytics</a>
+  </nav>
 
-  <main class="diagnostic-page has-sidebar">
+  <main class="diagnostic-page">
     <section class="section-shell diagnostic-hero">
       <span class="section-kicker">Diagnóstico adaptativo</span>
       <h1>Mapa objetivo do seu nível em dados.</h1>

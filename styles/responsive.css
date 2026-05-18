@@ -1,4 +1,40 @@
-@media (max-width: 900px) {
+@media (max-width: 1240px) {
+  .app-header {
+    gap: 0.75rem;
+  }
+
+  .header-nav {
+    gap: 0.16rem;
+    font-size: 0.86rem;
+  }
+
+  .header-nav a {
+    padding: 0.5rem 0.58rem;
+  }
+
+  .header-context {
+    font-size: 0.82rem;
+  }
+
+  .header-cta {
+    min-width: 2.72rem;
+    padding: 0.6rem 0.72rem;
+  }
+
+  .header-cta .header-cta-text {
+    display: none;
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-nav-toggle,
+  .mobile-nav-panel,
+  .mobile-nav-backdrop {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
   body.analytics-auth-locked {
     overflow-y: auto;
   }
@@ -9,7 +45,7 @@
   }
 
   .app-header {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
   }
 
   .section-shell {
@@ -17,94 +53,14 @@
     scroll-margin-top: calc(var(--header-height) + 16px);
   }
 
-  .has-sidebar {
-    margin-left: 0;
-  }
-
-  .header-context,
-  .header-cta {
+  .header-nav,
+  .header-context {
     display: none;
   }
 
-  .sidebar-toggle {
+  .mobile-nav-toggle {
     display: inline-flex;
     justify-self: end;
-  }
-
-  .app-sidebar {
-    top: var(--header-height);
-    left: 0;
-    z-index: 26;
-    width: min(19rem, calc(100vw - 1rem));
-    height: calc(100dvh - var(--header-height));
-    max-height: calc(100dvh - var(--header-height));
-    padding: 0.85rem;
-    overflow-y: auto;
-    overflow-x: hidden;
-    transform: translateX(-105%);
-    box-shadow: 20px 0 40px rgba(15, 23, 42, 0.18);
-    transition: transform 170ms ease;
-  }
-
-  .app-sidebar a {
-    justify-content: flex-start;
-    gap: 0.55rem;
-    padding-inline: 0.78rem;
-  }
-
-  .app-sidebar a span {
-    width: auto;
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-  }
-
-  .sidebar-label {
-    opacity: 1;
-    visibility: visible;
-    max-height: 1.8rem;
-    margin: 0.2rem 0.35rem;
-    transform: translateX(0);
-  }
-
-  .sidebar-panel {
-    display: grid;
-  }
-
-  .app-sidebar .mobile-menu-cta {
-    display: inline-flex;
-    justify-content: center;
-    margin-top: 0.35rem;
-    color: #ffffff !important;
-    background: linear-gradient(120deg, var(--color-primary), var(--color-accent));
-    border-color: transparent !important;
-  }
-
-  .sidebar-backdrop {
-    display: block;
-    top: var(--header-height);
-    inset-inline: 0;
-    bottom: 0;
-  }
-
-  body.nav-open {
-    overflow: hidden;
-  }
-
-  body.nav-open .app-sidebar {
-    transform: translateX(0);
-  }
-
-  body.nav-open .sidebar-backdrop {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .top-nav {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-    width: 100%;
-    overflow-x: auto;
   }
 
   .hero,

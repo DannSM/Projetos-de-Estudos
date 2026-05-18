@@ -1034,28 +1034,6 @@
   backdrop-filter: blur(16px) saturate(140%);
 }
 
-.analytics-ui .app-sidebar {
-  background: rgba(255, 255, 255, 0.58);
-  border-right-color: rgba(148, 163, 184, 0.26);
-  backdrop-filter: blur(16px) saturate(140%);
-}
-
-.analytics-ui .app-sidebar a {
-  background: rgba(255, 255, 255, 0.22);
-  border: 1px solid transparent;
-}
-
-.analytics-ui .app-sidebar a:hover,
-.analytics-ui .app-sidebar a.active {
-  background: rgba(219, 234, 254, 0.58);
-  border-color: rgba(37, 99, 235, 0.22);
-}
-
-.analytics-ui .sidebar-panel {
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(148, 163, 184, 0.28);
-}
-
 .analytics-ui .app-footer {
   background: rgba(255, 255, 255, 0.55);
   border-top-color: rgba(148, 163, 184, 0.3);
@@ -1771,7 +1749,6 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .analytics-ui .app-header,
-.analytics-ui .app-sidebar,
 .analytics-ui .app-footer,
 .analytics-ui .analytics-panel,
 .analytics-ui .analytics-kpi-card,
@@ -1791,16 +1768,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   background: rgba(255, 255, 255, 0.62);
   border-bottom-color: var(--analytics-glass-border);
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-}
-
-.analytics-ui .app-sidebar {
-  background: rgba(255, 255, 255, 0.52);
-  border-right-color: var(--analytics-glass-border);
-}
-
-.analytics-ui .sidebar-panel {
-  background: rgba(255, 255, 255, 0.44);
-  border-color: var(--analytics-glass-border);
 }
 
 .analytics-ui .app-footer {
