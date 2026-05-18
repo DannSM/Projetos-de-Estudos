@@ -83,6 +83,27 @@ function setupGlobalNavigation() {
   }
 
   const mobileQuery = window.matchMedia("(max-width: 1024px)");
+  const header = document.querySelector(".app-header");
+
+  const scrollToAnchor = (hashValue) => {
+    if (!hashValue || hashValue === "#") {
+      return;
+    }
+
+    const target = document.querySelector(hashValue);
+    if (!target) {
+      return;
+    }
+
+    const headerHeight = Math.ceil(header?.getBoundingClientRect().height || 0);
+    const offset = headerHeight + 56;
+    const targetTop = target.getBoundingClientRect().top + window.scrollY - offset;
+
+    window.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: "smooth"
+    });
+  };
 
   const setMenuOpen = (isOpen) => {
     const shouldOpen = mobileQuery.matches && isOpen;
@@ -114,8 +135,36 @@ function setupGlobalNavigation() {
     });
   });
 
-  document.querySelectorAll(".header-nav a, .mobile-nav-panel a").forEach((link) => {
-    link.addEventListener("click", () => {
+  document.querySelectorAll(".header-nav a, .mobile-nav-panel a, a[href^=\"#\"]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const href = link.getAttribute("href") || "";
+      const [rawPath, rawHash] = href.split("#");
+      const hash = rawHash ? `#${rawHash}` : "";
+
+      if (hash) {
+        const currentPath = (window.location.pathname || "").toLowerCase();
+        const linkPath = (rawPath || window.location.pathname || "").toLowerCase();
+        const isSamePage = !rawPath
+          || rawPath === "."
+          || linkPath === currentPath
+          || (currentPath.endsWith("/index.html") && (linkPath === "/" || linkPath.endsWith("/index.html")));
+
+        if (isSamePage) {
+          event.preventDefault();
+          setMenuOpen(false);
+
+          if (window.location.hash !== hash) {
+            window.history.pushState(null, "", hash);
+          }
+
+          window.setTimeout(() => {
+            scrollToAnchor(hash);
+            updateGlobalNavActiveState();
+          }, 70);
+          return;
+        }
+      }
+
       window.setTimeout(updateGlobalNavActiveState, 0);
     });
   });
@@ -138,7 +187,10 @@ function setupGlobalNavigation() {
     }
   });
 
-  window.addEventListener("hashchange", updateGlobalNavActiveState);
+  window.addEventListener("hashchange", () => {
+    updateGlobalNavActiveState();
+    scrollToAnchor(window.location.hash);
+  });
   window.addEventListener("popstate", updateGlobalNavActiveState);
   window.addEventListener("resize", () => {
     if (window.innerWidth > 1024) {
@@ -150,6 +202,13 @@ function setupGlobalNavigation() {
       setMenuOpen(false);
     }
   });
+
+  if (window.location.hash) {
+    window.setTimeout(() => {
+      scrollToAnchor(window.location.hash);
+      updateGlobalNavActiveState();
+    }, 70);
+  }
 }
 
 function updateHomeChallengeCount() {
