@@ -567,27 +567,38 @@ function confirmDiagnosticAnswer() {
         <strong>Resposta registrada.</strong>
         <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
       </div>
-      <button class="submit-button feedback-next-button ${nextAction.isTerminal ? "is-terminal-action" : ""}" id="nextQuestion">
+      <button class="submit-button feedback-next-button ${nextAction.isTerminal ? "is-terminal-action" : ""} ${nextAction.action === "level-performance" ? "is-level-performance-action" : ""}" id="nextQuestion">
         ${nextAction.label}
       </button>
     </div>
   `;
 
-  document.querySelector("#nextQuestion").addEventListener("click", advanceDiagnostic);
+  document.querySelector("#nextQuestion").addEventListener("click", () => handleNextQuestionClick(nextAction));
 }
 
 function getNextActionMeta() {
   const levelQuestions = getCurrentLevelQuestions();
   if (state.currentQuestion < levelQuestions.length - 1) {
-    return { label: "Próxima pergunta", isTerminal: false };
+    return { label: "Próxima pergunta", isTerminal: false, action: "next-question" };
   }
 
   const level = getCurrentLevel();
   if (level.minPercent === null) {
-    return { label: "Ver resultado", isTerminal: true };
+    return { label: "Ver resultado", isTerminal: true, action: "show-result" };
   }
 
-  return { label: "Ver desempenho do nível", isTerminal: true };
+  return { label: "Ver desempenho do nível", isTerminal: true, action: "level-performance" };
+}
+
+function handleNextQuestionClick(nextAction) {
+  if (nextAction && nextAction.action === "level-performance") {
+    const areaProgressCard = document.querySelector("#areaProgressCard") || document.querySelector(".diagnostic-overview-progress");
+    if (areaProgressCard) {
+      areaProgressCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  advanceDiagnostic();
 }
 
 function advanceDiagnostic() {

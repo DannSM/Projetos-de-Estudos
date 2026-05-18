@@ -97,16 +97,52 @@
     dom.gate.innerHTML = `
       <div class="analytics-gate-layout">
         <article class="analytics-panel analytics-gate-visual" aria-hidden="true">
-          <div class="analytics-gate-visual-icon-wrap">
-            <i class="analytics-gate-visual-icon" data-lucide="shield-check"></i>
+          <div class="analytics-gate-visual-head">
+            <div class="analytics-gate-visual-icon-wrap">
+              <i class="analytics-gate-visual-icon" data-lucide="shield-check"></i>
+            </div>
+            <div class="analytics-gate-visual-copy">
+              <h2>Ambiente protegido</h2>
+              <p>Acompanhe os principais indicadores da plataforma com segurança e visão consolidada.</p>
+            </div>
           </div>
-          <h2>Ambiente protegido</h2>
-          <p>Visualize os principais indicadores da plataforma em um só lugar.</p>
-          <ul class="analytics-gate-bullets">
-            <li>Dados apresentados de forma resumida</li>
-            <li>Acompanhamento por período</li>
-            <li>Acesso exclusivo da administração</li>
-          </ul>
+          <div class="analytics-gate-feature-grid">
+            <article class="analytics-gate-feature-card">
+              <i class="analytics-gate-feature-icon" data-lucide="database"></i>
+              <div>
+                <h3>Dados consolidados</h3>
+                <p>Indicadores resumidos em um só lugar</p>
+              </div>
+            </article>
+            <article class="analytics-gate-feature-card">
+              <i class="analytics-gate-feature-icon" data-lucide="calendar"></i>
+              <div>
+                <h3>Visão por período</h3>
+                <p>Acompanhe evolução e histórico</p>
+              </div>
+            </article>
+            <article class="analytics-gate-feature-card">
+              <i class="analytics-gate-feature-icon" data-lucide="shield"></i>
+              <div>
+                <h3>Acesso restrito</h3>
+                <p>Disponível apenas para administradores</p>
+              </div>
+            </article>
+            <article class="analytics-gate-feature-card">
+              <i class="analytics-gate-feature-icon" data-lucide="trending-up"></i>
+              <div>
+                <h3>Tomada de decisão</h3>
+                <p>Base para análise e melhorias</p>
+              </div>
+            </article>
+          </div>
+          <div class="analytics-gate-visual-status">
+            <span class="analytics-gate-status-dot" aria-hidden="true"></span>
+            <div>
+              <strong>Painel interno ativo</strong>
+              <small>Dados protegidos para uso administrativo</small>
+            </div>
+          </div>
         </article>
 
         <article class="analytics-panel analytics-gate-card" role="dialog" aria-labelledby="analyticsGateTitle">
