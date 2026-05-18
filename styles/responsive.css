@@ -32,7 +32,7 @@
 
 @media (max-width: 1024px) {
   :root {
-    --header-height: 60px;
+    --header-height: 56px;
   }
 
   body.analytics-auth-locked {
@@ -45,10 +45,10 @@
   }
 
   .app-header {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     min-height: var(--header-height);
-    gap: 0.38rem;
-    padding: 0.24rem 0.62rem;
+    gap: 0.5rem;
+    padding: 0.22rem 0.72rem;
   }
 
   .section-shell {
@@ -66,7 +66,7 @@
   }
 
   .brand {
-    gap: 0.42rem;
+    gap: 0.54rem;
   }
 
   .brand-logo-wrap {
@@ -84,12 +84,7 @@
   }
 
   .header-cta {
-    width: 2.76rem;
-    min-width: 2.76rem;
-    min-height: 2.76rem;
-    padding: 0;
-    border-radius: 14px;
-    flex-shrink: 0;
+    display: none;
   }
 
   .header-cta .header-cta-text {
@@ -99,10 +94,9 @@
   .mobile-nav-toggle {
     display: inline-flex;
     justify-self: end;
-    width: 2.76rem;
-    min-width: 2.76rem;
-    min-height: 2.76rem;
-    padding: 0.43rem;
+    width: 2.82rem;
+    min-width: 2.82rem;
+    min-height: 2.82rem;
     flex-shrink: 0;
   }
 
@@ -111,13 +105,13 @@
     left: 0;
     right: 0;
     max-width: none;
-    border-radius: 0;
-    padding: 0.58rem 0.65rem 0.68rem;
+    border-radius: 0 0 16px 16px;
+    padding: 0.62rem 0.7rem 0.76rem;
   }
 
   .mobile-nav-panel a {
-    min-height: 2.26rem;
-    padding: 0.44rem 0.6rem;
+    min-height: 2.4rem;
+    padding: 0.5rem 0.68rem;
     font-size: 0.9rem;
   }
 
@@ -228,7 +222,7 @@
 
 @media (max-width: 620px) {
   :root {
-    --header-height: 58px;
+    --header-height: 54px;
   }
 
   body.analytics-auth-locked {
@@ -242,8 +236,8 @@
   }
 
   .app-header {
-    gap: 0.28rem;
-    padding-inline: 0.5rem;
+    gap: 0.42rem;
+    padding-inline: 0.62rem;
   }
 
   .section-shell {
@@ -323,11 +317,10 @@
     font-size: clamp(0.94rem, 4.8vw, 1.1rem);
   }
 
-  .header-cta,
   .mobile-nav-toggle {
-    width: 2.58rem;
-    min-width: 2.58rem;
-    min-height: 2.58rem;
+    width: 2.78rem;
+    min-width: 2.78rem;
+    min-height: 2.78rem;
   }
 
   .mobile-nav-panel {
@@ -335,13 +328,13 @@
     left: 0;
     right: 0;
     max-width: none;
-    border-radius: 0;
-    padding: 0.54rem 0.58rem 0.64rem;
+    border-radius: 0 0 14px 14px;
+    padding: 0.58rem 0.62rem 0.7rem;
   }
 
   .mobile-nav-panel a {
-    min-height: 2.2rem;
-    padding: 0.42rem 0.56rem;
+    min-height: 2.34rem;
+    padding: 0.48rem 0.62rem;
   }
 
   .hero-actions,
@@ -505,7 +498,7 @@
 @media (max-width: 420px) {
   .app-header {
     gap: 0.2rem;
-    padding-inline: 0.4rem;
+    padding-inline: 0.52rem;
   }
 
   .brand {
@@ -526,10 +519,9 @@
     font-size: clamp(0.88rem, 4.4vw, 1rem);
   }
 
-  .header-cta,
   .mobile-nav-toggle {
-    width: 2.48rem;
-    min-width: 2.48rem;
-    min-height: 2.48rem;
+    width: 2.76rem;
+    min-width: 2.76rem;
+    min-height: 2.76rem;
   }
 }
