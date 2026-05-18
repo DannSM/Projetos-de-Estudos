@@ -272,7 +272,7 @@ function renderAreaList() {
   `).join("");
 }
 
-function renderAreaProgress() {
+function renderAreaProgress(showStatusColors = false) {
   const useSessionQuestions = state.diagnosticQuestionSets.length > 0;
 
   areaList.innerHTML = areaGoals.map((area) => {
@@ -280,7 +280,9 @@ function renderAreaProgress() {
     const expected = countQuestionsByArea(area, useSessionQuestions);
     const percent = score.total ? Math.round((score.correct / score.total) * 100) : 0;
     const answered = score.hits.length + score.misses.length;
-    const statusClass = answered === 0 ? "" : percent >= 75 ? "is-strong" : percent >= 45 ? "is-medium" : "is-low";
+    const statusClass = showStatusColors && answered > 0
+      ? (percent >= 75 ? "is-strong" : percent >= 45 ? "is-medium" : "is-low")
+      : "";
 
     return `
       <div class="area-pill ${statusClass}">
@@ -319,6 +321,42 @@ function resetDiagnostic() {
   renderDiagnosticIntro();
 }
 
+function getLevelIconMarkup(levelName) {
+  const normalizedLevel = cleanText(levelName)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (normalizedLevel === "basico") {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      </svg>
+    `;
+  }
+
+  if (normalizedLevel === "intermediario") {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 17l6-6 4 4 7-7"></path>
+        <path d="M14 8h6v6"></path>
+      </svg>
+    `;
+  }
+
+  return `
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8"></circle>
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M12 2v2"></path>
+      <path d="M12 20v2"></path>
+      <path d="M2 12h2"></path>
+      <path d="M20 12h2"></path>
+    </svg>
+  `;
+}
+
 function renderLevelRoadmap() {
   return `
     <div class="level-roadmap" aria-label="Etapas do diagnóstico">
@@ -329,7 +367,10 @@ function renderLevelRoadmap() {
         const score = result ? `${Math.round(result.percent * 100)}%` : level.minPercent ? `meta ${Math.round(level.minPercent * 100)}%` : "final";
         return `
           <div class="level-step ${status}">
-            <strong>${level.shortLabel}</strong>
+            <div class="level-step-header">
+              <span class="level-step-icon" aria-hidden="true">${getLevelIconMarkup(level.name)}</span>
+              <strong>${level.shortLabel}</strong>
+            </div>
             <span>${score}</span>
           </div>
         `;
@@ -473,6 +514,7 @@ function confirmDiagnosticAnswer() {
   });
 
   confirmButton.disabled = true;
+  confirmButton.classList.add("is-hidden-after-answer");
 
   if (isCorrect) {
     state.areaScore[question.area].correct += 1;
@@ -517,12 +559,16 @@ function confirmDiagnosticAnswer() {
 
   renderAreaProgress();
 
+  const nextAction = getNextActionMeta();
+
   document.querySelector("#feedbackMount").innerHTML = `
-    <div class="feedback-box">
-      <strong>Resposta registrada.</strong>
-      <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
-      <button class="submit-button" id="nextQuestion">
-        ${getNextButtonLabel()}
+    <div class="feedback-box feedback-box-compact">
+      <div class="feedback-box-compact-content">
+        <strong>Resposta registrada.</strong>
+        <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
+      </div>
+      <button class="submit-button feedback-next-button ${nextAction.isTerminal ? "is-terminal-action" : ""}" id="nextQuestion">
+        ${nextAction.label}
       </button>
     </div>
   `;
@@ -530,12 +576,18 @@ function confirmDiagnosticAnswer() {
   document.querySelector("#nextQuestion").addEventListener("click", advanceDiagnostic);
 }
 
-function getNextButtonLabel() {
+function getNextActionMeta() {
   const levelQuestions = getCurrentLevelQuestions();
-  if (state.currentQuestion < levelQuestions.length - 1) return "Próxima pergunta";
+  if (state.currentQuestion < levelQuestions.length - 1) {
+    return { label: "Próxima pergunta", isTerminal: false };
+  }
+
   const level = getCurrentLevel();
-  if (level.minPercent === null) return "Ver resultado";
-  return "Ver desempenho do nível";
+  if (level.minPercent === null) {
+    return { label: "Ver resultado", isTerminal: true };
+  }
+
+  return { label: "Ver desempenho do nível", isTerminal: true };
 }
 
 function advanceDiagnostic() {
@@ -636,6 +688,8 @@ function showResult({ blocked } = { blocked: false }) {
   const sqlLevel = mapPercentToLevel(getAreaPercentScore("SQL"));
   const statisticsLevel = mapPercentToLevel(getAreaPercentScore(areaGoals[1]));
   const dataLevel = getDataAreaLevel();
+
+  renderAreaProgress(true);
 
   persistDiagnosticSessionRecord({
     attempt_id: state.currentDiagnosticAttemptId,

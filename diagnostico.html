@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diagnóstico - Data Skill Map</title>
   <meta name="description" content="Data Skill Map: diagnóstico adaptativo com progressão por níveis, desempenho por área e recomendações práticas para evoluir em dados.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -71,7 +74,7 @@
 
     <section class="section-shell diagnostic-shell">
       <aside class="diagnostic-overview" aria-label="Contexto do diagnóstico">
-        <article class="diagnostic-overview-card">
+        <article class="diagnostic-overview-card diagnostic-overview-metrics">
           <div class="diagnostic-side-grid" aria-label="Resumo do diagnóstico">
             <div>
               <strong>15</strong>
@@ -88,12 +91,12 @@
           </div>
         </article>
 
-        <article class="diagnostic-overview-card diagnostic-note">
+        <article class="diagnostic-overview-card diagnostic-note diagnostic-overview-reading">
           <strong>Leitura do resultado</strong>
           <p>Você recebe desempenho por nível, análise por área e recomendação do próximo foco para estudo prático.</p>
         </article>
 
-        <article class="diagnostic-overview-card">
+        <article class="diagnostic-overview-card diagnostic-overview-progress">
           <strong class="overview-title">Progresso por área</strong>
           <p class="overview-copy">Acompanhe acertos e lacunas conforme responde as perguntas.</p>
           <div class="area-list" id="areaList"></div>
