@@ -307,8 +307,10 @@ video {
   border-bottom: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 0 0 18px 18px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
-  transform: translateY(-112%);
-  transition: transform 180ms ease;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(calc(-100% - var(--header-height) - 1rem));
+  transition: transform 180ms ease, visibility 0s linear 180ms;
 }
 
 .mobile-nav-panel a {
@@ -358,7 +360,10 @@ body.menu-open .mobile-nav-backdrop {
 }
 
 body.menu-open .mobile-nav-panel {
+  visibility: visible;
+  pointer-events: auto;
   transform: translateY(0);
+  transition: transform 180ms ease;
 }
 
 .header-cta,
