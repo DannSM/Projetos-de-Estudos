@@ -12,8 +12,6 @@
     maxRowsSatisfaction: 500
   };
 
-  let authClient = null;
-
   function getConfig() {
     return globalScope.DATA_SKILL_MAP_SUPABASE || {};
   }
@@ -24,26 +22,11 @@
   }
 
   function getClient() {
-    if (!isConfigured()) {
+    if (!globalScope.authService || typeof globalScope.authService.getClient !== "function") {
       return null;
     }
 
-    if (!globalScope.supabase || typeof globalScope.supabase.createClient !== "function") {
-      return null;
-    }
-
-    if (!authClient) {
-      const config = getConfig();
-      authClient = globalScope.supabase.createClient(config.url, config.anonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
-        }
-      });
-    }
-
-    return authClient;
+    return globalScope.authService.getClient();
   }
 
   function sanitizeDate(value) {
@@ -81,48 +64,32 @@
   }
 
   async function signInAdmin(email, password) {
-    const client = getClient();
-    if (!client) {
+    if (!globalScope.authService || typeof globalScope.authService.signIn !== "function") {
       return { ok: false, error: { message: "Supabase nao configurado para autenticacao." } };
     }
 
-    try {
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
-      if (error) return { ok: false, error };
-      return { ok: true, session: data.session || null, user: data.user || null };
-    } catch (error) {
-      return { ok: false, error };
-    }
+    return globalScope.authService.signIn(email, password);
   }
 
   async function signOutAdmin() {
-    const client = getClient();
-    if (!client) return { ok: true };
-
-    try {
-      const { error } = await client.auth.signOut();
-      if (error) return { ok: false, error };
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error };
-    }
+    if (!globalScope.authService || typeof globalScope.authService.signOut !== "function") return { ok: true };
+    return globalScope.authService.signOut();
   }
 
   async function getCurrentSession() {
-    const client = getClient();
-    if (!client) return { ok: false, session: null, error: { message: "Supabase nao configurado." } };
-
-    try {
-      const { data, error } = await client.auth.getSession();
-      if (error) return { ok: false, session: null, error };
-      return { ok: true, session: data.session || null, error: null };
-    } catch (error) {
-      return { ok: false, session: null, error };
+    if (!globalScope.authService || typeof globalScope.authService.getCurrentSession !== "function") {
+      return { ok: false, session: null, error: { message: "Supabase nao configurado." } };
     }
+
+    return globalScope.authService.getCurrentSession();
   }
 
   async function checkAdminAuthorization() {
-    return rpcRead(RPC_NAMES.isAdmin, {});
+    if (!globalScope.authService || typeof globalScope.authService.checkAdminAuthorization !== "function") {
+      return rpcRead(RPC_NAMES.isAdmin, {});
+    }
+
+    return globalScope.authService.checkAdminAuthorization();
   }
 
   async function fetchPlatformDaily(params = {}) {
@@ -162,7 +129,9 @@
     isConfigured,
     signInAdmin,
     signOutAdmin,
+    getAdminSession: getCurrentSession,
     getCurrentSession,
+    adminIsAuthorized: checkAdminAuthorization,
     checkAdminAuthorization,
     fetchPlatformDaily,
     fetchUserActivityDaily,
