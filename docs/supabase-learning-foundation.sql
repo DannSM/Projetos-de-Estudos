@@ -471,18 +471,31 @@ to authenticated
 using (user_id = auth.uid() or public.is_admin_user())
 with check (user_id = auth.uid() or public.is_admin_user());
 
+-- Hardening grants das tabelas auth-first novas.
+revoke all on table public.profiles from public, anon, authenticated;
+revoke all on table public.user_skill_progress from public, anon, authenticated;
+revoke all on table public.learning_recommendations from public, anon, authenticated;
+revoke all on table public.user_learning_progress from public, anon, authenticated;
+revoke all on table public.learning_paths from public, anon, authenticated;
+revoke all on table public.learning_path_steps from public, anon, authenticated;
+
 -- Grants minimos das novas estruturas.
 -- anon nao recebe acesso a perfis/progresso/recomendacoes.
 grant usage on schema public to anon, authenticated;
 
+-- anon: somente leitura de conteudo educacional ativo via RLS.
 grant select on table public.learning_paths to anon;
 grant select on table public.learning_path_steps to anon;
 
+-- authenticated: dados proprios via RLS.
 grant select, insert on table public.profiles to authenticated;
 grant update (email, display_name) on table public.profiles to authenticated;
 grant select, insert, update on table public.user_skill_progress to authenticated;
 grant select, insert, update on table public.learning_recommendations to authenticated;
 grant select, insert, update on table public.user_learning_progress to authenticated;
+
+-- authenticated: somente leitura de trilhas/etapas ativas por enquanto.
+-- A escrita de trilhas fica para SQL Editor ate existir tela admin dedicada.
 grant select on table public.learning_paths to authenticated;
 grant select on table public.learning_path_steps to authenticated;
 
