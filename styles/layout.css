@@ -45,9 +45,10 @@ main > .section-shell:first-child {
 
 .diagnostic-shell {
   display: grid;
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-  gap: clamp(0.58rem, 1.5vw, 0.95rem);
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 0;
+  align-items: start;
   padding-top: 0.12rem;
 }
 
@@ -83,7 +84,7 @@ main > .section-shell:first-child {
 .diagnostic-shell .quiz-card {
   padding: clamp(1.35rem, 2.6vw, 1.9rem);
   width: 100%;
-  max-width: 100%;
+  max-width: 58rem;
 }
 
 h1,

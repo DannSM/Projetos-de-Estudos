@@ -308,6 +308,8 @@ function countQuestionsByArea(area, sessionOnly = false) {
 }
 
 function renderAreaList() {
+  if (!areaList) return;
+
   areaList.innerHTML = `
     <div class="area-pill area-pill-summary">
       <strong>Áreas avaliadas</strong>
@@ -317,6 +319,8 @@ function renderAreaList() {
 }
 
 function renderSessionProgress() {
+  if (!areaList) return;
+
   const level = getCurrentLevel();
   const levelQuestions = getCurrentLevelQuestions();
   const answered = getTotalAnswered();
@@ -335,6 +339,8 @@ function renderSessionProgress() {
 }
 
 function renderAreaProgress(showStatusColors = false) {
+  if (!areaList) return;
+
   const useSessionQuestions = state.diagnosticQuestionSets.length > 0;
 
   if (!showStatusColors) {
@@ -452,7 +458,9 @@ function renderLevelRoadmap() {
         const result = state.levelResults.find((item) => item.name === level.name);
         const isCurrent = index === state.currentLevelIndex && state.diagnosticStarted;
         const status = result ? (result.passed ? "is-complete" : "is-blocked") : isCurrent ? "is-current" : "";
-        const score = result ? `${Math.round(result.percent * 100)}%` : level.minPercent ? `meta ${Math.round(level.minPercent * 100)}%` : "final";
+        const score = state.diagnosticStarted
+          ? (result ? (result.passed ? "concluído" : "reforçar") : isCurrent ? "em andamento" : "próximo")
+          : level.minPercent ? `meta ${Math.round(level.minPercent * 100)}%` : "final";
         return `
           <div class="level-step ${status}">
             <div class="level-step-header">
@@ -473,10 +481,10 @@ function renderDiagnosticIntro() {
 
   quizMount.innerHTML = `
     <div class="diagnostic-intro quiz-step">
-      <span class="section-kicker">Diagnóstico por níveis</span>
-      <h3 class="question-title">Responda 5 perguntas por nível com ordem aleatória.</h3>
+      <span class="section-kicker">Diagnóstico adaptativo</span>
+      <h3 class="question-title">Diagnóstico por níveis</h3>
       <p class="question-meta">
-        Banco atual com ${questionPool.length} questões. A cada tentativa, a plataforma sorteia ${QUESTIONS_PER_LEVEL} perguntas por nível.
+        Responda 5 perguntas por nível com ordem aleatória. Banco atual com ${questionPool.length} questões.
       </p>
       ${renderLevelRoadmap()}
       <div class="diagnostic-summary diagnostic-summary-inline">
@@ -485,6 +493,9 @@ function renderDiagnosticIntro() {
       <p class="explanation">
         Você avança para o próximo nível ao atingir 75% no nível atual.
       </p>
+      <div class="diagnostic-area-chips" aria-label="Áreas avaliadas">
+        ${areaGoals.map((area) => `<span>${area}</span>`).join("")}
+      </div>
       <button class="submit-button" id="startDiagnostic">Iniciar diagnóstico</button>
     </div>
   `;
@@ -555,12 +566,12 @@ function renderQuestion() {
   quizMount.innerHTML = `
     <div class="quiz-step">
       ${renderLevelRoadmap()}
-      <div class="progress-line" aria-label="Progresso do diagnóstico">
-        <span style="width: ${progress}%"></span>
-      </div>
-      <div class="quiz-top">
+      <div class="diagnostic-session-strip" aria-label="Sessão do diagnóstico">
         <span>${level.label} — pergunta ${state.currentQuestion + 1} de ${levelQuestions.length}</span>
         <span>Sessão: ${answered} de ${totalQuestions} respondidas</span>
+      </div>
+      <div class="progress-line" aria-label="Progresso do diagnóstico">
+        <span style="width: ${progress}%"></span>
       </div>
       <div class="quiz-top quiz-top-secondary">
         <span>Confirme uma alternativa para registrar sua resposta.</span>
@@ -705,13 +716,6 @@ function getNextActionMeta() {
 }
 
 function handleNextQuestionClick(nextAction) {
-  if (nextAction && nextAction.action === "level-performance") {
-    const areaProgressCard = document.querySelector("#areaProgressCard") || document.querySelector(".diagnostic-overview-progress");
-    if (areaProgressCard) {
-      areaProgressCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
   advanceDiagnostic();
 }
 
@@ -781,6 +785,10 @@ function showLevelTransition(levelResult) {
   quizMount.innerHTML = `
     <div class="level-transition quiz-step">
       ${renderLevelRoadmap()}
+      <div class="diagnostic-session-strip" aria-label="Sessão do diagnóstico">
+        <span>${levelResult.label} concluído</span>
+        <span>Sessão: ${getTotalAnswered()} de ${getSessionQuestionCount()} respondidas</span>
+      </div>
       <span class="section-kicker">Nível concluído</span>
       <h3 class="question-title">Você fez ${levelResult.correct}/${levelResult.total} no ${levelResult.label}.</h3>
       <p class="explanation">
@@ -815,14 +823,19 @@ function showResultLoading({ blocked }) {
   }
 
   quizMount.innerHTML = `
-    <div class="feedback-box quiz-step diagnostic-loading" role="status" aria-live="polite">
+    <div class="quiz-step diagnostic-loading" role="status" aria-live="polite">
       <div class="loading-dots" aria-hidden="true">
         <span></span>
         <span></span>
         <span></span>
       </div>
       <strong>Gerando seu diagnóstico final...</strong>
-      <p class="explanation">Estamos consolidando o desempenho por nível, área e pergunta.</p>
+      <p class="explanation">Estamos consolidando desempenho por nível, área e pergunta.</p>
+      <div class="diagnostic-loading-steps" aria-label="Etapas da geração">
+        <span>Calculando desempenho</span>
+        <span>Mapeando áreas</span>
+        <span>Montando plano</span>
+      </div>
     </div>
   `;
 
