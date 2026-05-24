@@ -354,11 +354,13 @@ video {
   padding: 0.68rem 0.74rem 0.82rem;
   overflow-y: auto;
   overflow-x: hidden;
-  background: rgba(255, 255, 255, 0.965);
+  background: rgba(255, 255, 255, 0.99);
   border-right: 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 0 0 18px 18px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   visibility: hidden;
   pointer-events: none;
   transform: translateY(calc(-100% - var(--header-height) - 1rem));
@@ -375,6 +377,7 @@ video {
   border-radius: 11px;
   font-weight: 700;
   font-size: 0.92rem;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .mobile-nav-panel a:hover,

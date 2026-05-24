@@ -22,11 +22,87 @@
   }
 }
 
-@media (min-width: 1025px) {
+@media (max-width: 1239px) {
+  .header-context {
+    display: none;
+  }
+}
+
+@media (min-width: 1121px) {
   .mobile-nav-toggle,
   .mobile-nav-panel,
   .mobile-nav-backdrop {
     display: none;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1120px) {
+  :root {
+    --header-height: 56px;
+  }
+
+  .app-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: var(--header-height);
+    gap: 0.5rem;
+    padding: 0.22rem 0.72rem;
+  }
+
+  .header-nav,
+  .header-context,
+  .header-cta,
+  .app-header > .auth-entry-button {
+    display: none;
+  }
+
+  .brand {
+    gap: 0.54rem;
+  }
+
+  .brand-logo-wrap {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .brand-logo {
+    width: 2.66rem;
+    height: 2.66rem;
+  }
+
+  .brand-name {
+    font-size: clamp(1rem, 3vw, 1.2rem);
+  }
+
+  .mobile-nav-toggle {
+    display: inline-flex;
+    justify-self: end;
+    width: 2.82rem;
+    min-width: 2.82rem;
+    min-height: 2.82rem;
+    flex-shrink: 0;
+  }
+
+  .mobile-nav-panel {
+    width: 100%;
+    left: 0;
+    right: 0;
+    max-width: none;
+    border-radius: 0 0 16px 16px;
+    padding: 0.62rem 0.7rem 0.76rem;
+  }
+
+  .mobile-nav-panel a {
+    min-height: 2.4rem;
+    padding: 0.5rem 0.68rem;
+    font-size: 0.9rem;
+  }
+
+  .mobile-nav-panel .mobile-cta-link {
+    min-height: 2.42rem;
+  }
+
+  .mobile-nav-panel .mobile-auth-entry {
+    min-height: 2.58rem;
   }
 }
 

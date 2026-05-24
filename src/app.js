@@ -43,6 +43,10 @@ function getCurrentNavKey() {
     return "analytics";
   }
 
+  if (fileName === "meu-progresso.html") {
+    return "progresso";
+  }
+
   if (fileName === "index.html" || fileName === "" || path.endsWith("/")) {
     if (hash === "#trilhas") {
       return "trilhas";
@@ -82,7 +86,8 @@ function setupGlobalNavigation() {
     return;
   }
 
-  const mobileQuery = window.matchMedia("(max-width: 1024px)");
+  const headerMobileBreakpoint = 1120;
+  const mobileQuery = window.matchMedia(`(max-width: ${headerMobileBreakpoint}px)`);
   const header = document.querySelector(".app-header");
 
   const scrollToAnchor = (hashValue) => {
@@ -193,7 +198,7 @@ function setupGlobalNavigation() {
   });
   window.addEventListener("popstate", updateGlobalNavActiveState);
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 1024) {
+    if (window.innerWidth > headerMobileBreakpoint) {
       setMenuOpen(false);
     }
   });
@@ -257,6 +262,10 @@ async function setupAuthEntryPoints() {
     setAuthButtonState(sessionResult && sessionResult.ok ? sessionResult.session : null);
   };
 
+  window.addEventListener("data-skill-map-auth-changed", () => {
+    void refreshAuthState();
+  });
+
   authButtons.forEach((button) => {
     button.addEventListener("click", async () => {
       closeMobileMenu();
@@ -264,13 +273,19 @@ async function setupAuthEntryPoints() {
       if (currentSession) {
         await window.authService.signOut();
         setAuthButtonState(null);
+        window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+          detail: { session: null, user: null }
+        }));
         return;
       }
 
       if (window.authModal && typeof window.authModal.openAuthModal === "function") {
         window.authModal.openAuthModal({
-          onSuccess: async () => {
+          onSuccess: async ({ session, user } = {}) => {
             await refreshAuthState();
+            window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+              detail: { session: session || null, user: user || null }
+            }));
           }
         });
       }
