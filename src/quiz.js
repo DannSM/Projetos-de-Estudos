@@ -293,16 +293,43 @@ function countQuestionsByArea(area, sessionOnly = false) {
 }
 
 function renderAreaList() {
-  areaList.innerHTML = areaGoals.map((area) => `
-    <div class="area-pill">
-      <strong>${area}</strong>
-      <span>0 respondidas de ${countQuestionsByArea(area)} previstas</span>
+  areaList.innerHTML = `
+    <div class="area-pill area-pill-summary">
+      <strong>Áreas avaliadas</strong>
+      <span>${areaGoals.join(", ")}</span>
     </div>
-  `).join("");
+  `;
+}
+
+function renderSessionProgress() {
+  const level = getCurrentLevel();
+  const levelQuestions = getCurrentLevelQuestions();
+  const answered = getTotalAnswered();
+  const totalQuestions = getSessionQuestionCount();
+
+  areaList.innerHTML = `
+    <div class="area-pill area-pill-summary">
+      <strong>${level ? level.label : "Diagnóstico"}</strong>
+      <span>Pergunta ${Math.min(state.currentQuestion + 1, levelQuestions.length)} de ${levelQuestions.length}</span>
+    </div>
+    <div class="area-pill area-pill-summary">
+      <strong>Sessão</strong>
+      <span>${answered} de ${totalQuestions} respondidas</span>
+    </div>
+  `;
 }
 
 function renderAreaProgress(showStatusColors = false) {
   const useSessionQuestions = state.diagnosticQuestionSets.length > 0;
+
+  if (!showStatusColors) {
+    if (state.diagnosticStarted) {
+      renderSessionProgress();
+    } else {
+      renderAreaList();
+    }
+    return;
+  }
 
   areaList.innerHTML = areaGoals.map((area) => {
     const score = state.areaScore[area];
@@ -339,6 +366,7 @@ function resetDiagnostic() {
   state.diagnosticQuestionSets = [];
   state.selectedDiagnosticAnswer = null;
   state.diagnosticAnswers = [];
+  state.confirmedDiagnosticAnswerKeys = new Set();
   state.levelResults = [];
   state.diagnosticStoppedAtLevel = null;
   state.areaScore = areaGoals.reduce((scores, area) => {
@@ -452,6 +480,7 @@ function startDiagnostic() {
     : `diag_${Date.now()}`;
   state.selectedDiagnosticAnswer = null;
   state.diagnosticQuestionSets = buildDiagnosticQuestionSets();
+  state.confirmedDiagnosticAnswerKeys = new Set();
 
   const emptyLevels = diagnosticLevels.filter((_, index) => state.diagnosticQuestionSets[index].length === 0);
   if (emptyLevels.length > 0) {
@@ -492,10 +521,11 @@ function renderQuestion() {
     return;
   }
 
+  renderAreaProgress();
+
   const answered = getTotalAnswered();
   const totalQuestions = getSessionQuestionCount();
   const progress = totalQuestions ? (answered / totalQuestions) * 100 : 0;
-  const percentLabel = Math.round(progress);
   const cleanOptions = cleanOptionList(question.options);
   const cleanConcept = cleanText(question.concept);
   const cleanArea = cleanText(question.area);
@@ -508,12 +538,11 @@ function renderQuestion() {
         <span style="width: ${progress}%"></span>
       </div>
       <div class="quiz-top">
-        <span>${level.label} - pergunta ${state.currentQuestion + 1} de ${levelQuestions.length}</span>
-        <span>${percentLabel}% concluído</span>
+        <span>${level.label} — pergunta ${state.currentQuestion + 1} de ${levelQuestions.length}</span>
+        <span>Sessão: ${answered} de ${totalQuestions} respondidas</span>
       </div>
       <div class="quiz-top quiz-top-secondary">
-        <span>Respostas registradas: ${answered}</span>
-        <span>Total da sessão: ${totalQuestions}</span>
+        <span>Confirme uma alternativa para registrar sua resposta.</span>
       </div>
       <div class="concept-row">
         <span class="concept-tag">${cleanConcept}</span>
@@ -547,9 +576,24 @@ function selectDiagnosticAnswer(selectedIndex) {
   document.querySelector("#confirmDiagnosticAnswer").disabled = false;
 }
 
+function getCurrentAnswerKey() {
+  return [
+    state.currentDiagnosticAttemptId || "diag",
+    state.currentLevelIndex,
+    state.currentQuestion
+  ].join(":");
+}
+
 function confirmDiagnosticAnswer() {
   const selectedIndex = state.selectedDiagnosticAnswer;
   if (selectedIndex === null || selectedIndex === undefined) return;
+  if (!state.confirmedDiagnosticAnswerKeys) {
+    state.confirmedDiagnosticAnswerKeys = new Set();
+  }
+
+  const answerKey = getCurrentAnswerKey();
+  if (state.confirmedDiagnosticAnswerKeys.has(answerKey)) return;
+  state.confirmedDiagnosticAnswerKeys.add(answerKey);
 
   const levelQuestions = getCurrentLevelQuestions();
   const question = levelQuestions[state.currentQuestion];
@@ -613,7 +657,7 @@ function confirmDiagnosticAnswer() {
   document.querySelector("#feedbackMount").innerHTML = `
     <div class="feedback-box feedback-box-compact">
       <div class="feedback-box-compact-content">
-        <strong>Resposta registrada.</strong>
+        <strong>Resposta confirmada.</strong>
         <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
       </div>
       <button class="submit-button feedback-next-button ${nextAction.isTerminal ? "is-terminal-action" : ""} ${nextAction.action === "level-performance" ? "is-level-performance-action" : ""}" id="nextQuestion">
@@ -973,7 +1017,6 @@ function showResult({ blocked } = { blocked: false }) {
             <span>${totalWrong} erros</span>
             <span>${stopped ? `Até ${stopped.label}` : "3 níveis concluídos"}</span>
           </div>
-          <button class="restart-button result-hero-action" id="restartDiagnostic">Refazer diagnóstico</button>
         </div>
         <div class="result-score-card" aria-label="Percentual geral">
           <span>Percentual geral</span>
@@ -995,6 +1038,10 @@ function showResult({ blocked } = { blocked: false }) {
           <span>Prioridade recomendada</span>
           <strong>${priorityLabel}</strong>
         </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="restart-button" id="restartDiagnostic">Refazer diagnóstico</button>
       </div>
 
       <section class="next-action-card">
@@ -1028,14 +1075,16 @@ function showResult({ blocked } = { blocked: false }) {
         <div class="score-bars area-score-map">
           ${insights.map((item) => `
             <div class="score-row ${getAreaVisualClass(item.percent)}">
-              <div>
-                <strong>${item.area}</strong>
-                <span>${item.correct}/${item.total} - ${item.percent}% - ${getAreaStatusText(item.percent)}</span>
+              <div class="score-row-header">
+                <div>
+                  <strong>${item.area}</strong>
+                  <span>${item.correct}/${item.total} - ${getAreaStatusText(item.percent)}</span>
+                </div>
+                <strong class="score-percent">${item.percent}%</strong>
               </div>
               <div class="score-track" aria-label="${item.area}: ${item.percent}%">
                 <div class="score-fill" style="width: ${item.percent}%"></div>
               </div>
-              <span>${item.percent}%</span>
             </div>
           `).join("")}
         </div>

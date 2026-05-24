@@ -69,6 +69,18 @@
   align-content: start;
 }
 
+.diagnostic-overview-compact {
+  padding: 0.68rem 0.78rem;
+}
+
+.diagnostic-overview-compact p {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .diagnostic-overview-progress {
   padding: 0.62rem 0.72rem 0.66rem;
 }
@@ -650,6 +662,16 @@
   padding: clamp(0.9rem, 1.55vw, 1.08rem);
 }
 
+.evolution-plan .recommendation-card {
+  padding: 0.88rem;
+  gap: 0.42rem;
+}
+
+.evolution-plan .recommendation-card h3,
+.evolution-plan .recommendation-card p {
+  margin-bottom: 0;
+}
+
 .track-number {
   display: inline-block;
   margin-bottom: 0.65rem;
@@ -690,20 +712,6 @@
   display: grid;
   align-content: center;
   gap: 0.65rem;
-}
-
-.result-hero-action {
-  width: fit-content;
-  margin-top: 0.25rem;
-  color: #1d4ed8;
-  background: #ffffff;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
-}
-
-.result-hero-action:hover,
-.result-hero-action:focus-visible {
-  color: #ffffff;
-  background: rgba(15, 23, 42, 0.22);
 }
 
 .result-hero-panel h2 {
@@ -811,6 +819,17 @@
   border-color: rgba(37, 99, 235, 0.22);
 }
 
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.result-actions .restart-button {
+  width: fit-content;
+}
+
 .next-action-card {
   display: grid;
   gap: 1rem;
@@ -858,14 +877,21 @@
 
 .area-score-map .score-row {
   display: grid;
-  grid-template-columns: minmax(11rem, 16rem) minmax(0, 1fr) 3.6rem;
-  gap: 0.85rem;
-  align-items: center;
-  padding: 0.72rem;
+  grid-template-columns: 1fr;
+  gap: 0.48rem;
+  align-items: stretch;
+  padding: 0.68rem 0.72rem;
   color: var(--color-text-secondary);
   background: #ffffff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+}
+
+.score-row-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .area-score-map .score-row strong {
@@ -881,6 +907,11 @@
   display: block;
   margin-top: 0.12rem;
   font-size: 0.8rem;
+}
+
+.score-percent {
+  flex-shrink: 0;
+  font-size: 0.95rem;
 }
 
 .area-score-map .score-row.is-strong {
@@ -908,7 +939,7 @@
 }
 
 .score-track {
-  height: 0.62rem;
+  height: 0.5rem;
   overflow: hidden;
   background: var(--color-bg-secondary);
   border-radius: 999px;
@@ -990,7 +1021,7 @@
 }
 
 .evolution-plan {
-  padding: clamp(1rem, 2vw, 1.25rem);
+  padding: clamp(0.9rem, 1.7vw, 1.08rem);
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -1007,7 +1038,7 @@
 
 .evolution-steps li {
   min-width: 0;
-  padding: 0.85rem;
+  padding: 0.72rem;
   color: var(--color-text-secondary);
   background: #ffffff;
   border: 1px solid var(--color-border);
@@ -1029,7 +1060,7 @@
 }
 
 .review-card {
-  padding: 0.9rem;
+  padding: 0.78rem;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -1055,7 +1086,7 @@
 }
 
 .review-card h4 {
-  margin: 0.7rem 0;
+  margin: 0.52rem 0;
   font-size: 1rem;
   line-height: 1.4;
   overflow-wrap: break-word;
@@ -1079,7 +1110,7 @@
 
 .review-detail-grid div {
   min-width: 0;
-  padding: 0.72rem;
+  padding: 0.62rem;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -2621,9 +2652,113 @@ body.analytics-auth-locked .analytics-hero-copy {
   box-shadow: 0 20px 44px rgba(22, 163, 74, 0.48);
 }
 
+.diagnostic-ui .contact-footer,
+.analytics-ui .contact-footer,
+.progress-ui .contact-footer,
+.contact-footer--compact {
+  margin-top: clamp(1.6rem, 3vw, 2.4rem);
+  border-radius: 22px 22px 0 0;
+}
+
+.diagnostic-ui .contact-footer__content,
+.analytics-ui .contact-footer__content,
+.progress-ui .contact-footer__content,
+.contact-footer--compact .contact-footer__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1.05rem 0 0.95rem;
+}
+
+.diagnostic-ui .contact-footer__intro,
+.analytics-ui .contact-footer__intro,
+.progress-ui .contact-footer__intro,
+.contact-footer--compact .contact-footer__intro {
+  display: none;
+}
+
+.diagnostic-ui .contact-footer__brand,
+.analytics-ui .contact-footer__brand,
+.progress-ui .contact-footer__brand,
+.contact-footer--compact .contact-footer__brand {
+  gap: 0.18rem;
+  margin-bottom: 0;
+}
+
+.diagnostic-ui .contact-footer__brand strong,
+.analytics-ui .contact-footer__brand strong,
+.progress-ui .contact-footer__brand strong,
+.contact-footer--compact .contact-footer__brand strong {
+  font-size: 0.98rem;
+}
+
+.diagnostic-ui .contact-footer__brand span,
+.analytics-ui .contact-footer__brand span,
+.progress-ui .contact-footer__brand span,
+.contact-footer--compact .contact-footer__brand span {
+  font-size: 0.8rem;
+}
+
+.diagnostic-ui .contact-footer__grid,
+.analytics-ui .contact-footer__grid,
+.progress-ui .contact-footer__grid,
+.contact-footer--compact .contact-footer__grid {
+  display: none;
+}
+
+.diagnostic-ui .contact-footer__links,
+.analytics-ui .contact-footer__links,
+.progress-ui .contact-footer__links,
+.contact-footer--compact .contact-footer__links {
+  justify-content: flex-end;
+  gap: 0.78rem;
+}
+
+.diagnostic-ui .contact-footer__links a,
+.analytics-ui .contact-footer__links a,
+.progress-ui .contact-footer__links a,
+.contact-footer--compact .contact-footer__links a {
+  font-size: 0.82rem;
+}
+
+.diagnostic-ui .contact-footer__bottom,
+.analytics-ui .contact-footer__bottom,
+.progress-ui .contact-footer__bottom,
+.contact-footer--compact .contact-footer__bottom {
+  padding-top: 0.72rem;
+  padding-bottom: 0.72rem;
+  font-size: 0.78rem;
+}
+
+.diagnostic-ui .contact-footer__whatsapp,
+.analytics-ui .contact-footer__whatsapp,
+.progress-ui .contact-footer__whatsapp,
+.contact-footer--compact .contact-footer__whatsapp {
+  width: 46px;
+  height: 46px;
+  right: 18px;
+  bottom: 10px;
+}
+
 @media (max-width: 900px) {
   .contact-footer__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diagnostic-ui .contact-footer__content,
+  .analytics-ui .contact-footer__content,
+  .progress-ui .contact-footer__content,
+  .contact-footer--compact .contact-footer__content {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .diagnostic-ui .contact-footer__links,
+  .analytics-ui .contact-footer__links,
+  .progress-ui .contact-footer__links,
+  .contact-footer--compact .contact-footer__links {
+    justify-content: flex-start;
   }
 }
 
@@ -2668,6 +2803,43 @@ body.analytics-auth-locked .analytics-hero-copy {
     height: 54px;
     right: 16px;
     bottom: 14px;
+  }
+
+  .diagnostic-ui .contact-footer__content,
+  .analytics-ui .contact-footer__content,
+  .progress-ui .contact-footer__content,
+  .contact-footer--compact .contact-footer__content {
+    width: min(1120px, calc(100% - 28px));
+    padding: 1rem 0 0.9rem;
+  }
+
+  .diagnostic-ui .contact-footer__links,
+  .analytics-ui .contact-footer__links,
+  .progress-ui .contact-footer__links,
+  .contact-footer--compact .contact-footer__links {
+    flex-direction: row;
+    gap: 0.6rem 0.9rem;
+  }
+
+  .diagnostic-ui .contact-footer__bottom,
+  .analytics-ui .contact-footer__bottom,
+  .progress-ui .contact-footer__bottom,
+  .contact-footer--compact .contact-footer__bottom {
+    padding: 0.75rem 4.5rem 0.75rem 1rem;
+  }
+
+  .diagnostic-ui .contact-footer__whatsapp,
+  .analytics-ui .contact-footer__whatsapp,
+  .progress-ui .contact-footer__whatsapp,
+  .contact-footer--compact .contact-footer__whatsapp {
+    width: 42px;
+    height: 42px;
+    right: 14px;
+    bottom: 10px;
+  }
+
+  .result-actions .restart-button {
+    width: 100%;
   }
 }
 
