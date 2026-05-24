@@ -218,6 +218,7 @@
     position: static;
     gap: 0.58rem;
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .diagnostic-hero {
@@ -351,6 +352,10 @@
 
   .diagnostic-overview {
     gap: 0.62rem;
+  }
+
+  .diagnostic-overview-progress {
+    height: auto;
   }
 
   .area-score-map {
