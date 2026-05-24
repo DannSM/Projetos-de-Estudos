@@ -134,6 +134,10 @@
   display: none;
 }
 
+.diagnostic-hero-result-hidden {
+  display: none;
+}
+
 .diagnostic-shell-result-hidden {
   display: none;
 }
@@ -943,8 +947,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.58rem;
   align-items: center;
-  justify-self: start;
-  width: min(100%, 40rem);
+  justify-self: center;
+  width: min(100%, 42rem);
 }
 
 .result-actions .restart-button,

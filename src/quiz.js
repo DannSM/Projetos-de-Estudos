@@ -397,6 +397,10 @@ function resetDiagnostic() {
 
   resultSection.classList.add("hidden");
   resultMount.innerHTML = "";
+  const diagnosticHero = document.querySelector(".diagnostic-hero");
+  if (diagnosticHero) {
+    diagnosticHero.classList.remove("diagnostic-hero-result-hidden");
+  }
   const diagnosticCard = quizMount.closest(".diagnostic-card");
   if (diagnosticCard) {
     diagnosticCard.classList.remove("diagnostic-card-result-hidden");
@@ -1046,6 +1050,10 @@ function showResult({ blocked } = { blocked: false }) {
   });
 
   quizMount.innerHTML = "";
+  const diagnosticHero = document.querySelector(".diagnostic-hero");
+  if (diagnosticHero) {
+    diagnosticHero.classList.add("diagnostic-hero-result-hidden");
+  }
   const diagnosticCard = quizMount.closest(".diagnostic-card");
   if (diagnosticCard) {
     diagnosticCard.classList.add("diagnostic-card-result-hidden");
