@@ -122,6 +122,34 @@ function persistDiagnosticSessionRecord(payload) {
   void window.supabaseDataService.saveDiagnosticSession(payload);
 }
 
+function trackDiagnosticFunnelEvent(eventType, payload = {}) {
+  if (!window.diagnosticFunnelService || typeof window.diagnosticFunnelService.trackEvent !== "function") {
+    return;
+  }
+
+  const answered = getTotalAnswered();
+  const scorePercent = answered ? Math.round((getTotalCorrect() / answered) * 100) : null;
+  const metadata = {
+    source: "diagnostico",
+    page: "diagnostico.html",
+    currentLevel: getCurrentLevel() ? getCurrentLevel().name : null,
+    timestamp: new Date().toISOString(),
+    ...(payload.metadata || {})
+  };
+
+  void window.diagnosticFunnelService.trackEvent({
+    attempt_id: state.currentDiagnosticAttemptId,
+    anonymous_user_id: getAnonymousUserId(),
+    user_id: null,
+    event_type: eventType,
+    level: payload.level === undefined ? (getCurrentLevel() ? getCurrentLevel().name : null) : payload.level,
+    question_index: payload.question_index === undefined ? state.currentQuestion : payload.question_index,
+    total_questions_answered: payload.total_questions_answered === undefined ? answered : payload.total_questions_answered,
+    score_percent: payload.score_percent === undefined ? scorePercent : payload.score_percent,
+    metadata
+  });
+}
+
 function persistSatisfactionFeedbackRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveSatisfactionFeedback !== "function") {
     return Promise.resolve({ ok: false, skipped: true });
@@ -429,6 +457,18 @@ function startDiagnostic() {
     return;
   }
 
+  trackDiagnosticFunnelEvent("started", {
+    level: getCurrentLevel() ? getCurrentLevel().name : null,
+    question_index: 0,
+    total_questions_answered: 0,
+    score_percent: null,
+    metadata: {
+      currentLevel: getCurrentLevel() ? getCurrentLevel().name : null,
+      totalSessionQuestions: getSessionQuestionCount(),
+      selectionSource: state.diagnosticSelectionMeta ? state.diagnosticSelectionMeta.source : null
+    }
+  });
+
   renderAreaProgress();
   renderQuestion();
 }
@@ -614,6 +654,13 @@ function advanceDiagnostic() {
   completeCurrentLevel();
 }
 
+function getCompletedLevelEventType(levelIndex) {
+  if (levelIndex === 0) return "completed_basic";
+  if (levelIndex === 1) return "completed_intermediate";
+  if (levelIndex === 2) return "completed_advanced";
+  return null;
+}
+
 function completeCurrentLevel() {
   const level = getCurrentLevel();
   const levelAnswers = state.diagnosticAnswers.filter((answer) => answer.level === level.name);
@@ -622,6 +669,23 @@ function completeCurrentLevel() {
   const passed = level.minPercent === null || percent >= level.minPercent;
   const levelResult = { name: level.name, label: level.shortLabel, correct, total: levelAnswers.length, percent, passed };
   state.levelResults.push(levelResult);
+  const completedEventType = getCompletedLevelEventType(state.currentLevelIndex);
+
+  if (completedEventType) {
+    trackDiagnosticFunnelEvent(completedEventType, {
+      level: level.name,
+      question_index: state.currentQuestion,
+      total_questions_answered: getTotalAnswered(),
+      score_percent: Math.round(percent * 100),
+      metadata: {
+        completedLevel: level.name,
+        levelLabel: level.label,
+        levelCorrect: correct,
+        levelTotal: levelAnswers.length,
+        levelPassed: passed
+      }
+    });
+  }
 
   if (!passed) {
     state.diagnosticStoppedAtLevel = levelResult;
@@ -653,6 +717,17 @@ function showLevelTransition(levelResult) {
   `;
 
   document.querySelector("#continueDiagnostic").addEventListener("click", () => {
+    trackDiagnosticFunnelEvent("continued_to_next_level", {
+      level: levelResult.name,
+      question_index: state.currentQuestion,
+      total_questions_answered: getTotalAnswered(),
+      score_percent: Math.round(levelResult.percent * 100),
+      metadata: {
+        completedLevel: levelResult.name,
+        nextLevel: nextLevel.name
+      }
+    });
+
     state.currentLevelIndex += 1;
     state.currentQuestion = 0;
     state.selectedDiagnosticAnswer = null;
@@ -701,6 +776,20 @@ function showResult({ blocked } = { blocked: false }) {
   const dataLevel = getDataAreaLevel();
 
   renderAreaProgress(true);
+
+  trackDiagnosticFunnelEvent("generated_final_result", {
+    level: "Final",
+    question_index: answered ? answered - 1 : 0,
+    total_questions_answered: answered,
+    score_percent: Math.round(percent * 100),
+    metadata: {
+      completedLevel: stopped ? stopped.name : "Avançado",
+      currentLevel: "Final",
+      blocked,
+      stoppedAtLevel: stopped ? stopped.name : null,
+      overallLevel: profile.name
+    }
+  });
 
   persistDiagnosticSessionRecord({
     attempt_id: state.currentDiagnosticAttemptId,
