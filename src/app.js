@@ -211,6 +211,75 @@ function setupGlobalNavigation() {
   }
 }
 
+async function setupAuthEntryPoints() {
+  const authButtons = document.querySelectorAll("[data-auth-entry]");
+  if (!authButtons.length || !window.authService) {
+    return;
+  }
+
+  let currentSession = null;
+
+  const closeMobileMenu = () => {
+    const toggle = document.querySelector(".mobile-nav-toggle");
+    const backdrop = document.querySelector(".mobile-nav-backdrop");
+    document.body.classList.remove("menu-open");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Abrir menu de navegação");
+    }
+    if (backdrop) {
+      backdrop.setAttribute("hidden", "");
+    }
+  };
+
+  const setAuthButtonState = (session) => {
+    currentSession = session || null;
+
+    authButtons.forEach((button) => {
+      const isMobileButton = button.classList.contains("mobile-auth-entry");
+      const label = button.querySelector("[data-auth-entry-label]");
+      const isAuthenticated = Boolean(currentSession);
+
+      button.classList.toggle("is-authenticated", isAuthenticated);
+      button.setAttribute("aria-label", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
+      button.setAttribute("title", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
+
+      if (label) {
+        label.textContent = isAuthenticated
+          ? (isMobileButton ? "Logado - Sair" : "Sair")
+          : (isMobileButton ? "Entrar / Criar conta" : "Entrar");
+      }
+    });
+  };
+
+  const refreshAuthState = async () => {
+    const sessionResult = await window.authService.getCurrentSession();
+    setAuthButtonState(sessionResult && sessionResult.ok ? sessionResult.session : null);
+  };
+
+  authButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      closeMobileMenu();
+
+      if (currentSession) {
+        await window.authService.signOut();
+        setAuthButtonState(null);
+        return;
+      }
+
+      if (window.authModal && typeof window.authModal.openAuthModal === "function") {
+        window.authModal.openAuthModal({
+          onSuccess: async () => {
+            await refreshAuthState();
+          }
+        });
+      }
+    });
+  });
+
+  await refreshAuthState();
+}
+
 function updateHomeChallengeCount() {
   const challengeCountMount = document.querySelector("#homeChallengeCount");
   if (!challengeCountMount) return;
@@ -225,6 +294,7 @@ function updateHomeChallengeCount() {
 async function init() {
   bindHeaderHeightSync();
   setupGlobalNavigation();
+  await setupAuthEntryPoints();
   renderIcons();
   if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
     state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();

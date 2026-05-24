@@ -100,7 +100,7 @@ video {
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 0.62rem;
   min-height: var(--header-height);
@@ -217,6 +217,58 @@ video {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.auth-entry-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-height: 2.5rem;
+  padding: 0.48rem 0.78rem;
+  color: var(--color-primary-hover);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 13px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  font-family: var(--font-base);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.auth-entry-button:hover,
+.auth-entry-button:focus-visible {
+  color: var(--color-primary);
+  background: #ffffff;
+  border-color: rgba(37, 99, 235, 0.32);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+}
+
+.auth-entry-button:active {
+  transform: translateY(1px);
+}
+
+.auth-entry-button .lucide {
+  width: 0.94rem;
+  height: 0.94rem;
+  stroke-width: 2.3;
+}
+
+.auth-entry-button.is-authenticated {
+  color: var(--color-success);
+  background: var(--color-success-light);
+  border-color: rgba(22, 163, 74, 0.24);
+}
+
+.auth-entry-button.is-authenticated:hover,
+.auth-entry-button.is-authenticated:focus-visible {
+  color: var(--color-error);
+  background: var(--color-error-light);
+  border-color: rgba(220, 38, 38, 0.22);
 }
 
 .header-cta,
@@ -348,6 +400,17 @@ video {
   color: #ffffff;
   background: linear-gradient(120deg, var(--color-primary-hover), var(--color-accent-strong));
   border-color: transparent;
+}
+
+.mobile-nav-panel .mobile-auth-entry {
+  width: 100%;
+  min-height: 2.58rem;
+  margin-top: 0.18rem;
+  justify-content: center;
+  color: var(--color-primary-hover);
+  background: rgba(219, 234, 254, 0.42);
+  border-color: rgba(37, 99, 235, 0.18);
+  box-shadow: none;
 }
 
 body.menu-open {

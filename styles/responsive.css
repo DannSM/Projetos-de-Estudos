@@ -87,6 +87,10 @@
     display: none;
   }
 
+  .app-header > .auth-entry-button {
+    display: none;
+  }
+
   .header-cta .header-cta-text {
     display: none;
   }
@@ -117,6 +121,10 @@
 
   .mobile-nav-panel .mobile-cta-link {
     min-height: 2.42rem;
+  }
+
+  .mobile-nav-panel .mobile-auth-entry {
+    min-height: 2.58rem;
   }
 
   .hero,
@@ -335,6 +343,11 @@
   .mobile-nav-panel a {
     min-height: 2.34rem;
     padding: 0.48rem 0.62rem;
+  }
+
+  .mobile-nav-panel .mobile-auth-entry {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.62rem;
   }
 
   .hero-actions,
