@@ -9,7 +9,6 @@ const DATA_AREAS = areaGoals.slice(2);
 const DIAGNOSTIC_FEEDBACK_STORAGE_PREFIX = "dataSkillMap_feedback_diagnostic";
 const DIAGNOSTIC_RECENT_QUESTIONS_STORAGE_KEY = "dataSkillMap_diag_recent_questions";
 const DIAGNOSTIC_RECENT_WINDOW_DAYS = 7;
-const DIAGNOSTIC_FEEDBACK_DELAY_MS = 2600;
 
 const diagnosticLevelBlueprint = [
   {
@@ -213,6 +212,17 @@ function openDiagnosticSatisfactionModal({ scorePercent, blocked }) {
     onSkip: () => {
       setDiagnosticFeedbackFlag("dismissed");
     }
+  });
+}
+
+function scrollToResultStart() {
+  const header = document.querySelector(".app-header");
+  const headerHeight = header ? header.getBoundingClientRect().height : 0;
+  const targetTop = resultSection.getBoundingClientRect().top + window.scrollY - headerHeight - 14;
+
+  window.scrollTo({
+    top: Math.max(targetTop, 0),
+    behavior: "smooth"
   });
 }
 
@@ -456,10 +466,8 @@ function renderDiagnosticIntro() {
         Banco atual com ${questionPool.length} questões. A cada tentativa, a plataforma sorteia ${QUESTIONS_PER_LEVEL} perguntas por nível.
       </p>
       ${renderLevelRoadmap()}
-      <div class="diagnostic-summary">
-        <span>${QUESTIONS_PER_LEVEL} por nível</span>
-        <span>${totalQuestions} por sessão</span>
-        <span>Confirmação antes de responder</span>
+      <div class="diagnostic-summary diagnostic-summary-inline">
+        <span>${totalQuestions} por sessão • 3 níveis • meta de 75% por nível</span>
       </div>
       <p class="explanation">
         Você avança para o próximo nível ao atingir 75% no nível atual.
@@ -1042,6 +1050,7 @@ function showResult({ blocked } = { blocked: false }) {
 
       <div class="result-actions">
         <button class="restart-button" id="restartDiagnostic">Refazer diagnóstico</button>
+        <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">Avaliar experiência</button>
       </div>
 
       <section class="next-action-card">
@@ -1165,11 +1174,11 @@ function showResult({ blocked } = { blocked: false }) {
   `;
 
   document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
-  resultSection.classList.remove("hidden");
-  resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  window.setTimeout(() => {
+  document.querySelector("#openDiagnosticFeedback").addEventListener("click", () => {
     openDiagnosticSatisfactionModal({ scorePercent, blocked });
-  }, DIAGNOSTIC_FEEDBACK_DELAY_MS);
+  });
+  resultSection.classList.remove("hidden");
+  scrollToResultStart();
 }
 
 function renderLevelSummary() {
