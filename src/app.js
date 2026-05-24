@@ -43,6 +43,10 @@ function getCurrentNavKey() {
     return "analytics";
   }
 
+  if (fileName === "meu-progresso.html") {
+    return "progresso";
+  }
+
   if (fileName === "index.html" || fileName === "" || path.endsWith("/")) {
     if (hash === "#trilhas") {
       return "trilhas";
@@ -82,7 +86,8 @@ function setupGlobalNavigation() {
     return;
   }
 
-  const mobileQuery = window.matchMedia("(max-width: 1024px)");
+  const headerMobileBreakpoint = 1120;
+  const mobileQuery = window.matchMedia(`(max-width: ${headerMobileBreakpoint}px)`);
   const header = document.querySelector(".app-header");
 
   const scrollToAnchor = (hashValue) => {
@@ -193,7 +198,7 @@ function setupGlobalNavigation() {
   });
   window.addEventListener("popstate", updateGlobalNavActiveState);
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 1024) {
+    if (window.innerWidth > headerMobileBreakpoint) {
       setMenuOpen(false);
     }
   });
@@ -211,6 +216,85 @@ function setupGlobalNavigation() {
   }
 }
 
+async function setupAuthEntryPoints() {
+  const authButtons = document.querySelectorAll("[data-auth-entry]");
+  if (!authButtons.length || !window.authService) {
+    return;
+  }
+
+  let currentSession = null;
+
+  const closeMobileMenu = () => {
+    const toggle = document.querySelector(".mobile-nav-toggle");
+    const backdrop = document.querySelector(".mobile-nav-backdrop");
+    document.body.classList.remove("menu-open");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Abrir menu de navegação");
+    }
+    if (backdrop) {
+      backdrop.setAttribute("hidden", "");
+    }
+  };
+
+  const setAuthButtonState = (session) => {
+    currentSession = session || null;
+
+    authButtons.forEach((button) => {
+      const isMobileButton = button.classList.contains("mobile-auth-entry");
+      const label = button.querySelector("[data-auth-entry-label]");
+      const isAuthenticated = Boolean(currentSession);
+
+      button.classList.toggle("is-authenticated", isAuthenticated);
+      button.setAttribute("aria-label", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
+      button.setAttribute("title", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
+
+      if (label) {
+        label.textContent = isAuthenticated
+          ? (isMobileButton ? "Logado - Sair" : "Sair")
+          : (isMobileButton ? "Entrar / Criar conta" : "Entrar");
+      }
+    });
+  };
+
+  const refreshAuthState = async () => {
+    const sessionResult = await window.authService.getCurrentSession();
+    setAuthButtonState(sessionResult && sessionResult.ok ? sessionResult.session : null);
+  };
+
+  window.addEventListener("data-skill-map-auth-changed", () => {
+    void refreshAuthState();
+  });
+
+  authButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      closeMobileMenu();
+
+      if (currentSession) {
+        await window.authService.signOut();
+        setAuthButtonState(null);
+        window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+          detail: { session: null, user: null }
+        }));
+        return;
+      }
+
+      if (window.authModal && typeof window.authModal.openAuthModal === "function") {
+        window.authModal.openAuthModal({
+          onSuccess: async ({ session, user } = {}) => {
+            await refreshAuthState();
+            window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+              detail: { session: session || null, user: user || null }
+            }));
+          }
+        });
+      }
+    });
+  });
+
+  await refreshAuthState();
+}
+
 function updateHomeChallengeCount() {
   const challengeCountMount = document.querySelector("#homeChallengeCount");
   if (!challengeCountMount) return;
@@ -225,6 +309,7 @@ function updateHomeChallengeCount() {
 async function init() {
   bindHeaderHeightSync();
   setupGlobalNavigation();
+  await setupAuthEntryPoints();
   renderIcons();
   if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
     state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();

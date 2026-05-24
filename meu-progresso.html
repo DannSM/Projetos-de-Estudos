@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diagnóstico - Data Skill Map</title>
-  <meta name="description" content="Data Skill Map: diagnóstico adaptativo com progressão por níveis, desempenho por área e recomendações práticas para evoluir em dados.">
+  <title>Meu Progresso - Data Skill Map</title>
+  <meta name="description" content="Acompanhe seu progresso de estudos no Data Skill Map.">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -12,10 +12,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles/progress.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body class="progress-ui">
   <header class="app-header">
     <a class="brand" href="index.html" aria-label="Data Skill Map">
       <span class="brand-logo-wrap" aria-hidden="true">
@@ -37,14 +38,14 @@
       <a data-nav-key="analytics" href="analytics.html">Analytics</a>
     </nav>
 
-    <div class="header-context">Diagnóstico em etapas para mapear seu nível com critério claro.</div>
+    <div class="header-context">Seu espaço para acompanhar evolução em dados.</div>
     <button class="auth-entry-button" type="button" data-auth-entry aria-label="Entrar ou criar conta">
       <i data-lucide="user-circle" aria-hidden="true"></i>
       <span data-auth-entry-label>Entrar</span>
     </button>
-    <a class="header-cta" href="index.html#desafios" aria-label="Praticar desafios" title="Praticar desafios">
-      <i data-lucide="target" aria-hidden="true"></i>
-      <span class="header-cta-text">Praticar</span>
+    <a class="header-cta" href="diagnostico.html" aria-label="Iniciar diagnóstico" title="Iniciar diagnóstico">
+      <i data-lucide="play" aria-hidden="true"></i>
+      <span class="header-cta-text">Iniciar</span>
     </a>
     <button
       class="mobile-nav-toggle"
@@ -69,57 +70,15 @@
       <i data-lucide="user-circle" aria-hidden="true"></i>
       <span data-auth-entry-label>Entrar / Criar conta</span>
     </button>
-    <a class="mobile-cta-link" href="index.html#desafios">
-      <i data-lucide="target" aria-hidden="true"></i>
-      <span>Praticar desafios</span>
+    <a class="mobile-cta-link" href="diagnostico.html">
+      <i data-lucide="play" aria-hidden="true"></i>
+      <span>Iniciar diagnóstico</span>
     </a>
   </nav>
 
-  <main class="diagnostic-page">
-    <section class="section-shell diagnostic-hero">
-      <span class="section-kicker">Diagnóstico adaptativo</span>
-      <h1>Mapa objetivo do seu nível em dados.</h1>
-      <p class="diagnostic-hero-copy">Cada etapa testa fundamentos e libera a próxima somente quando sua base estiver consistente.</p>
-    </section>
-
-    <section class="section-shell diagnostic-shell">
-      <aside class="diagnostic-overview" aria-label="Contexto do diagnóstico">
-        <article class="diagnostic-overview-card diagnostic-overview-metrics">
-          <div class="diagnostic-side-grid" aria-label="Resumo do diagnóstico">
-            <div>
-              <strong>15</strong>
-              <span>perguntas</span>
-            </div>
-            <div>
-              <strong>3</strong>
-              <span>níveis</span>
-            </div>
-            <div>
-              <strong>75%</strong>
-              <span>para avançar</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="diagnostic-overview-card diagnostic-note diagnostic-overview-reading">
-          <strong>Leitura do resultado</strong>
-          <p>Você recebe desempenho por nível, análise por área e recomendação do próximo foco para estudo prático.</p>
-        </article>
-
-        <article id="areaProgressCard" class="diagnostic-overview-card diagnostic-overview-progress">
-          <strong class="overview-title">Progresso por área</strong>
-          <p class="overview-copy">Acompanhe acertos e lacunas conforme responde as perguntas.</p>
-          <div class="area-list" id="areaList"></div>
-        </article>
-      </aside>
-
-      <div class="quiz-card diagnostic-card">
-        <div id="quizMount"></div>
-      </div>
-    </section>
-
-    <section id="resultado" class="section-shell result-section hidden">
-      <div id="resultMount"></div>
+  <main class="progress-page">
+    <section class="section-shell progress-shell" aria-live="polite">
+      <div id="progressPageMount"></div>
     </section>
   </main>
 
@@ -181,18 +140,10 @@
     </a>
   </footer>
 
-  <script src="src/data/content.js"></script>
-  <script src="src/state.js"></script>
   <script src="src/supabase-config.js"></script>
   <script src="src/auth-service.js"></script>
   <script src="src/auth-modal.js"></script>
-  <script src="src/supabase-service.js"></script>
-  <script src="src/diagnostic-funnel-service.js"></script>
-  <script src="src/question-bank-service.js"></script>
-  <script src="src/question-selector.js"></script>
-  <script src="src/feedback-modal.js"></script>
-  <script src="src/recommendations.js"></script>
-  <script src="src/quiz.js"></script>
   <script src="src/app.js"></script>
+  <script src="src/progress-page.js"></script>
 </body>
 </html>
