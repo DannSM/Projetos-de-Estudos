@@ -289,7 +289,7 @@
     min-width: 100%;
   }
 
-  .score-row {
+  .area-score-map .score-row {
     grid-template-columns: 1fr;
     gap: 0.35rem;
   }

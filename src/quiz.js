@@ -9,6 +9,7 @@ const DATA_AREAS = areaGoals.slice(2);
 const DIAGNOSTIC_FEEDBACK_STORAGE_PREFIX = "dataSkillMap_feedback_diagnostic";
 const DIAGNOSTIC_RECENT_QUESTIONS_STORAGE_KEY = "dataSkillMap_diag_recent_questions";
 const DIAGNOSTIC_RECENT_WINDOW_DAYS = 7;
+const DIAGNOSTIC_FEEDBACK_DELAY_MS = 2600;
 
 const diagnosticLevelBlueprint = [
   {
@@ -295,7 +296,7 @@ function renderAreaList() {
   areaList.innerHTML = areaGoals.map((area) => `
     <div class="area-pill">
       <strong>${area}</strong>
-      <span>0/${countQuestionsByArea(area)}</span>
+      <span>0 respondidas de ${countQuestionsByArea(area)} previstas</span>
     </div>
   `).join("");
 }
@@ -315,7 +316,11 @@ function renderAreaProgress(showStatusColors = false) {
     return `
       <div class="area-pill ${statusClass}">
         <strong>${area}</strong>
-        <span>${score.correct}/${expected} - ${answered ? `${percent}%` : "pendente"}</span>
+        <span>
+          ${answered
+            ? `${percent}% de aproveitamento - ${score.correct} acerto${score.correct === 1 ? "" : "s"} em ${answered} respondida${answered === 1 ? "" : "s"} - ${expected} previstas`
+            : `Pendente - ${expected} previstas`}
+        </span>
       </div>
     `;
   }).join("");
@@ -343,6 +348,10 @@ function resetDiagnostic() {
 
   resultSection.classList.add("hidden");
   resultMount.innerHTML = "";
+  const diagnosticCard = quizMount.closest(".diagnostic-card");
+  if (diagnosticCard) {
+    diagnosticCard.classList.remove("diagnostic-card-result-hidden");
+  }
   diagnosticLevels = buildDiagnosticLevels();
 
   renderAreaProgress();
@@ -782,6 +791,81 @@ function getAreaStatusText(percent) {
   return "Atenção";
 }
 
+function getAreaImpactText(area) {
+  const messages = {
+    SQL: "impacta sua autonomia para consultar, cruzar e validar dados.",
+    "Estatística": "impacta a interpretação de variação, relação entre variáveis e confiança dos resultados.",
+    Excel: "impacta sua agilidade para organizar, conferir e apresentar análises operacionais.",
+    "Lógica de dados": "impacta a forma como você estrutura hipóteses e transforma contexto em análise.",
+    Indicadores: "impacta sua leitura de métricas, metas e sinais de negócio."
+  };
+
+  return messages[area] || "impacta a consistência da sua análise.";
+}
+
+function getPriorityConceptText(area) {
+  const score = state.areaScore[area];
+  const concepts = score ? [...new Set(score.misses)].filter(Boolean).slice(0, 4) : [];
+
+  if (!concepts.length) {
+    return "os conceitos em que você sentiu mais dificuldade durante o diagnóstico";
+  }
+
+  return concepts.join(", ");
+}
+
+function getPriorityActionTitle({ blocked, stopped, priorityAreaLabel }) {
+  if (blocked && stopped) {
+    return `Consolidar ${stopped.label}`;
+  }
+
+  return `Reforçar ${priorityAreaLabel}`;
+}
+
+function getChallengeLabelForArea(area) {
+  if (typeof mapAreaToChallenge === "function") {
+    return mapAreaToChallenge(area);
+  }
+
+  return area || "Todos";
+}
+
+function getTrackTextForProfile(profileName, priorityArea) {
+  if (typeof getTrackSuggestion === "function") {
+    return getTrackSuggestion(profileName, priorityArea);
+  }
+
+  return `Siga pela trilha de ${getPriorityDisplayLabel(priorityArea)} antes de partir para um projeto completo.`;
+}
+
+function getReviewContextText(item) {
+  const concept = cleanText(item.concept).toLowerCase();
+
+  if (concept.includes("dispers")) {
+    return "Você escolheu uma leitura que não comparava a variabilidade pedida pela pergunta.";
+  }
+  if (concept.includes("correla")) {
+    return "A resposta confundiu associação entre variáveis com uma conclusão causal ou operacional.";
+  }
+  if (concept.includes("distribui")) {
+    return "A questão pedia reconhecer o comportamento da distribuição antes de interpretar o resultado.";
+  }
+  if (concept.includes("intervalo") || concept.includes("confian")) {
+    return "Faltou considerar a incerteza da estimativa antes de fechar a interpretação.";
+  }
+  if (concept.includes("join")) {
+    return "A lacuna apareceu na escolha da forma correta de cruzar tabelas sem perder registros importantes.";
+  }
+  if (concept.includes("kpi") || concept.includes("indicador")) {
+    return "A resposta não separou claramente métrica, meta e decisão de negócio.";
+  }
+  if (concept.includes("filtro") || concept.includes("where")) {
+    return "A condição usada para filtrar os dados não respondia exatamente ao recorte pedido.";
+  }
+
+  return `A questão avaliava ${item.concept}; vale revisar o raciocínio por trás desse conceito antes de avançar.`;
+}
+
 function showResult({ blocked } = { blocked: false }) {
   const finishedAt = new Date().toISOString();
   const totalCorrect = getTotalCorrect();
@@ -796,15 +880,41 @@ function showResult({ blocked } = { blocked: false }) {
   const missedAnswers = state.diagnosticAnswers.filter((answer) => !answer.correct);
   const stopped = state.diagnosticStoppedAtLevel;
   const scorePercent = Math.round(percent * 100);
-  const priorityArea = blocked && stopped ? stopped.label : weakest.area;
-  const priorityLabel = blocked ? `Reforce ${priorityArea}` : getPriorityDisplayLabel(priorityArea);
+  const priorityArea = weakest.area;
+  const priorityAreaLabel = getPriorityDisplayLabel(priorityArea);
+  const priorityLevelLabel = blocked && stopped ? stopped.label : null;
+  const priorityLabel = priorityLevelLabel ? `${priorityAreaLabel} no ${priorityLevelLabel}` : priorityAreaLabel;
+  const priorityConceptText = getPriorityConceptText(priorityArea);
   const priorityReason = blocked
-    ? "O diagnóstico preserva a sequência de aprendizagem quando um nível ainda precisa de reforço."
-    : `${weakest.area} teve o menor desempenho relativo entre as áreas respondidas e concentra o maior ganho potencial agora.`;
+    ? `${priorityAreaLabel} concentrou a maior lacuna e ${getAreaImpactText(priorityArea)}`
+    : `${priorityAreaLabel} teve o menor desempenho relativo entre as áreas respondidas e ${getAreaImpactText(priorityArea)}`;
   const priorityNextStep = blocked
-    ? "Revise os conceitos desse nível, refaça exercícios curtos e tente liberar a próxima etapa quando se sentir consistente."
-    : `Comece por ${priorityLabel.toLowerCase()} antes de avançar para novos conteúdos ou projetos mais abertos.`;
-  const nextActionTitle = blocked ? priorityLabel : `Comece por ${priorityLabel}`;
+    ? `Revise ${priorityConceptText} dentro do ${stopped.label.toLowerCase()} antes de tentar liberar a próxima etapa.`
+    : `Revise ${priorityConceptText} e resolva exercícios curtos antes de avançar para novos conteúdos.`;
+  const nextActionTitle = getPriorityActionTitle({ blocked, stopped, priorityAreaLabel });
+  const priorityRecommendationText = blocked
+    ? `Prioridade recomendada: consolidar ${priorityAreaLabel.toLowerCase()} no ${stopped.label.toLowerCase()} para recuperar a base do nível.`
+    : `Prioridade recomendada: reforçar ${priorityAreaLabel.toLowerCase()} porque é a área com maior ganho potencial agora.`;
+  const evolutionCards = [
+    {
+      level: "Agora",
+      title: "Primeiro foco",
+      text: `Trabalhe ${priorityConceptText} com exemplos pequenos e correção imediata.`,
+      next: `Filtre os desafios por ${getChallengeLabelForArea(priorityArea)}.`
+    },
+    {
+      level: "Revisão",
+      title: "Conceitos para revisar",
+      text: priorityConceptText,
+      next: "Refaça primeiro as perguntas erradas e anote o motivo da alternativa correta."
+    },
+    {
+      level: profile.name,
+      title: "Trilha sugerida",
+      text: getTrackTextForProfile(profile.name, priorityArea),
+      next: "Depois conecte a revisão a um mini-projeto com pergunta de negócio e conclusão."
+    }
+  ];
   const sqlLevel = mapPercentToLevel(getAreaPercentScore("SQL"));
   const statisticsLevel = mapPercentToLevel(getAreaPercentScore(areaGoals[1]));
   const dataLevel = getDataAreaLevel();
@@ -845,19 +955,11 @@ function showResult({ blocked } = { blocked: false }) {
     area_score_snapshot: buildAreaScoreSnapshot()
   });
 
-  quizMount.innerHTML = `
-    <div class="feedback-box ${blocked ? "error" : "success"} quiz-step">
-      <strong>${blocked ? "Nível não liberado" : "Diagnóstico concluído"}</strong>
-      <p class="explanation">
-        ${blocked
-          ? `Você fez ${stopped.correct}/${stopped.total} no ${stopped.label}. Reforce este nível antes de avançar.`
-          : `Você respondeu os 3 níveis e acertou ${totalCorrect} de ${answered} perguntas.`}
-      </p>
-      <button class="restart-button" id="restartDiagnostic">Refazer diagnóstico</button>
-    </div>
-  `;
-
-  document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
+  quizMount.innerHTML = "";
+  const diagnosticCard = quizMount.closest(".diagnostic-card");
+  if (diagnosticCard) {
+    diagnosticCard.classList.add("diagnostic-card-result-hidden");
+  }
 
   resultMount.innerHTML = `
     <article class="result-card result-dashboard quiz-step">
@@ -871,6 +973,7 @@ function showResult({ blocked } = { blocked: false }) {
             <span>${totalWrong} erros</span>
             <span>${stopped ? `Até ${stopped.label}` : "3 níveis concluídos"}</span>
           </div>
+          <button class="restart-button result-hero-action" id="restartDiagnostic">Refazer diagnóstico</button>
         </div>
         <div class="result-score-card" aria-label="Percentual geral">
           <span>Percentual geral</span>
@@ -902,7 +1005,7 @@ function showResult({ blocked } = { blocked: false }) {
         <div class="next-action-grid">
           <div>
             <strong>Área prioritária</strong>
-            <p>${priorityLabel}</p>
+            <p>${priorityAreaLabel}</p>
           </div>
           <div>
             <strong>Por que agora</strong>
@@ -927,12 +1030,12 @@ function showResult({ blocked } = { blocked: false }) {
             <div class="score-row ${getAreaVisualClass(item.percent)}">
               <div>
                 <strong>${item.area}</strong>
-                <span>${getAreaStatusText(item.percent)}</span>
+                <span>${item.correct}/${item.total} - ${item.percent}% - ${getAreaStatusText(item.percent)}</span>
               </div>
               <div class="score-track" aria-label="${item.area}: ${item.percent}%">
                 <div class="score-fill" style="width: ${item.percent}%"></div>
               </div>
-              <span>${item.correct}/${item.total}</span>
+              <span>${item.percent}%</span>
             </div>
           `).join("")}
         </div>
@@ -946,10 +1049,10 @@ function showResult({ blocked } = { blocked: false }) {
         <div class="priority-card">
           <span class="section-kicker">Prioridade recomendada</span>
           <h3>${priorityLabel}</h3>
-          <p>${recommendations.priority.text}</p>
+          <p>${priorityRecommendationText}</p>
         </div>
         <div class="recommendation-grid">
-          ${recommendations.cards.map((item) => `
+          ${evolutionCards.map((item) => `
             <article class="recommendation-card">
               <span class="concept-tag">${item.level}</span>
               <h3>${item.title}</h3>
@@ -974,7 +1077,7 @@ function showResult({ blocked } = { blocked: false }) {
                 <div class="review-detail-grid">
                   <div>
                     <strong>O que aconteceu</strong>
-                    <p>Essa pergunta avaliava ${item.concept} e marcou uma lacuna nessa área.</p>
+                    <p>${getReviewContextText(item)}</p>
                   </div>
                   <div>
                     <strong>Sua resposta</strong>
@@ -1012,9 +1115,12 @@ function showResult({ blocked } = { blocked: false }) {
     </article>
   `;
 
-  openDiagnosticSatisfactionModal({ scorePercent: Math.round(percent * 100), blocked });
+  document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
   resultSection.classList.remove("hidden");
   resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => {
+    openDiagnosticSatisfactionModal({ scorePercent, blocked });
+  }, DIAGNOSTIC_FEEDBACK_DELAY_MS);
 }
 
 function renderLevelSummary() {
@@ -1022,13 +1128,16 @@ function renderLevelSummary() {
     <div class="level-summary">
       ${diagnosticLevels.map((level) => {
         const result = state.levelResults.find((item) => item.name === level.name);
-        const text = result
-          ? `${result.correct}/${result.total} - ${Math.round(result.percent * 100)}%`
+        const percent = result ? Math.round(result.percent * 100) : 0;
+        const statusText = result
+          ? (result.passed ? "nível liberado" : "precisa reforçar")
           : "não aplicado";
+        const scoreText = result ? `${result.correct}/${result.total} - ${percent}%` : "aguardando";
         return `
           <div class="level-summary-item ${result ? (result.passed ? "is-complete" : "is-blocked") : ""}">
             <strong>${level.shortLabel}</strong>
-            <span>${text}</span>
+            <span>${statusText}</span>
+            <small>${scoreText}</small>
           </div>
         `;
       }).join("")}

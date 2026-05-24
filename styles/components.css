@@ -17,9 +17,9 @@
 
 .area-pill {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.42rem;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 0.18rem;
   min-width: 0;
   min-height: 0;
   padding: 0.42rem 0.56rem;
@@ -41,17 +41,17 @@
 }
 
 .area-pill span {
-  white-space: nowrap;
+  white-space: normal;
   overflow-wrap: normal;
-  word-break: keep-all;
-  text-align: right;
-  justify-self: end;
-  font-size: 0.78rem;
+  word-break: normal;
+  text-align: left;
+  justify-self: start;
+  font-size: 0.75rem;
   line-height: 1.25;
 }
 
 .diagnostic-overview-card .area-pill {
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: 1fr;
 }
 
 .diagnostic-overview-metrics,
@@ -95,6 +95,10 @@
 .quiz-card {
   min-height: 0;
   padding: clamp(1.05rem, 2.6vw, 1.4rem);
+}
+
+.diagnostic-card-result-hidden {
+  display: none;
 }
 
 #quizMount {
@@ -202,6 +206,15 @@
   color: var(--color-text-secondary);
   font-size: 0.78rem;
   font-weight: 700;
+  line-height: 1.2;
+}
+
+.level-summary-item small {
+  display: block;
+  margin-top: 0.24rem;
+  color: var(--color-text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
   line-height: 1.2;
 }
 
@@ -679,6 +692,20 @@
   gap: 0.65rem;
 }
 
+.result-hero-action {
+  width: fit-content;
+  margin-top: 0.25rem;
+  color: #1d4ed8;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.result-hero-action:hover,
+.result-hero-action:focus-visible {
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.22);
+}
+
 .result-hero-panel h2 {
   margin: 0;
   color: #ffffff;
@@ -829,9 +856,9 @@
   margin: 1rem 0;
 }
 
-.score-row {
+.area-score-map .score-row {
   display: grid;
-  grid-template-columns: 10rem minmax(0, 1fr) 3rem;
+  grid-template-columns: minmax(11rem, 16rem) minmax(0, 1fr) 3.6rem;
   gap: 0.85rem;
   align-items: center;
   padding: 0.72rem;
@@ -841,43 +868,43 @@
   border-radius: var(--radius-md);
 }
 
-.score-row strong {
+.area-score-map .score-row strong {
   display: block;
   color: var(--color-text-primary);
 }
 
-.score-row span {
+.area-score-map .score-row span {
   font-weight: 800;
 }
 
-.score-row > div:first-child span {
+.area-score-map .score-row > div:first-child span {
   display: block;
   margin-top: 0.12rem;
   font-size: 0.8rem;
 }
 
-.score-row.is-strong {
+.area-score-map .score-row.is-strong {
   border-left: 4px solid var(--color-success);
 }
 
-.score-row.is-building {
+.area-score-map .score-row.is-building {
   border-left: 4px solid var(--color-warning);
 }
 
-.score-row.is-attention {
+.area-score-map .score-row.is-attention {
   border-left: 4px solid var(--color-error);
 }
 
-.score-row.is-strong .score-fill {
+.area-score-map .score-row.is-strong .score-fill {
   background: linear-gradient(90deg, var(--color-success), var(--color-accent));
 }
 
-.score-row.is-building .score-fill {
-  background: linear-gradient(90deg, var(--color-warning), var(--color-accent));
+.area-score-map .score-row.is-building .score-fill {
+  background: linear-gradient(90deg, var(--color-warning), #38bdf8);
 }
 
-.score-row.is-attention .score-fill {
-  background: linear-gradient(90deg, var(--color-error), var(--color-warning));
+.area-score-map .score-row.is-attention .score-fill {
+  background: linear-gradient(90deg, var(--color-error), #f97316);
 }
 
 .score-track {
@@ -994,7 +1021,7 @@
 
 .question-review-list {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.72rem;
 }
 
 .error-review-block {
@@ -1010,6 +1037,7 @@
 
 .question-review-card {
   border-left: 4px solid var(--color-border);
+  padding: 0.72rem 0.8rem;
 }
 
 .question-review-card.is-hit {
