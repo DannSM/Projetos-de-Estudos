@@ -289,9 +289,8 @@
     min-width: 100%;
   }
 
-  .area-score-map .score-row {
-    grid-template-columns: 1fr;
-    gap: 0.35rem;
+  .area-score-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .result-hero-panel {
@@ -352,6 +351,10 @@
 
   .diagnostic-overview {
     gap: 0.62rem;
+  }
+
+  .area-score-map {
+    grid-template-columns: 1fr;
   }
 
   .diagnostic-overview-card,

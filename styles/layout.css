@@ -45,7 +45,7 @@ main > .section-shell:first-child {
 
 .diagnostic-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(17rem, 0.34fr) minmax(0, 1fr);
   gap: clamp(0.58rem, 1.5vw, 0.95rem);
   align-items: start;
   padding-top: 0.12rem;
@@ -54,7 +54,7 @@ main > .section-shell:first-child {
 .diagnostic-overview {
   position: static;
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  grid-template-columns: 1fr;
   gap: 0.62rem;
   align-self: start;
   align-items: stretch;
@@ -70,7 +70,6 @@ main > .section-shell:first-child {
 }
 
 .diagnostic-overview-progress {
-  grid-column: 1 / -1;
   align-self: start;
 }
 

@@ -216,13 +216,18 @@ function openDiagnosticSatisfactionModal({ scorePercent, blocked }) {
 }
 
 function scrollToResultStart() {
-  const header = document.querySelector(".app-header");
-  const headerHeight = header ? header.getBoundingClientRect().height : 0;
-  const targetTop = resultSection.getBoundingClientRect().top + window.scrollY - headerHeight - 14;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const header = document.querySelector(".app-header");
+      const resultHero = resultMount.querySelector(".result-hero-panel") || resultSection;
+      const headerHeight = header ? header.getBoundingClientRect().height : 0;
+      const targetTop = resultHero.getBoundingClientRect().top + window.scrollY - headerHeight - 14;
 
-  window.scrollTo({
-    top: Math.max(targetTop, 0),
-    behavior: "smooth"
+      window.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: "smooth"
+      });
+    });
   });
 }
 
@@ -389,6 +394,14 @@ function resetDiagnostic() {
   const diagnosticCard = quizMount.closest(".diagnostic-card");
   if (diagnosticCard) {
     diagnosticCard.classList.remove("diagnostic-card-result-hidden");
+  }
+  const diagnosticOverview = document.querySelector(".diagnostic-overview");
+  if (diagnosticOverview) {
+    diagnosticOverview.classList.remove("diagnostic-overview-result-hidden");
+  }
+  const diagnosticShell = document.querySelector(".diagnostic-shell");
+  if (diagnosticShell) {
+    diagnosticShell.classList.remove("diagnostic-shell-result-hidden");
   }
   diagnosticLevels = buildDiagnosticLevels();
 
@@ -843,6 +856,18 @@ function getAreaStatusText(percent) {
   return "Atenção";
 }
 
+function getAreaMarker(area) {
+  const markers = {
+    SQL: "SQL",
+    "Estatística": "%",
+    Excel: "XL",
+    "Lógica de dados": "IF",
+    Indicadores: "KPI"
+  };
+
+  return markers[area] || "DS";
+}
+
 function getAreaImpactText(area) {
   const messages = {
     SQL: "impacta sua autonomia para consultar, cruzar e validar dados.",
@@ -1012,6 +1037,14 @@ function showResult({ blocked } = { blocked: false }) {
   if (diagnosticCard) {
     diagnosticCard.classList.add("diagnostic-card-result-hidden");
   }
+  const diagnosticOverview = document.querySelector(".diagnostic-overview");
+  if (diagnosticOverview) {
+    diagnosticOverview.classList.add("diagnostic-overview-result-hidden");
+  }
+  const diagnosticShell = document.querySelector(".diagnostic-shell");
+  if (diagnosticShell) {
+    diagnosticShell.classList.add("diagnostic-shell-result-hidden");
+  }
 
   resultMount.innerHTML = `
     <article class="result-card result-dashboard quiz-step">
@@ -1049,8 +1082,8 @@ function showResult({ blocked } = { blocked: false }) {
       </div>
 
       <div class="result-actions">
-        <button class="restart-button" id="restartDiagnostic">Refazer diagnóstico</button>
-        <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">Avaliar experiência</button>
+        <button class="restart-button result-restart-button" id="restartDiagnostic">↻ Refazer diagnóstico</button>
+        <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">☆ Avaliar experiência</button>
       </div>
 
       <section class="next-action-card">
@@ -1084,13 +1117,15 @@ function showResult({ blocked } = { blocked: false }) {
         <div class="score-bars area-score-map">
           ${insights.map((item) => `
             <div class="score-row ${getAreaVisualClass(item.percent)}">
+              <span class="area-score-marker" aria-hidden="true">${getAreaMarker(item.area)}</span>
               <div class="score-row-header">
                 <div>
                   <strong>${item.area}</strong>
-                  <span>${item.correct}/${item.total} - ${getAreaStatusText(item.percent)}</span>
+                  <span>${item.correct}/${item.total}</span>
                 </div>
                 <strong class="score-percent">${item.percent}%</strong>
               </div>
+              <span class="score-status">${getAreaStatusText(item.percent)}</span>
               <div class="score-track" aria-label="${item.area}: ${item.percent}%">
                 <div class="score-fill" style="width: ${item.percent}%"></div>
               </div>
