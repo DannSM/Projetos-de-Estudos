@@ -758,6 +758,30 @@ function showResultLoading({ blocked }) {
   }, RESULT_RENDER_DELAY_MS);
 }
 
+function getPriorityDisplayLabel(area) {
+  const labels = {
+    SQL: "SQL prático",
+    "Estatística": "Estatística aplicada",
+    Excel: "Excel e BI operacional",
+    "Lógica de dados": "Lógica aplicada aos dados",
+    Indicadores: "Indicadores e KPIs"
+  };
+
+  return labels[area] || area;
+}
+
+function getAreaVisualClass(percent) {
+  if (percent >= 75) return "is-strong";
+  if (percent >= 45) return "is-building";
+  return "is-attention";
+}
+
+function getAreaStatusText(percent) {
+  if (percent >= 75) return "Ponto forte";
+  if (percent >= 45) return "Em consolidação";
+  return "Atenção";
+}
+
 function showResult({ blocked } = { blocked: false }) {
   const finishedAt = new Date().toISOString();
   const totalCorrect = getTotalCorrect();
@@ -771,6 +795,16 @@ function showResult({ blocked } = { blocked: false }) {
   const weakest = [...insights].reverse()[0];
   const missedAnswers = state.diagnosticAnswers.filter((answer) => !answer.correct);
   const stopped = state.diagnosticStoppedAtLevel;
+  const scorePercent = Math.round(percent * 100);
+  const priorityArea = blocked && stopped ? stopped.label : weakest.area;
+  const priorityLabel = blocked ? `Reforce ${priorityArea}` : getPriorityDisplayLabel(priorityArea);
+  const priorityReason = blocked
+    ? "O diagnóstico preserva a sequência de aprendizagem quando um nível ainda precisa de reforço."
+    : `${weakest.area} teve o menor desempenho relativo entre as áreas respondidas e concentra o maior ganho potencial agora.`;
+  const priorityNextStep = blocked
+    ? "Revise os conceitos desse nível, refaça exercícios curtos e tente liberar a próxima etapa quando se sentir consistente."
+    : `Comece por ${priorityLabel.toLowerCase()} antes de avançar para novos conteúdos ou projetos mais abertos.`;
+  const nextActionTitle = blocked ? priorityLabel : `Comece por ${priorityLabel}`;
   const sqlLevel = mapPercentToLevel(getAreaPercentScore("SQL"));
   const statisticsLevel = mapPercentToLevel(getAreaPercentScore(areaGoals[1]));
   const dataLevel = getDataAreaLevel();
@@ -827,101 +861,153 @@ function showResult({ blocked } = { blocked: false }) {
 
   resultMount.innerHTML = `
     <article class="result-card result-dashboard quiz-step">
-      <div class="profile-title">
-        <div>
-          <span class="section-kicker">Resultado</span>
+      <section class="result-hero-panel">
+        <div class="result-hero-content">
+          <span class="result-status-badge">Diagnóstico concluído</span>
           <h2>${profile.name}</h2>
+          <p class="profile-detail">${profile.description}</p>
+          <div class="result-hero-meta" aria-label="Resumo do resultado">
+            <span>${totalCorrect} acertos</span>
+            <span>${totalWrong} erros</span>
+            <span>${stopped ? `Até ${stopped.label}` : "3 níveis concluídos"}</span>
+          </div>
         </div>
-        <span class="profile-badge">${Math.round(percent * 100)}% nas perguntas respondidas</span>
-      </div>
-      <p class="profile-detail">${profile.description}</p>
-
-      <div class="priority-card result-summary">
-        <span class="section-kicker">Próximo passo</span>
-        <h3>${blocked ? `Reforce ${stopped.label}` : `Comece por ${weakest.area}`}</h3>
-        <p>${blocked ? "O diagnóstico parou no nível atual para preservar a sequência de aprendizagem." : "Essa é a área com maior ganho potencial agora."}</p>
-      </div>
+        <div class="result-score-card" aria-label="Percentual geral">
+          <span>Percentual geral</span>
+          <strong>${scorePercent}%</strong>
+          <small>${totalCorrect}/${answered} perguntas</small>
+        </div>
+      </section>
 
       <div class="result-metrics">
         <div class="metric-card">
-          <strong>${totalCorrect}</strong>
-          <span>acertos</span>
+          <span>Nível alcançado</span>
+          <strong>${profile.name}</strong>
         </div>
         <div class="metric-card">
-          <strong>${totalWrong}</strong>
-          <span>erros</span>
-        </div>
-        <div class="metric-card">
+          <span>Área mais forte</span>
           <strong>${strongest.area}</strong>
-          <span>área mais forte</span>
+        </div>
+        <div class="metric-card metric-card-priority">
+          <span>Prioridade recomendada</span>
+          <strong>${priorityLabel}</strong>
         </div>
       </div>
 
-      <div class="result-block">
+      <section class="next-action-card">
+        <div>
+          <span class="section-kicker">Próxima ação</span>
+          <h3>${nextActionTitle}</h3>
+        </div>
+        <div class="next-action-grid">
+          <div>
+            <strong>Área prioritária</strong>
+            <p>${priorityLabel}</p>
+          </div>
+          <div>
+            <strong>Por que agora</strong>
+            <p>${priorityReason}</p>
+          </div>
+          <div>
+            <strong>Próximo passo prático</strong>
+            <p>${priorityNextStep}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="result-block">
         <h3>Desempenho por nível</h3>
         ${renderLevelSummary()}
-      </div>
+      </section>
 
-      <div class="result-block">
+      <section class="result-block">
         <h3>Mapa por área</h3>
-        <div class="score-bars">
+        <div class="score-bars area-score-map">
           ${insights.map((item) => `
-            <div class="score-row">
-              <strong>${item.area}</strong>
-              <div class="score-track"><div class="score-fill" style="width: ${item.percent}%"></div></div>
+            <div class="score-row ${getAreaVisualClass(item.percent)}">
+              <div>
+                <strong>${item.area}</strong>
+                <span>${getAreaStatusText(item.percent)}</span>
+              </div>
+              <div class="score-track" aria-label="${item.area}: ${item.percent}%">
+                <div class="score-fill" style="width: ${item.percent}%"></div>
+              </div>
               <span>${item.correct}/${item.total}</span>
             </div>
           `).join("")}
         </div>
-      </div>
+      </section>
 
-      <div class="priority-card">
-        <span class="section-kicker">Prioridade recomendada</span>
-        <h3>${recommendations.priority.title}</h3>
-        <p>${recommendations.priority.text}</p>
-      </div>
+      <section class="result-block evolution-plan">
+        <div class="result-section-heading">
+          <span class="section-kicker">Plano de evolução</span>
+          <h3>Uma sequência objetiva para transformar lacunas em prática</h3>
+        </div>
+        <div class="priority-card">
+          <span class="section-kicker">Prioridade recomendada</span>
+          <h3>${priorityLabel}</h3>
+          <p>${recommendations.priority.text}</p>
+        </div>
+        <div class="recommendation-grid">
+          ${recommendations.cards.map((item) => `
+            <article class="recommendation-card">
+              <span class="concept-tag">${item.level}</span>
+              <h3>${item.title}</h3>
+              <p>${item.text}</p>
+              <p><strong>Próximo desafio:</strong> ${item.next}</p>
+            </article>
+          `).join("")}
+        </div>
+        <ol class="evolution-steps">
+          ${recommendations.plan.map((item) => `<li>${item}</li>`).join("")}
+        </ol>
+      </section>
 
-      <div class="recommendation-grid">
-        ${recommendations.cards.map((item) => `
-          <article class="recommendation-card">
-            <span class="concept-tag">${item.level}</span>
-            <h3>${item.title}</h3>
-            <p>${item.text}</p>
-            <p><strong>Próximo desafio:</strong> ${item.next}</p>
-          </article>
-        `).join("")}
-      </div>
+      <section class="result-block error-review-block">
+        <h3>Revisão dos erros</h3>
+        ${missedAnswers.length ? `
+          <div class="review-list">
+            ${missedAnswers.map((item) => `
+              <article class="review-card error-review-card">
+                <span class="concept-tag">${item.area} - ${item.level}</span>
+                <h4>${item.question}</h4>
+                <div class="review-detail-grid">
+                  <div>
+                    <strong>O que aconteceu</strong>
+                    <p>Essa pergunta avaliava ${item.concept} e marcou uma lacuna nessa área.</p>
+                  </div>
+                  <div>
+                    <strong>Sua resposta</strong>
+                    <p>${item.selected}</p>
+                  </div>
+                  <div>
+                    <strong>Resposta correta</strong>
+                    <p>${item.correctAnswer}</p>
+                  </div>
+                  <div>
+                    <strong>Explicação</strong>
+                    <p>${item.explanation}</p>
+                  </div>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
+      </section>
 
-      <div class="result-block">
-        <h3>Histórico por pergunta</h3>
+      <details class="result-block question-history-block">
+        <summary>Ver histórico completo</summary>
         <div class="question-review-list">
           ${state.diagnosticAnswers.map((item) => `
             <article class="review-card question-review-card ${item.correct ? "is-hit" : "is-miss"}">
-              <span class="question-review-status">${item.correct ? "Acerto" : "Erro"} - Q${item.order}</span>
+              <span class="question-review-status">${item.correct ? "Acerto" : "Erro"} - Q${item.order} - ${item.area}</span>
               <h4>${item.question}</h4>
               <p><strong>Sua resposta:</strong> ${item.selected}</p>
               <p><strong>Resposta correta:</strong> ${item.correctAnswer}</p>
             </article>
           `).join("")}
         </div>
-      </div>
-
-      <div class="result-block">
-        <h3>Revisão dos erros</h3>
-        ${missedAnswers.length ? `
-          <div class="review-list">
-            ${missedAnswers.map((item) => `
-              <article class="review-card">
-                <span class="concept-tag">${item.area} - ${item.level}</span>
-                <h4>${item.question}</h4>
-                <p><strong>Sua resposta:</strong> ${item.selected}</p>
-                <p><strong>Resposta correta:</strong> ${item.correctAnswer}</p>
-                <p class="explanation">${item.explanation}</p>
-              </article>
-            `).join("")}
-          </div>
-        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
-      </div>
+      </details>
 
     </article>
   `;

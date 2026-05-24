@@ -248,12 +248,15 @@
   .track-grid,
   .home-journey-grid,
   .recommendation-grid,
+  .next-action-grid,
   .result-metrics,
   .diagnostic-summary,
   .diagnostic-side-grid,
   .level-roadmap,
   .level-summary,
   .insight-grid,
+  .review-detail-grid,
+  .evolution-steps,
   .analytics-kpi-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -289,6 +292,10 @@
   .score-row {
     grid-template-columns: 1fr;
     gap: 0.35rem;
+  }
+
+  .result-hero-panel {
+    grid-template-columns: 1fr;
   }
 
   .feedback-modal-sheet {
@@ -436,8 +443,11 @@
   .track-grid,
   .home-journey-grid,
   .recommendation-grid,
+  .next-action-grid,
   .result-metrics,
   .insight-grid,
+  .review-detail-grid,
+  .evolution-steps,
   .diagnostic-summary,
   .diagnostic-side-grid,
   .level-roadmap,
