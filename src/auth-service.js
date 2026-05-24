@@ -29,7 +29,8 @@
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: true
+          detectSessionInUrl: true,
+          storageKey: "data_skill_map_auth_session"
         }
       });
     }

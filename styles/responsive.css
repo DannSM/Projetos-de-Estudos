@@ -501,6 +501,47 @@
     align-items: stretch;
   }
 
+  .auth-modal-overlay {
+    align-items: center;
+    place-items: center;
+    padding: 0.62rem;
+    padding-bottom: calc(0.62rem + env(safe-area-inset-bottom));
+  }
+
+  .auth-modal-sheet {
+    width: min(30rem, 100%);
+    max-height: calc(100dvh - 1.24rem);
+    border-radius: 14px;
+  }
+
+  .auth-modal-header {
+    padding: 0.82rem 0.84rem 0.64rem;
+  }
+
+  .auth-modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .auth-modal-header p {
+    font-size: 0.86rem;
+  }
+
+  .auth-modal-close {
+    min-width: 2.65rem;
+    min-height: 2.65rem;
+  }
+
+  .auth-modal-form {
+    gap: 0.5rem;
+    padding: 0.78rem 0.84rem calc(0.84rem + env(safe-area-inset-bottom));
+  }
+
+  .auth-modal-form input,
+  .auth-modal-actions .submit-button,
+  .auth-modal-secondary {
+    min-height: 2.9rem;
+  }
+
   .feedback-skip-button {
     width: 100%;
     min-height: 1.9rem;

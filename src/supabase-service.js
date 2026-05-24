@@ -29,7 +29,8 @@
         auth: {
           persistSession: false,
           autoRefreshToken: false,
-          detectSessionInUrl: false
+          detectSessionInUrl: false,
+          storageKey: "data_skill_map_public_client"
         }
       });
     }
