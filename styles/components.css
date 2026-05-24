@@ -943,7 +943,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.58rem;
   align-items: center;
-  width: min(100%, 31rem);
+  justify-self: start;
+  width: min(100%, 40rem);
 }
 
 .result-actions .restart-button,
@@ -953,6 +954,7 @@
   justify-content: center;
   width: 100%;
   min-height: 2.72rem;
+  margin-top: 0;
   padding: 0.62rem 0.82rem;
   font-weight: 800;
   line-height: 1.15;

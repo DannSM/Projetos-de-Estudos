@@ -336,6 +336,11 @@
     scroll-margin-top: calc(var(--header-height) + 14px);
   }
 
+  .diagnostic-hero,
+  .diagnostic-shell {
+    width: min(58rem, calc(100% - 24px));
+  }
+
   .anchor-section {
     scroll-margin-top: calc(var(--header-height) + 52px);
   }
