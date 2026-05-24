@@ -15,7 +15,8 @@
 .progress-ui .progress-loading-card,
 .progress-ui .progress-gate-card,
 .progress-ui .progress-hero-card,
-.progress-ui .progress-metric-card {
+.progress-ui .progress-metric-card,
+.progress-ui .progress-detail-card {
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: var(--radius-lg);
@@ -120,7 +121,8 @@
 .progress-ui .progress-gate-copy p,
 .progress-ui .progress-hero-text,
 .progress-ui .progress-status-card p,
-.progress-ui .progress-metric-card p {
+.progress-ui .progress-metric-card p,
+.progress-ui .progress-detail-card p {
   margin: 0;
   color: var(--color-text-secondary);
 }
@@ -197,6 +199,19 @@
   font-size: 1.02rem;
 }
 
+.progress-ui .progress-status-link {
+  width: fit-content;
+  margin-top: 0.45rem;
+  color: var(--color-primary-hover);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.progress-ui .progress-status-link:hover {
+  text-decoration: underline;
+}
+
 .progress-ui .progress-metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -248,6 +263,59 @@
   line-height: 1.45;
 }
 
+.progress-ui .progress-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.progress-ui .progress-detail-card {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.progress-ui .progress-detail-card > span {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.progress-ui .progress-detail-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-ui .progress-detail-list li {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.progress-ui .progress-detail-list li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.progress-ui .progress-detail-list strong {
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.progress-ui .progress-detail-list span {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 @keyframes progressSpin {
   to {
     transform: rotate(360deg);
@@ -266,6 +334,10 @@
 
   .progress-ui .progress-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .progress-ui .progress-detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 
