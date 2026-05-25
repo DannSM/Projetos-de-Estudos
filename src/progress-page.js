@@ -47,6 +47,12 @@
     }).format(date);
   }
 
+  function clampPercent(value) {
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) return 0;
+    return Math.min(100, Math.max(0, Math.round(numberValue)));
+  }
+
   function normalizeList(value) {
     return Array.isArray(value) ? value : [];
   }
@@ -79,6 +85,14 @@
 
   function getAreaPercent(area) {
     return area?.score_percent ?? area?.percent ?? null;
+  }
+
+  function getProgressStatus(percent) {
+    const numberValue = Number(percent);
+    if (!Number.isFinite(numberValue)) return "Aguardando dados";
+    if (numberValue >= 75) return "Ponto forte";
+    if (numberValue >= 45) return "Em consolidação";
+    return "Prioridade";
   }
 
   function getPriorityAreaFromSession(latestSession) {
@@ -440,18 +454,21 @@
     return [
       {
         icon: "clipboard-list",
+        tone: "blue",
         label: "Diagnósticos realizados",
         value: data.diagnosticCount ? String(data.diagnosticCount) : "0",
         note: data.diagnosticCount ? `${totalQuestions || 0} perguntas no último diagnóstico.` : EMPTY_MESSAGE
       },
       {
         icon: "badge-check",
+        tone: "green",
         label: "Nível atual",
         value: latestSession?.overall_level || latestSession?.identified_profile || "Sem diagnóstico",
         note: score ? `${score} geral no último resultado.` : "Seu nível aparecerá após o diagnóstico."
       },
       {
         icon: "trending-up",
+        tone: "amber",
         label: "Áreas para evoluir",
         value: priorityArea ? getAreaDisplayName(priorityArea.area) : "Sem mapa por área",
         note: priorityArea
@@ -460,6 +477,7 @@
       },
       {
         icon: "clock-3",
+        tone: "cyan",
         label: "Última atividade",
         value: formatDate(getSessionDate(latestSession)),
         note: latestSession ? `${totalCorrect}/${totalQuestions || 0} acertos registrados.` : "Nenhuma sessão encontrada ainda."
@@ -536,15 +554,19 @@
 
   function renderHistory(sessions) {
     if (!sessions.length) {
-      return `<p>${EMPTY_MESSAGE}</p>`;
+      return `<p class="progress-empty-text">${EMPTY_MESSAGE}</p>`;
     }
 
     return `
-      <ul class="progress-detail-list">
+      <ul class="progress-history-list">
         ${sessions.map((session) => `
           <li>
-            <strong>${escapeHtml(session.overall_level || session.identified_profile || "Resultado registrado")}</strong>
-            <span>${escapeHtml(formatDate(getSessionDate(session)))} • ${escapeHtml(formatPercent(session.score_percent) || "sem percentual")}</span>
+            <span class="progress-history-dot" aria-hidden="true"></span>
+            <div>
+              <span>${escapeHtml(formatDate(getSessionDate(session)))}</span>
+              <strong>${escapeHtml(session.overall_level || session.identified_profile || "Resultado registrado")}</strong>
+              <p>${escapeHtml(formatPercent(session.score_percent) || "sem percentual")} geral</p>
+            </div>
           </li>
         `).join("")}
       </ul>
@@ -553,18 +575,29 @@
 
   function renderAreas(areas) {
     if (!areas.length) {
-      return `<p>Faça um diagnóstico para gerar seu mapa por área.</p>`;
+      return `<p class="progress-empty-text">Faça um diagnóstico para gerar seu mapa por área.</p>`;
     }
 
     return `
-      <ul class="progress-detail-list">
+      <div class="progress-area-list">
         ${areas.map((area) => `
-          <li>
-            <strong>${escapeHtml(getAreaDisplayName(area.area))}</strong>
-            <span>${escapeHtml(formatPercent(area.percent) || "0%")}${Number.isFinite(Number(area.correct)) && Number.isFinite(Number(area.total)) ? ` • ${escapeHtml(`${area.correct}/${area.total} acertos`)}` : ""}</span>
-          </li>
+          <article class="progress-area-row">
+            <div class="progress-area-row__top">
+              <div>
+                <strong>${escapeHtml(getAreaDisplayName(area.area))}</strong>
+                <span>${escapeHtml(getProgressStatus(area.percent))}</span>
+              </div>
+              <div class="progress-area-score">
+                <strong>${escapeHtml(formatPercent(area.percent) || "0%")}</strong>
+                ${Number.isFinite(Number(area.correct)) && Number.isFinite(Number(area.total)) ? `<span>${escapeHtml(`${area.correct}/${area.total} acertos`)}</span>` : ""}
+              </div>
+            </div>
+            <div class="progress-area-bar" aria-hidden="true">
+              <span style="width: ${clampPercent(area.percent)}%"></span>
+            </div>
+          </article>
         `).join("")}
-      </ul>
+      </div>
     `;
   }
 
@@ -575,6 +608,12 @@
     const userLabel = displayName ? `${displayName} • ${email}` : email;
     const latestSession = data.diagnosticSessions[0] || null;
     const priorityAreas = data.areaSummary?.areas || [];
+    const priorityArea = data.priorityArea || getPriorityArea(data.areaSummary || { areas: [] });
+    const score = formatPercent(latestSession?.score_percent);
+    const currentLevel = latestSession?.overall_level || latestSession?.identified_profile || "Sem diagnóstico";
+    const progressStatus = latestSession
+      ? (Number(latestSession.score_percent) >= 75 ? "Em avanço consistente" : "Plano de evolução ativo")
+      : "Aguardando primeiro diagnóstico";
     const nextStep = buildNextStep({
       learningRecommendation: data.learningRecommendation,
       diagnosticRecommendation: data.diagnosticRecommendation,
@@ -585,7 +624,7 @@
       priorityArea: data.priorityArea
     });
     const cards = buildCards(data).map((card) => `
-      <article class="progress-metric-card">
+      <article class="progress-metric-card progress-metric-card--${card.tone}">
         <span class="progress-metric-icon" aria-hidden="true">
           <i data-lucide="${card.icon}"></i>
         </span>
@@ -608,11 +647,29 @@
               <span>${escapeHtml(userLabel)}</span>
             </p>
             <p class="progress-hero-text">${escapeHtml(data.diagnosticCount ? "Seu painel foi atualizado com seus dados reais de diagnóstico e trilha." : EMPTY_MESSAGE)}</p>
+            <div class="progress-hero-summary" aria-label="Resumo do nível atual">
+              <div>
+                <span>Nível atual</span>
+                <strong>${escapeHtml(currentLevel)}</strong>
+              </div>
+              <div>
+                <span>Percentual geral</span>
+                <strong>${escapeHtml(score || "0%")}</strong>
+              </div>
+              <div>
+                <span>Prioridade</span>
+                <strong>${escapeHtml(priorityArea ? getAreaDisplayName(priorityArea.area) : "A definir")}</strong>
+              </div>
+            </div>
           </div>
-          <div class="progress-status-card">
-            <span>Próxima etapa</span>
+          <div class="progress-status-card" aria-label="Recomendação de próxima etapa">
+            <span class="progress-status-eyebrow">
+              <i data-lucide="sparkles" aria-hidden="true"></i>
+              Próxima etapa
+            </span>
             <strong>${escapeHtml(nextStep.title)}</strong>
             <p>${escapeHtml(nextStep.text)}</p>
+            <small>${escapeHtml(progressStatus)}</small>
             <a class="progress-status-link" href="${escapeHtml(nextStep.href)}">${escapeHtml(nextStep.cta)}</a>
           </div>
         </section>
@@ -623,11 +680,11 @@
 
         <section class="progress-detail-grid" aria-label="Detalhes do progresso">
           <article class="progress-detail-card">
-            <span>Histórico de diagnóstico</span>
+            <span class="progress-panel-label">Histórico de diagnóstico</span>
             ${renderHistory(data.diagnosticSessions.slice(0, 5))}
           </article>
           <article class="progress-detail-card">
-            <span>Progresso por área</span>
+            <span class="progress-panel-label">Progresso por área</span>
             ${renderAreas(priorityAreas)}
           </article>
         </section>
