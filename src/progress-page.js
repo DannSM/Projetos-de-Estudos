@@ -6,6 +6,14 @@
   }
 
   const EMPTY_MESSAGE = "Faça seu primeiro diagnóstico para gerar seu progresso.";
+  const DIAGNOSTIC_AREAS = ["SQL", "Estatística", "Excel", "Lógica de dados", "Indicadores"];
+  const AREA_LABELS = {
+    SQL: "SQL",
+    "Estatística": "Estatística",
+    Excel: "Excel",
+    "Lógica de dados": "Lógica de dados",
+    Indicadores: "Indicadores e KPIs"
+  };
 
   function escapeHtml(value) {
     return String(value || "")
@@ -55,47 +63,130 @@
     return area?.skill_area || area?.area || area?.name || "Área";
   }
 
+  function normalizeAreaName(value) {
+    const text = String(value || "").toLowerCase();
+    return DIAGNOSTIC_AREAS.find((area) => {
+      const areaText = area.toLowerCase();
+      const labelText = AREA_LABELS[area].toLowerCase();
+      return text === areaText || text === labelText || text.includes(areaText) || text.includes(labelText);
+    }) || "";
+  }
+
+  function getAreaDisplayName(area) {
+    const normalizedArea = normalizeAreaName(area) || area;
+    return AREA_LABELS[normalizedArea] || normalizedArea || "Área";
+  }
+
   function getAreaPercent(area) {
     return area?.score_percent ?? area?.percent ?? null;
   }
 
-  function getPriorityAreas(skillProgress, latestSession) {
-    const skillAreas = normalizeList(skillProgress)
+  function getPriorityAreaFromSession(latestSession) {
+    const recommendationText = [
+      latestSession?.study_recommendation,
+      latestSession?.priority_text
+    ].filter(Boolean).join(" ");
+
+    return normalizeAreaName(recommendationText);
+  }
+
+  function sortAreasByNeed(areas, preferredArea) {
+    return normalizeList(areas).slice().sort((a, b) => {
+      const aPercent = Number.isFinite(Number(a.percent)) ? Number(a.percent) : 101;
+      const bPercent = Number.isFinite(Number(b.percent)) ? Number(b.percent) : 101;
+
+      if (aPercent !== bPercent) return aPercent - bPercent;
+      if (preferredArea && a.area === preferredArea) return -1;
+      if (preferredArea && b.area === preferredArea) return 1;
+      return DIAGNOSTIC_AREAS.indexOf(a.area) - DIAGNOSTIC_AREAS.indexOf(b.area);
+    });
+  }
+
+  function buildAreasFromAnswers(answers) {
+    const grouped = normalizeList(answers).reduce((summary, answer) => {
+      const area = normalizeAreaName(answer.area);
+      if (!area) return summary;
+
+      if (!summary[area]) {
+        summary[area] = { area, correct: 0, total: 0, misses: [] };
+      }
+
+      summary[area].total += 1;
+      if (answer.is_correct) {
+        summary[area].correct += 1;
+      } else if (answer.concept) {
+        summary[area].misses.push(answer.concept);
+      }
+
+      return summary;
+    }, {});
+
+    return DIAGNOSTIC_AREAS
+      .map((area) => grouped[area])
+      .filter(Boolean)
+      .map((area) => ({
+        ...area,
+        percent: area.total ? Math.round((area.correct / area.total) * 100) : 0
+      }));
+  }
+
+  function buildAreasFromSnapshot(latestSession) {
+    return normalizeList(latestSession?.area_score_snapshot)
+      .map((area) => ({
+        area: normalizeAreaName(getAreaName(area)) || getAreaName(area),
+        percent: getAreaPercent(area),
+        correct: area.correct,
+        total: area.total,
+        misses: normalizeList(area.misses)
+      }))
+      .filter((area) => area.area && area.total > 0);
+  }
+
+  function buildAreasFromSkillProgress(skillProgress) {
+    return normalizeList(skillProgress)
       .filter((area) => area.status !== "archived")
       .map((area) => ({
-        area: getAreaName(area),
+        area: normalizeAreaName(getAreaName(area)) || getAreaName(area),
         percent: getAreaPercent(area),
         level: area.current_level,
         status: area.status,
         correct: area.questions_correct,
         total: area.questions_answered
-      }))
-      .sort((a, b) => {
-        const aPercent = Number.isFinite(Number(a.percent)) ? Number(a.percent) : 101;
-        const bPercent = Number.isFinite(Number(b.percent)) ? Number(b.percent) : 101;
-        return aPercent - bPercent;
-      });
-
-    if (skillAreas.length) {
-      return skillAreas;
-    }
-
-    return normalizeList(latestSession?.area_score_snapshot)
-      .map((area) => ({
-        area: getAreaName(area),
-        percent: getAreaPercent(area),
-        correct: area.correct,
-        total: area.total
-      }))
-      .filter((area) => area.area && area.total > 0)
-      .sort((a, b) => {
-        const aPercent = Number.isFinite(Number(a.percent)) ? Number(a.percent) : 101;
-        const bPercent = Number.isFinite(Number(b.percent)) ? Number(b.percent) : 101;
-        return aPercent - bPercent;
-      });
+      }));
   }
 
-  function buildNextStep({ learningRecommendation, diagnosticRecommendation, learningProgress, path, step, latestSession }) {
+  function buildAreaSummary({ skillProgress, latestSession, diagnosticAnswers }) {
+    const preferredArea = getPriorityAreaFromSession(latestSession);
+    const answerAreas = buildAreasFromAnswers(diagnosticAnswers);
+    const snapshotAreas = buildAreasFromSnapshot(latestSession);
+    const skillAreas = buildAreasFromSkillProgress(skillProgress);
+    const areas = answerAreas.length ? answerAreas : (snapshotAreas.length ? snapshotAreas : skillAreas);
+
+    return {
+      preferredArea,
+      areas: sortAreasByNeed(areas, preferredArea)
+    };
+  }
+
+  function getPriorityArea(areaSummary) {
+    if (areaSummary.preferredArea) {
+      const matchedArea = areaSummary.areas.find((area) => area.area === areaSummary.preferredArea);
+      if (matchedArea) return matchedArea;
+    }
+
+    return areaSummary.areas[0] || null;
+  }
+
+  function buildNextStep({ learningRecommendation, diagnosticRecommendation, learningProgress, path, step, latestSession, priorityArea }) {
+    if (diagnosticRecommendation) {
+      return {
+        title: diagnosticRecommendation.title,
+        text: diagnosticRecommendation.next_step || diagnosticRecommendation.study_guidance || "Próximo passo recomendado pelo diagnóstico.",
+        href: "diagnostico.html",
+        cta: "Refazer diagnóstico"
+      };
+    }
+
     if (learningRecommendation) {
       return {
         title: learningRecommendation.title,
@@ -105,10 +196,10 @@
       };
     }
 
-    if (diagnosticRecommendation) {
+    if (priorityArea?.area && latestSession) {
       return {
-        title: diagnosticRecommendation.title,
-        text: diagnosticRecommendation.next_step || diagnosticRecommendation.study_guidance || "Próximo passo recomendado pelo diagnóstico.",
+        title: `Reforçar ${getAreaDisplayName(priorityArea.area)}`,
+        text: `Revise os conceitos de ${getAreaDisplayName(priorityArea.area)} e resolva exercícios curtos antes de avançar.`,
         href: "diagnostico.html",
         cta: "Refazer diagnóstico"
       };
@@ -221,22 +312,66 @@
 
     const learningProgress = normalizeList(learningProgressResult.data)[0] || null;
     const latestSession = normalizeList(sessionsResult.data)[0] || null;
-    const priorityArea = getPriorityAreas(normalizeList(skillProgressResult.data), latestSession)[0] || null;
+    let diagnosticAnswers = [];
+    let areaSummary = buildAreaSummary({
+      skillProgress: normalizeList(skillProgressResult.data),
+      latestSession,
+      diagnosticAnswers
+    });
+    const preferredArea = areaSummary.preferredArea;
     let diagnosticRecommendation = null;
     let path = null;
     let step = null;
 
-    if (priorityArea?.area) {
-      const diagnosticRecommendationResult = await fetchOrThrow(
+    if (latestSession?.attempt_id) {
+      const answersResult = await fetchOrThrow(
         client
-          .from("diagnostic_recommendations")
-          .select("area,level,title,study_guidance,next_step,priority,is_active")
-          .eq("is_active", true)
-          .eq("area", priorityArea.area)
-          .order("priority", { ascending: true })
-          .limit(1),
+          .from("diagnostic_answers")
+          .select("area,concept,is_correct,order_index,answered_at")
+          .eq("user_id", userId)
+          .eq("attempt_id", latestSession.attempt_id)
+          .order("order_index", { ascending: true }),
+        "diagnostic_answers"
+      );
+      diagnosticAnswers = normalizeList(answersResult.data);
+      areaSummary = buildAreaSummary({
+        skillProgress: normalizeList(skillProgressResult.data),
+        latestSession,
+        diagnosticAnswers
+      });
+    }
+
+    const priorityArea = getPriorityArea(areaSummary);
+
+    if (priorityArea?.area) {
+      let diagnosticRecommendationQuery = client
+        .from("diagnostic_recommendations")
+        .select("area,level,title,study_guidance,next_step,priority,is_active")
+        .eq("is_active", true)
+        .eq("area", priorityArea.area);
+
+      if (latestSession?.stopped_at_level) {
+        diagnosticRecommendationQuery = diagnosticRecommendationQuery.eq("level", latestSession.stopped_at_level);
+      }
+
+      let diagnosticRecommendationResult = await fetchOrThrow(
+        diagnosticRecommendationQuery.order("priority", { ascending: true }).limit(1),
         "diagnostic_recommendations"
       );
+
+      if (!normalizeList(diagnosticRecommendationResult.data).length && latestSession?.stopped_at_level) {
+        diagnosticRecommendationResult = await fetchOrThrow(
+          client
+            .from("diagnostic_recommendations")
+            .select("area,level,title,study_guidance,next_step,priority,is_active")
+            .eq("is_active", true)
+            .eq("area", priorityArea.area)
+            .order("priority", { ascending: true })
+            .limit(1),
+          "diagnostic_recommendations"
+        );
+      }
+
       diagnosticRecommendation = normalizeList(diagnosticRecommendationResult.data)[0] || null;
     }
 
@@ -281,6 +416,10 @@
       diagnosticSessions: normalizeList(sessionsResult.data),
       diagnosticCount: sessionsResult.count || normalizeList(sessionsResult.data).length,
       skillProgress: normalizeList(skillProgressResult.data),
+      diagnosticAnswers,
+      areaSummary,
+      priorityArea,
+      preferredArea,
       learningRecommendation: normalizeList(recommendationsResult.data)[0] || null,
       diagnosticRecommendation,
       learningProgress,
@@ -291,9 +430,9 @@
 
   function buildCards(data) {
     const latestSession = data.diagnosticSessions[0] || null;
-    const priorityAreas = getPriorityAreas(data.skillProgress, latestSession);
+    const priorityAreas = data.areaSummary?.areas || [];
     const belowTargetCount = priorityAreas.filter((area) => Number(area.percent) < 70).length;
-    const priorityArea = priorityAreas[0] || null;
+    const priorityArea = data.priorityArea || getPriorityArea(data.areaSummary || { areas: [] });
     const totalQuestions = Number(latestSession?.total_questions_answered || 0);
     const totalCorrect = Number(latestSession?.total_correct || 0);
     const score = formatPercent(latestSession?.score_percent);
@@ -314,7 +453,7 @@
       {
         icon: "trending-up",
         label: "Áreas para evoluir",
-        value: priorityArea ? priorityArea.area : "Sem mapa por área",
+        value: priorityArea ? getAreaDisplayName(priorityArea.area) : "Sem mapa por área",
         note: priorityArea
           ? `${belowTargetCount || 1} área(s) abaixo da meta de 70%.`
           : "Faça um diagnóstico para gerar seu mapa por área."
@@ -419,10 +558,10 @@
 
     return `
       <ul class="progress-detail-list">
-        ${areas.slice(0, 4).map((area) => `
+        ${areas.map((area) => `
           <li>
-            <strong>${escapeHtml(area.area)}</strong>
-            <span>${escapeHtml(formatPercent(area.percent) || "sem percentual")}${area.level ? ` • ${escapeHtml(area.level)}` : ""}</span>
+            <strong>${escapeHtml(getAreaDisplayName(area.area))}</strong>
+            <span>${escapeHtml(formatPercent(area.percent) || "0%")}${Number.isFinite(Number(area.correct)) && Number.isFinite(Number(area.total)) ? ` • ${escapeHtml(`${area.correct}/${area.total} acertos`)}` : ""}</span>
           </li>
         `).join("")}
       </ul>
@@ -435,14 +574,15 @@
     const email = user.email || data.profile?.email || "Usuário autenticado";
     const userLabel = displayName ? `${displayName} • ${email}` : email;
     const latestSession = data.diagnosticSessions[0] || null;
-    const priorityAreas = getPriorityAreas(data.skillProgress, latestSession);
+    const priorityAreas = data.areaSummary?.areas || [];
     const nextStep = buildNextStep({
       learningRecommendation: data.learningRecommendation,
       diagnosticRecommendation: data.diagnosticRecommendation,
       learningProgress: data.learningProgress,
       path: data.path,
       step: data.step,
-      latestSession
+      latestSession,
+      priorityArea: data.priorityArea
     });
     const cards = buildCards(data).map((card) => `
       <article class="progress-metric-card">
