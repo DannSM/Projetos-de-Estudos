@@ -108,18 +108,73 @@ function buildAreaScoreSnapshot() {
   });
 }
 
+async function getAuthenticatedUserForPersistence() {
+  if (!window.authService || typeof window.authService.getCurrentSession !== "function") {
+    return null;
+  }
+
+  try {
+    const sessionResult = await window.authService.getCurrentSession();
+    return sessionResult && sessionResult.ok && sessionResult.user ? sessionResult.user : null;
+  } catch (error) {
+    console.warn("[Diagnóstico] Não foi possível ler usuário autenticado para persistência.", error);
+    return null;
+  }
+}
+
+async function persistAuthenticatedRecord(tableKey, payload) {
+  const user = await getAuthenticatedUserForPersistence();
+  const client = window.authService && typeof window.authService.getClient === "function"
+    ? window.authService.getClient()
+    : null;
+  const tableName = window.DATA_SKILL_MAP_SUPABASE?.tables?.[tableKey];
+
+  if (!user || !client || !tableName) {
+    return { ok: false, skipped: true };
+  }
+
+  try {
+    const { error } = await client
+      .from(tableName)
+      .insert({
+        ...payload,
+        user_id: user.id
+      });
+
+    if (error) {
+      console.warn("[Diagnóstico] Falha ao salvar registro autenticado.", error);
+      return { ok: false, error };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.warn("[Diagnóstico] Erro inesperado ao salvar registro autenticado.", error);
+    return { ok: false, error };
+  }
+}
+
 function persistDiagnosticAnswerRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticAnswer !== "function") {
     return;
   }
-  void window.supabaseDataService.saveDiagnosticAnswer(payload);
+  void persistAuthenticatedRecord("diagnosticAnswers", payload).then((result) => {
+    if (!result || !result.ok) {
+      return window.supabaseDataService.saveDiagnosticAnswer(payload);
+    }
+    return result;
+  });
 }
 
 function persistDiagnosticSessionRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticSession !== "function") {
     return;
   }
-  void window.supabaseDataService.saveDiagnosticSession(payload);
+  void persistAuthenticatedRecord("diagnosticSessions", payload).then((result) => {
+    if (!result || !result.ok) {
+      return window.supabaseDataService.saveDiagnosticSession(payload);
+    }
+    return result;
+  });
 }
 
 function trackDiagnosticFunnelEvent(eventType, payload = {}) {
