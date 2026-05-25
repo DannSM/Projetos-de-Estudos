@@ -108,18 +108,73 @@ function buildAreaScoreSnapshot() {
   });
 }
 
+async function getAuthenticatedUserForPersistence() {
+  if (!window.authService || typeof window.authService.getCurrentSession !== "function") {
+    return null;
+  }
+
+  try {
+    const sessionResult = await window.authService.getCurrentSession();
+    return sessionResult && sessionResult.ok && sessionResult.user ? sessionResult.user : null;
+  } catch (error) {
+    console.warn("[Diagnóstico] Não foi possível ler usuário autenticado para persistência.", error);
+    return null;
+  }
+}
+
+async function persistAuthenticatedRecord(tableKey, payload) {
+  const user = await getAuthenticatedUserForPersistence();
+  const client = window.authService && typeof window.authService.getClient === "function"
+    ? window.authService.getClient()
+    : null;
+  const tableName = window.DATA_SKILL_MAP_SUPABASE?.tables?.[tableKey];
+
+  if (!user || !client || !tableName) {
+    return { ok: false, skipped: true };
+  }
+
+  try {
+    const { error } = await client
+      .from(tableName)
+      .insert({
+        ...payload,
+        user_id: user.id
+      });
+
+    if (error) {
+      console.warn("[Diagnóstico] Falha ao salvar registro autenticado.", error);
+      return { ok: false, error };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.warn("[Diagnóstico] Erro inesperado ao salvar registro autenticado.", error);
+    return { ok: false, error };
+  }
+}
+
 function persistDiagnosticAnswerRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticAnswer !== "function") {
     return;
   }
-  void window.supabaseDataService.saveDiagnosticAnswer(payload);
+  void persistAuthenticatedRecord("diagnosticAnswers", payload).then((result) => {
+    if (!result || !result.ok) {
+      return window.supabaseDataService.saveDiagnosticAnswer(payload);
+    }
+    return result;
+  });
 }
 
 function persistDiagnosticSessionRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticSession !== "function") {
     return;
   }
-  void window.supabaseDataService.saveDiagnosticSession(payload);
+  void persistAuthenticatedRecord("diagnosticSessions", payload).then((result) => {
+    if (!result || !result.ok) {
+      return window.supabaseDataService.saveDiagnosticSession(payload);
+    }
+    return result;
+  });
 }
 
 function trackDiagnosticFunnelEvent(eventType, payload = {}) {
@@ -215,6 +270,22 @@ function openDiagnosticSatisfactionModal({ scorePercent, blocked }) {
   });
 }
 
+function scrollToResultStart() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const header = document.querySelector(".app-header");
+      const resultHero = resultMount.querySelector(".result-hero-panel") || resultSection;
+      const headerHeight = header ? header.getBoundingClientRect().height : 0;
+      const targetTop = resultHero.getBoundingClientRect().top + window.scrollY - headerHeight - 14;
+
+      window.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: "smooth"
+      });
+    });
+  });
+}
+
 function shuffleArray(values) {
   const shuffled = [...values];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -292,16 +363,49 @@ function countQuestionsByArea(area, sessionOnly = false) {
 }
 
 function renderAreaList() {
-  areaList.innerHTML = areaGoals.map((area) => `
-    <div class="area-pill">
-      <strong>${area}</strong>
-      <span>0/${countQuestionsByArea(area)}</span>
+  if (!areaList) return;
+
+  areaList.innerHTML = `
+    <div class="area-pill area-pill-summary">
+      <strong>Áreas avaliadas</strong>
+      <span>${areaGoals.join(", ")}</span>
     </div>
-  `).join("");
+  `;
+}
+
+function renderSessionProgress() {
+  if (!areaList) return;
+
+  const level = getCurrentLevel();
+  const levelQuestions = getCurrentLevelQuestions();
+  const answered = getTotalAnswered();
+  const totalQuestions = getSessionQuestionCount();
+
+  areaList.innerHTML = `
+    <div class="area-pill area-pill-summary">
+      <strong>${level ? level.label : "Diagnóstico"}</strong>
+      <span>Pergunta ${Math.min(state.currentQuestion + 1, levelQuestions.length)} de ${levelQuestions.length}</span>
+    </div>
+    <div class="area-pill area-pill-summary">
+      <strong>Sessão</strong>
+      <span>${answered} de ${totalQuestions} respondidas</span>
+    </div>
+  `;
 }
 
 function renderAreaProgress(showStatusColors = false) {
+  if (!areaList) return;
+
   const useSessionQuestions = state.diagnosticQuestionSets.length > 0;
+
+  if (!showStatusColors) {
+    if (state.diagnosticStarted) {
+      renderSessionProgress();
+    } else {
+      renderAreaList();
+    }
+    return;
+  }
 
   areaList.innerHTML = areaGoals.map((area) => {
     const score = state.areaScore[area];
@@ -315,7 +419,11 @@ function renderAreaProgress(showStatusColors = false) {
     return `
       <div class="area-pill ${statusClass}">
         <strong>${area}</strong>
-        <span>${score.correct}/${expected} - ${answered ? `${percent}%` : "pendente"}</span>
+        <span>
+          ${answered
+            ? `${percent}% de aproveitamento - ${score.correct} acerto${score.correct === 1 ? "" : "s"} em ${answered} respondida${answered === 1 ? "" : "s"} - ${expected} previstas`
+            : `Pendente - ${expected} previstas`}
+        </span>
       </div>
     `;
   }).join("");
@@ -334,6 +442,7 @@ function resetDiagnostic() {
   state.diagnosticQuestionSets = [];
   state.selectedDiagnosticAnswer = null;
   state.diagnosticAnswers = [];
+  state.confirmedDiagnosticAnswerKeys = new Set();
   state.levelResults = [];
   state.diagnosticStoppedAtLevel = null;
   state.areaScore = areaGoals.reduce((scores, area) => {
@@ -343,6 +452,22 @@ function resetDiagnostic() {
 
   resultSection.classList.add("hidden");
   resultMount.innerHTML = "";
+  const diagnosticHero = document.querySelector(".diagnostic-hero");
+  if (diagnosticHero) {
+    diagnosticHero.classList.remove("diagnostic-hero-result-hidden");
+  }
+  const diagnosticCard = quizMount.closest(".diagnostic-card");
+  if (diagnosticCard) {
+    diagnosticCard.classList.remove("diagnostic-card-result-hidden");
+  }
+  const diagnosticOverview = document.querySelector(".diagnostic-overview");
+  if (diagnosticOverview) {
+    diagnosticOverview.classList.remove("diagnostic-overview-result-hidden");
+  }
+  const diagnosticShell = document.querySelector(".diagnostic-shell");
+  if (diagnosticShell) {
+    diagnosticShell.classList.remove("diagnostic-shell-result-hidden");
+  }
   diagnosticLevels = buildDiagnosticLevels();
 
   renderAreaProgress();
@@ -392,7 +517,9 @@ function renderLevelRoadmap() {
         const result = state.levelResults.find((item) => item.name === level.name);
         const isCurrent = index === state.currentLevelIndex && state.diagnosticStarted;
         const status = result ? (result.passed ? "is-complete" : "is-blocked") : isCurrent ? "is-current" : "";
-        const score = result ? `${Math.round(result.percent * 100)}%` : level.minPercent ? `meta ${Math.round(level.minPercent * 100)}%` : "final";
+        const score = state.diagnosticStarted
+          ? (result ? (result.passed ? "concluído" : "reforçar") : isCurrent ? "em andamento" : "próximo")
+          : level.minPercent ? `meta ${Math.round(level.minPercent * 100)}%` : "final";
         return `
           <div class="level-step ${status}">
             <div class="level-step-header">
@@ -413,20 +540,21 @@ function renderDiagnosticIntro() {
 
   quizMount.innerHTML = `
     <div class="diagnostic-intro quiz-step">
-      <span class="section-kicker">Diagnóstico por níveis</span>
-      <h3 class="question-title">Responda 5 perguntas por nível com ordem aleatória.</h3>
+      <span class="section-kicker">Diagnóstico adaptativo</span>
+      <h3 class="question-title">Diagnóstico por níveis</h3>
       <p class="question-meta">
-        Banco atual com ${questionPool.length} questões. A cada tentativa, a plataforma sorteia ${QUESTIONS_PER_LEVEL} perguntas por nível.
+        Responda 5 perguntas por nível com ordem aleatória. Banco atual com ${questionPool.length} questões.
       </p>
       ${renderLevelRoadmap()}
-      <div class="diagnostic-summary">
-        <span>${QUESTIONS_PER_LEVEL} por nível</span>
-        <span>${totalQuestions} por sessão</span>
-        <span>Confirmação antes de responder</span>
+      <div class="diagnostic-summary diagnostic-summary-inline">
+        <span>${totalQuestions} por sessão • 3 níveis • meta de 75% por nível</span>
       </div>
       <p class="explanation">
         Você avança para o próximo nível ao atingir 75% no nível atual.
       </p>
+      <div class="diagnostic-area-chips" aria-label="Áreas avaliadas">
+        ${areaGoals.map((area) => `<span>${area}</span>`).join("")}
+      </div>
       <button class="submit-button" id="startDiagnostic">Iniciar diagnóstico</button>
     </div>
   `;
@@ -443,6 +571,7 @@ function startDiagnostic() {
     : `diag_${Date.now()}`;
   state.selectedDiagnosticAnswer = null;
   state.diagnosticQuestionSets = buildDiagnosticQuestionSets();
+  state.confirmedDiagnosticAnswerKeys = new Set();
 
   const emptyLevels = diagnosticLevels.filter((_, index) => state.diagnosticQuestionSets[index].length === 0);
   if (emptyLevels.length > 0) {
@@ -483,10 +612,11 @@ function renderQuestion() {
     return;
   }
 
+  renderAreaProgress();
+
   const answered = getTotalAnswered();
   const totalQuestions = getSessionQuestionCount();
   const progress = totalQuestions ? (answered / totalQuestions) * 100 : 0;
-  const percentLabel = Math.round(progress);
   const cleanOptions = cleanOptionList(question.options);
   const cleanConcept = cleanText(question.concept);
   const cleanArea = cleanText(question.area);
@@ -495,16 +625,15 @@ function renderQuestion() {
   quizMount.innerHTML = `
     <div class="quiz-step">
       ${renderLevelRoadmap()}
+      <div class="diagnostic-session-strip" aria-label="Sessão do diagnóstico">
+        <span>${level.label} — pergunta ${state.currentQuestion + 1} de ${levelQuestions.length}</span>
+        <span>Sessão: ${answered} de ${totalQuestions} respondidas</span>
+      </div>
       <div class="progress-line" aria-label="Progresso do diagnóstico">
         <span style="width: ${progress}%"></span>
       </div>
-      <div class="quiz-top">
-        <span>${level.label} - pergunta ${state.currentQuestion + 1} de ${levelQuestions.length}</span>
-        <span>${percentLabel}% concluído</span>
-      </div>
       <div class="quiz-top quiz-top-secondary">
-        <span>Respostas registradas: ${answered}</span>
-        <span>Total da sessão: ${totalQuestions}</span>
+        <span>Confirme uma alternativa para registrar sua resposta.</span>
       </div>
       <div class="concept-row">
         <span class="concept-tag">${cleanConcept}</span>
@@ -538,9 +667,24 @@ function selectDiagnosticAnswer(selectedIndex) {
   document.querySelector("#confirmDiagnosticAnswer").disabled = false;
 }
 
+function getCurrentAnswerKey() {
+  return [
+    state.currentDiagnosticAttemptId || "diag",
+    state.currentLevelIndex,
+    state.currentQuestion
+  ].join(":");
+}
+
 function confirmDiagnosticAnswer() {
   const selectedIndex = state.selectedDiagnosticAnswer;
   if (selectedIndex === null || selectedIndex === undefined) return;
+  if (!state.confirmedDiagnosticAnswerKeys) {
+    state.confirmedDiagnosticAnswerKeys = new Set();
+  }
+
+  const answerKey = getCurrentAnswerKey();
+  if (state.confirmedDiagnosticAnswerKeys.has(answerKey)) return;
+  state.confirmedDiagnosticAnswerKeys.add(answerKey);
 
   const levelQuestions = getCurrentLevelQuestions();
   const question = levelQuestions[state.currentQuestion];
@@ -604,7 +748,7 @@ function confirmDiagnosticAnswer() {
   document.querySelector("#feedbackMount").innerHTML = `
     <div class="feedback-box feedback-box-compact">
       <div class="feedback-box-compact-content">
-        <strong>Resposta registrada.</strong>
+        <strong>Resposta confirmada.</strong>
         <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
       </div>
       <button class="submit-button feedback-next-button ${nextAction.isTerminal ? "is-terminal-action" : ""} ${nextAction.action === "level-performance" ? "is-level-performance-action" : ""}" id="nextQuestion">
@@ -631,13 +775,6 @@ function getNextActionMeta() {
 }
 
 function handleNextQuestionClick(nextAction) {
-  if (nextAction && nextAction.action === "level-performance") {
-    const areaProgressCard = document.querySelector("#areaProgressCard") || document.querySelector(".diagnostic-overview-progress");
-    if (areaProgressCard) {
-      areaProgressCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
   advanceDiagnostic();
 }
 
@@ -707,6 +844,10 @@ function showLevelTransition(levelResult) {
   quizMount.innerHTML = `
     <div class="level-transition quiz-step">
       ${renderLevelRoadmap()}
+      <div class="diagnostic-session-strip" aria-label="Sessão do diagnóstico">
+        <span>${levelResult.label} concluído</span>
+        <span>Sessão: ${getTotalAnswered()} de ${getSessionQuestionCount()} respondidas</span>
+      </div>
       <span class="section-kicker">Nível concluído</span>
       <h3 class="question-title">Você fez ${levelResult.correct}/${levelResult.total} no ${levelResult.label}.</h3>
       <p class="explanation">
@@ -741,14 +882,19 @@ function showResultLoading({ blocked }) {
   }
 
   quizMount.innerHTML = `
-    <div class="feedback-box quiz-step diagnostic-loading" role="status" aria-live="polite">
+    <div class="quiz-step diagnostic-loading" role="status" aria-live="polite">
       <div class="loading-dots" aria-hidden="true">
         <span></span>
         <span></span>
         <span></span>
       </div>
       <strong>Gerando seu diagnóstico final...</strong>
-      <p class="explanation">Estamos consolidando o desempenho por nível, área e pergunta.</p>
+      <p class="explanation">Estamos consolidando desempenho por nível, área e pergunta.</p>
+      <div class="diagnostic-loading-steps" aria-label="Etapas da geração">
+        <span>Calculando desempenho</span>
+        <span>Mapeando áreas</span>
+        <span>Montando plano</span>
+      </div>
     </div>
   `;
 
@@ -756,6 +902,117 @@ function showResultLoading({ blocked }) {
     state.resultRenderTimer = null;
     showResult({ blocked });
   }, RESULT_RENDER_DELAY_MS);
+}
+
+function getPriorityDisplayLabel(area) {
+  const labels = {
+    SQL: "SQL prático",
+    "Estatística": "Estatística aplicada",
+    Excel: "Excel e BI operacional",
+    "Lógica de dados": "Lógica aplicada aos dados",
+    Indicadores: "Indicadores e KPIs"
+  };
+
+  return labels[area] || area;
+}
+
+function getAreaVisualClass(percent) {
+  if (percent >= 75) return "is-strong";
+  if (percent >= 45) return "is-building";
+  return "is-attention";
+}
+
+function getAreaStatusText(percent) {
+  if (percent >= 75) return "Ponto forte";
+  if (percent >= 45) return "Em consolidação";
+  return "Atenção";
+}
+
+function getAreaMarker(area) {
+  const markers = {
+    SQL: "SQL",
+    "Estatística": "%",
+    Excel: "XL",
+    "Lógica de dados": "IF",
+    Indicadores: "KPI"
+  };
+
+  return markers[area] || "DS";
+}
+
+function getAreaImpactText(area) {
+  const messages = {
+    SQL: "impacta sua autonomia para consultar, cruzar e validar dados.",
+    "Estatística": "impacta a interpretação de variação, relação entre variáveis e confiança dos resultados.",
+    Excel: "impacta sua agilidade para organizar, conferir e apresentar análises operacionais.",
+    "Lógica de dados": "impacta a forma como você estrutura hipóteses e transforma contexto em análise.",
+    Indicadores: "impacta sua leitura de métricas, metas e sinais de negócio."
+  };
+
+  return messages[area] || "impacta a consistência da sua análise.";
+}
+
+function getPriorityConceptText(area) {
+  const score = state.areaScore[area];
+  const concepts = score ? [...new Set(score.misses)].filter(Boolean).slice(0, 4) : [];
+
+  if (!concepts.length) {
+    return "os conceitos em que você sentiu mais dificuldade durante o diagnóstico";
+  }
+
+  return concepts.join(", ");
+}
+
+function getPriorityActionTitle({ blocked, stopped, priorityAreaLabel }) {
+  if (blocked && stopped) {
+    return `Consolidar ${stopped.label}`;
+  }
+
+  return `Reforçar ${priorityAreaLabel}`;
+}
+
+function getChallengeLabelForArea(area) {
+  if (typeof mapAreaToChallenge === "function") {
+    return mapAreaToChallenge(area);
+  }
+
+  return area || "Todos";
+}
+
+function getTrackTextForProfile(profileName, priorityArea) {
+  if (typeof getTrackSuggestion === "function") {
+    return getTrackSuggestion(profileName, priorityArea);
+  }
+
+  return `Siga pela trilha de ${getPriorityDisplayLabel(priorityArea)} antes de partir para um projeto completo.`;
+}
+
+function getReviewContextText(item) {
+  const concept = cleanText(item.concept).toLowerCase();
+
+  if (concept.includes("dispers")) {
+    return "Você escolheu uma leitura que não comparava a variabilidade pedida pela pergunta.";
+  }
+  if (concept.includes("correla")) {
+    return "A resposta confundiu associação entre variáveis com uma conclusão causal ou operacional.";
+  }
+  if (concept.includes("distribui")) {
+    return "A questão pedia reconhecer o comportamento da distribuição antes de interpretar o resultado.";
+  }
+  if (concept.includes("intervalo") || concept.includes("confian")) {
+    return "Faltou considerar a incerteza da estimativa antes de fechar a interpretação.";
+  }
+  if (concept.includes("join")) {
+    return "A lacuna apareceu na escolha da forma correta de cruzar tabelas sem perder registros importantes.";
+  }
+  if (concept.includes("kpi") || concept.includes("indicador")) {
+    return "A resposta não separou claramente métrica, meta e decisão de negócio.";
+  }
+  if (concept.includes("filtro") || concept.includes("where")) {
+    return "A condição usada para filtrar os dados não respondia exatamente ao recorte pedido.";
+  }
+
+  return `A questão avaliava ${item.concept}; vale revisar o raciocínio por trás desse conceito antes de avançar.`;
 }
 
 function showResult({ blocked } = { blocked: false }) {
@@ -771,6 +1028,42 @@ function showResult({ blocked } = { blocked: false }) {
   const weakest = [...insights].reverse()[0];
   const missedAnswers = state.diagnosticAnswers.filter((answer) => !answer.correct);
   const stopped = state.diagnosticStoppedAtLevel;
+  const scorePercent = Math.round(percent * 100);
+  const priorityArea = weakest.area;
+  const priorityAreaLabel = getPriorityDisplayLabel(priorityArea);
+  const priorityLevelLabel = blocked && stopped ? stopped.label : null;
+  const priorityLabel = priorityLevelLabel ? `${priorityAreaLabel} no ${priorityLevelLabel}` : priorityAreaLabel;
+  const priorityConceptText = getPriorityConceptText(priorityArea);
+  const priorityReason = blocked
+    ? `${priorityAreaLabel} concentrou a maior lacuna e ${getAreaImpactText(priorityArea)}`
+    : `${priorityAreaLabel} teve o menor desempenho relativo entre as áreas respondidas e ${getAreaImpactText(priorityArea)}`;
+  const priorityNextStep = blocked
+    ? `Revise ${priorityConceptText} dentro do ${stopped.label.toLowerCase()} antes de tentar liberar a próxima etapa.`
+    : `Revise ${priorityConceptText} e resolva exercícios curtos antes de avançar para novos conteúdos.`;
+  const nextActionTitle = getPriorityActionTitle({ blocked, stopped, priorityAreaLabel });
+  const priorityRecommendationText = blocked
+    ? `Prioridade recomendada: consolidar ${priorityAreaLabel.toLowerCase()} no ${stopped.label.toLowerCase()} para recuperar a base do nível.`
+    : `Prioridade recomendada: reforçar ${priorityAreaLabel.toLowerCase()} porque é a área com maior ganho potencial agora.`;
+  const evolutionCards = [
+    {
+      level: "Agora",
+      title: "Primeiro foco",
+      text: `Trabalhe ${priorityConceptText} com exemplos pequenos e correção imediata.`,
+      next: `Filtre os desafios por ${getChallengeLabelForArea(priorityArea)}.`
+    },
+    {
+      level: "Revisão",
+      title: "Conceitos para revisar",
+      text: priorityConceptText,
+      next: "Refaça primeiro as perguntas erradas e anote o motivo da alternativa correta."
+    },
+    {
+      level: profile.name,
+      title: "Trilha sugerida",
+      text: getTrackTextForProfile(profile.name, priorityArea),
+      next: "Depois conecte a revisão a um mini-projeto com pergunta de negócio e conclusão."
+    }
+  ];
   const sqlLevel = mapPercentToLevel(getAreaPercentScore("SQL"));
   const statisticsLevel = mapPercentToLevel(getAreaPercentScore(areaGoals[1]));
   const dataLevel = getDataAreaLevel();
@@ -811,124 +1104,192 @@ function showResult({ blocked } = { blocked: false }) {
     area_score_snapshot: buildAreaScoreSnapshot()
   });
 
-  quizMount.innerHTML = `
-    <div class="feedback-box ${blocked ? "error" : "success"} quiz-step">
-      <strong>${blocked ? "Nível não liberado" : "Diagnóstico concluído"}</strong>
-      <p class="explanation">
-        ${blocked
-          ? `Você fez ${stopped.correct}/${stopped.total} no ${stopped.label}. Reforce este nível antes de avançar.`
-          : `Você respondeu os 3 níveis e acertou ${totalCorrect} de ${answered} perguntas.`}
-      </p>
-      <button class="restart-button" id="restartDiagnostic">Refazer diagnóstico</button>
-    </div>
-  `;
-
-  document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
+  quizMount.innerHTML = "";
+  const diagnosticHero = document.querySelector(".diagnostic-hero");
+  if (diagnosticHero) {
+    diagnosticHero.classList.add("diagnostic-hero-result-hidden");
+  }
+  const diagnosticCard = quizMount.closest(".diagnostic-card");
+  if (diagnosticCard) {
+    diagnosticCard.classList.add("diagnostic-card-result-hidden");
+  }
+  const diagnosticOverview = document.querySelector(".diagnostic-overview");
+  if (diagnosticOverview) {
+    diagnosticOverview.classList.add("diagnostic-overview-result-hidden");
+  }
+  const diagnosticShell = document.querySelector(".diagnostic-shell");
+  if (diagnosticShell) {
+    diagnosticShell.classList.add("diagnostic-shell-result-hidden");
+  }
 
   resultMount.innerHTML = `
     <article class="result-card result-dashboard quiz-step">
-      <div class="profile-title">
-        <div>
-          <span class="section-kicker">Resultado</span>
+      <section class="result-hero-panel">
+        <div class="result-hero-content">
+          <span class="result-status-badge">Diagnóstico concluído</span>
           <h2>${profile.name}</h2>
+          <p class="profile-detail">${profile.description}</p>
+          <div class="result-hero-meta" aria-label="Resumo do resultado">
+            <span>${totalCorrect} acertos</span>
+            <span>${totalWrong} erros</span>
+            <span>${stopped ? `Até ${stopped.label}` : "3 níveis concluídos"}</span>
+          </div>
         </div>
-        <span class="profile-badge">${Math.round(percent * 100)}% nas perguntas respondidas</span>
-      </div>
-      <p class="profile-detail">${profile.description}</p>
-
-      <div class="priority-card result-summary">
-        <span class="section-kicker">Próximo passo</span>
-        <h3>${blocked ? `Reforce ${stopped.label}` : `Comece por ${weakest.area}`}</h3>
-        <p>${blocked ? "O diagnóstico parou no nível atual para preservar a sequência de aprendizagem." : "Essa é a área com maior ganho potencial agora."}</p>
-      </div>
+        <div class="result-score-card" aria-label="Percentual geral">
+          <span>Percentual geral</span>
+          <strong>${scorePercent}%</strong>
+          <small>${totalCorrect}/${answered} perguntas</small>
+        </div>
+      </section>
 
       <div class="result-metrics">
         <div class="metric-card">
-          <strong>${totalCorrect}</strong>
-          <span>acertos</span>
+          <span>Nível alcançado</span>
+          <strong>${profile.name}</strong>
         </div>
         <div class="metric-card">
-          <strong>${totalWrong}</strong>
-          <span>erros</span>
-        </div>
-        <div class="metric-card">
+          <span>Área mais forte</span>
           <strong>${strongest.area}</strong>
-          <span>área mais forte</span>
+        </div>
+        <div class="metric-card metric-card-priority">
+          <span>Prioridade recomendada</span>
+          <strong>${priorityLabel}</strong>
         </div>
       </div>
 
-      <div class="result-block">
+      <div class="result-actions">
+        <button class="restart-button result-restart-button" id="restartDiagnostic">↻ Refazer diagnóstico</button>
+        <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">☆ Avaliar experiência</button>
+      </div>
+
+      <section class="next-action-card">
+        <div>
+          <span class="section-kicker">Próxima ação</span>
+          <h3>${nextActionTitle}</h3>
+        </div>
+        <div class="next-action-grid">
+          <div>
+            <strong>Área prioritária</strong>
+            <p>${priorityAreaLabel}</p>
+          </div>
+          <div>
+            <strong>Por que agora</strong>
+            <p>${priorityReason}</p>
+          </div>
+          <div>
+            <strong>Próximo passo prático</strong>
+            <p>${priorityNextStep}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="result-block">
         <h3>Desempenho por nível</h3>
         ${renderLevelSummary()}
-      </div>
+      </section>
 
-      <div class="result-block">
+      <section class="result-block">
         <h3>Mapa por área</h3>
-        <div class="score-bars">
+        <div class="score-bars area-score-map">
           ${insights.map((item) => `
-            <div class="score-row">
-              <strong>${item.area}</strong>
-              <div class="score-track"><div class="score-fill" style="width: ${item.percent}%"></div></div>
-              <span>${item.correct}/${item.total}</span>
+            <div class="score-row ${getAreaVisualClass(item.percent)}">
+              <span class="area-score-marker" aria-hidden="true">${getAreaMarker(item.area)}</span>
+              <div class="score-row-header">
+                <div>
+                  <strong>${item.area}</strong>
+                  <span>${item.correct}/${item.total}</span>
+                </div>
+                <strong class="score-percent">${item.percent}%</strong>
+              </div>
+              <span class="score-status">${getAreaStatusText(item.percent)}</span>
+              <div class="score-track" aria-label="${item.area}: ${item.percent}%">
+                <div class="score-fill" style="width: ${item.percent}%"></div>
+              </div>
             </div>
           `).join("")}
         </div>
-      </div>
+      </section>
 
-      <div class="priority-card">
-        <span class="section-kicker">Prioridade recomendada</span>
-        <h3>${recommendations.priority.title}</h3>
-        <p>${recommendations.priority.text}</p>
-      </div>
+      <section class="result-block evolution-plan">
+        <div class="result-section-heading">
+          <span class="section-kicker">Plano de evolução</span>
+          <h3>Uma sequência objetiva para transformar lacunas em prática</h3>
+        </div>
+        <div class="priority-card">
+          <span class="section-kicker">Prioridade recomendada</span>
+          <h3>${priorityLabel}</h3>
+          <p>${priorityRecommendationText}</p>
+        </div>
+        <div class="recommendation-grid">
+          ${evolutionCards.map((item) => `
+            <article class="recommendation-card">
+              <span class="concept-tag">${item.level}</span>
+              <h3>${item.title}</h3>
+              <p>${item.text}</p>
+              <p><strong>Próximo desafio:</strong> ${item.next}</p>
+            </article>
+          `).join("")}
+        </div>
+        <ol class="evolution-steps">
+          ${recommendations.plan.map((item) => `<li>${item}</li>`).join("")}
+        </ol>
+      </section>
 
-      <div class="recommendation-grid">
-        ${recommendations.cards.map((item) => `
-          <article class="recommendation-card">
-            <span class="concept-tag">${item.level}</span>
-            <h3>${item.title}</h3>
-            <p>${item.text}</p>
-            <p><strong>Próximo desafio:</strong> ${item.next}</p>
-          </article>
-        `).join("")}
-      </div>
+      <section class="result-block error-review-block">
+        <h3>Revisão dos erros</h3>
+        ${missedAnswers.length ? `
+          <div class="review-list">
+            ${missedAnswers.map((item) => `
+              <article class="review-card error-review-card">
+                <span class="concept-tag">${item.area} - ${item.level}</span>
+                <h4>${item.question}</h4>
+                <div class="review-detail-grid">
+                  <div>
+                    <strong>O que aconteceu</strong>
+                    <p>${getReviewContextText(item)}</p>
+                  </div>
+                  <div>
+                    <strong>Sua resposta</strong>
+                    <p>${item.selected}</p>
+                  </div>
+                  <div>
+                    <strong>Resposta correta</strong>
+                    <p>${item.correctAnswer}</p>
+                  </div>
+                  <div>
+                    <strong>Explicação</strong>
+                    <p>${item.explanation}</p>
+                  </div>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
+      </section>
 
-      <div class="result-block">
-        <h3>Histórico por pergunta</h3>
+      <details class="result-block question-history-block">
+        <summary>Ver histórico completo</summary>
         <div class="question-review-list">
           ${state.diagnosticAnswers.map((item) => `
             <article class="review-card question-review-card ${item.correct ? "is-hit" : "is-miss"}">
-              <span class="question-review-status">${item.correct ? "Acerto" : "Erro"} - Q${item.order}</span>
+              <span class="question-review-status">${item.correct ? "Acerto" : "Erro"} - Q${item.order} - ${item.area}</span>
               <h4>${item.question}</h4>
               <p><strong>Sua resposta:</strong> ${item.selected}</p>
               <p><strong>Resposta correta:</strong> ${item.correctAnswer}</p>
             </article>
           `).join("")}
         </div>
-      </div>
-
-      <div class="result-block">
-        <h3>Revisão dos erros</h3>
-        ${missedAnswers.length ? `
-          <div class="review-list">
-            ${missedAnswers.map((item) => `
-              <article class="review-card">
-                <span class="concept-tag">${item.area} - ${item.level}</span>
-                <h4>${item.question}</h4>
-                <p><strong>Sua resposta:</strong> ${item.selected}</p>
-                <p><strong>Resposta correta:</strong> ${item.correctAnswer}</p>
-                <p class="explanation">${item.explanation}</p>
-              </article>
-            `).join("")}
-          </div>
-        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
-      </div>
+      </details>
 
     </article>
   `;
 
-  openDiagnosticSatisfactionModal({ scorePercent: Math.round(percent * 100), blocked });
+  document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
+  document.querySelector("#openDiagnosticFeedback").addEventListener("click", () => {
+    openDiagnosticSatisfactionModal({ scorePercent, blocked });
+  });
   resultSection.classList.remove("hidden");
-  resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToResultStart();
 }
 
 function renderLevelSummary() {
@@ -936,13 +1297,16 @@ function renderLevelSummary() {
     <div class="level-summary">
       ${diagnosticLevels.map((level) => {
         const result = state.levelResults.find((item) => item.name === level.name);
-        const text = result
-          ? `${result.correct}/${result.total} - ${Math.round(result.percent * 100)}%`
+        const percent = result ? Math.round(result.percent * 100) : 0;
+        const statusText = result
+          ? (result.passed ? "nível liberado" : "precisa reforçar")
           : "não aplicado";
+        const scoreText = result ? `${result.correct}/${result.total} - ${percent}%` : "aguardando";
         return `
           <div class="level-summary-item ${result ? (result.passed ? "is-complete" : "is-blocked") : ""}">
             <strong>${level.shortLabel}</strong>
-            <span>${text}</span>
+            <span>${statusText}</span>
+            <small>${scoreText}</small>
           </div>
         `;
       }).join("")}

@@ -218,6 +218,7 @@
     position: static;
     gap: 0.58rem;
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .diagnostic-hero {
@@ -248,12 +249,15 @@
   .track-grid,
   .home-journey-grid,
   .recommendation-grid,
+  .next-action-grid,
   .result-metrics,
   .diagnostic-summary,
   .diagnostic-side-grid,
   .level-roadmap,
   .level-summary,
   .insight-grid,
+  .review-detail-grid,
+  .evolution-steps,
   .analytics-kpi-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -286,9 +290,12 @@
     min-width: 100%;
   }
 
-  .score-row {
+  .area-score-map {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .result-hero-panel {
     grid-template-columns: 1fr;
-    gap: 0.35rem;
   }
 
   .feedback-modal-sheet {
@@ -329,6 +336,11 @@
     scroll-margin-top: calc(var(--header-height) + 14px);
   }
 
+  .diagnostic-hero,
+  .diagnostic-shell {
+    width: min(58rem, calc(100% - 24px));
+  }
+
   .anchor-section {
     scroll-margin-top: calc(var(--header-height) + 52px);
   }
@@ -345,6 +357,26 @@
 
   .diagnostic-overview {
     gap: 0.62rem;
+  }
+
+  .diagnostic-overview-progress {
+    height: auto;
+  }
+
+  .area-score-map {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnostic-session-strip {
+    flex-direction: column;
+  }
+
+  .diagnostic-loading-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnostic-loading-steps {
+    width: 100%;
   }
 
   .diagnostic-overview-card,
@@ -436,8 +468,11 @@
   .track-grid,
   .home-journey-grid,
   .recommendation-grid,
+  .next-action-grid,
   .result-metrics,
   .insight-grid,
+  .review-detail-grid,
+  .evolution-steps,
   .diagnostic-summary,
   .diagnostic-side-grid,
   .level-roadmap,

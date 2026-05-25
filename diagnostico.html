@@ -15,7 +15,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body class="diagnostic-ui">
   <header class="app-header">
     <a class="brand" href="index.html" aria-label="Data Skill Map">
       <span class="brand-logo-wrap" aria-hidden="true">
@@ -83,36 +83,6 @@
     </section>
 
     <section class="section-shell diagnostic-shell">
-      <aside class="diagnostic-overview" aria-label="Contexto do diagnóstico">
-        <article class="diagnostic-overview-card diagnostic-overview-metrics">
-          <div class="diagnostic-side-grid" aria-label="Resumo do diagnóstico">
-            <div>
-              <strong>15</strong>
-              <span>perguntas</span>
-            </div>
-            <div>
-              <strong>3</strong>
-              <span>níveis</span>
-            </div>
-            <div>
-              <strong>75%</strong>
-              <span>para avançar</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="diagnostic-overview-card diagnostic-note diagnostic-overview-reading">
-          <strong>Leitura do resultado</strong>
-          <p>Você recebe desempenho por nível, análise por área e recomendação do próximo foco para estudo prático.</p>
-        </article>
-
-        <article id="areaProgressCard" class="diagnostic-overview-card diagnostic-overview-progress">
-          <strong class="overview-title">Progresso por área</strong>
-          <p class="overview-copy">Acompanhe acertos e lacunas conforme responde as perguntas.</p>
-          <div class="area-list" id="areaList"></div>
-        </article>
-      </aside>
-
       <div class="quiz-card diagnostic-card">
         <div id="quizMount"></div>
       </div>
@@ -164,21 +134,23 @@
         <a href="diagnostico.html">Diagnóstico</a>
         <a href="index.html#desafios">Desafios</a>
       </nav>
+
+      <a
+        href="https://wa.me/5538991452743"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="contact-footer__whatsapp"
+        aria-label="Abrir conversa no WhatsApp"
+        title="Abrir conversa no WhatsApp"
+      >
+        <i data-lucide="message-circle" aria-hidden="true"></i>
+        <span>WhatsApp</span>
+      </a>
     </div>
 
     <div class="contact-footer__bottom">
       <span>© 2026 Data Skill Map. Desenvolvido por Daniellysson Souza Mendes.</span>
     </div>
-
-    <a
-      href="https://wa.me/5538991452743"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="contact-footer__whatsapp"
-      aria-label="Entrar em contato pelo WhatsApp"
-    >
-      <i data-lucide="message-circle" aria-hidden="true"></i>
-    </a>
   </footer>
 
   <script src="src/data/content.js"></script>
