@@ -241,6 +241,10 @@
   box-shadow: 0 18px 38px rgba(37, 99, 235, 0.11);
 }
 
+.progress-ui .progress-status-card p {
+  max-width: 34rem;
+}
+
 .progress-ui .progress-status-card span,
 .progress-ui .progress-metric-card span {
   color: var(--color-text-secondary);
@@ -297,17 +301,17 @@
 
 .progress-ui .progress-metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
 }
 
 .progress-ui .progress-metric-card {
-  min-height: 8.3rem;
+  min-height: 6.9rem;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.8rem;
-  align-items: start;
-  padding: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.62rem;
+  align-items: center;
+  padding: 0.84rem;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -318,10 +322,10 @@
 }
 
 .progress-ui .progress-metric-icon {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 1;
-  width: 2.55rem;
-  height: 2.55rem;
+  width: 2.36rem;
+  height: 2.36rem;
   display: inline-grid;
   place-items: center;
   color: var(--color-primary);
@@ -330,7 +334,8 @@
 }
 
 .progress-ui .progress-metric-card > div {
-  grid-column: 1 / -1;
+  grid-column: 2;
+  grid-row: 1;
   min-width: 0;
 }
 
@@ -357,7 +362,7 @@
 
 .progress-ui .progress-metric-card strong {
   display: block;
-  margin-top: 0.18rem;
+  margin-top: 0.12rem;
   color: var(--color-text-primary);
   font-size: clamp(1.08rem, 1.5vw, 1.32rem);
   line-height: 1.2;
@@ -365,7 +370,7 @@
 }
 
 .progress-ui .progress-metric-card p {
-  margin-top: 0.35rem;
+  margin-top: 0.24rem;
   font-size: 0.84rem;
   line-height: 1.45;
 }
@@ -406,8 +411,9 @@
 .progress-ui .progress-history-list li {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem 0.8rem;
+  align-items: center;
   min-width: 0;
   padding: 0.75rem;
   background: rgba(248, 250, 252, 0.72);
@@ -428,11 +434,27 @@
   min-width: 0;
 }
 
+.progress-ui .progress-history-score {
+  justify-self: end;
+  margin: 0;
+  padding: 0.24rem 0.5rem;
+  color: var(--color-primary-hover);
+  background: rgba(219, 234, 254, 0.58);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  border-radius: 999px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .progress-ui .progress-history-list span,
 .progress-ui .progress-history-list p {
   color: var(--color-text-secondary);
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.progress-ui .progress-history-list .progress-history-score {
+  color: var(--color-primary-hover);
 }
 
 .progress-ui .progress-history-list strong {
@@ -484,6 +506,11 @@
   border-radius: var(--radius-md);
 }
 
+.progress-ui .progress-area-row--empty {
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.88), rgba(239, 246, 255, 0.62));
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
 .progress-ui .progress-area-row__top {
   display: flex;
   align-items: flex-start;
@@ -509,6 +536,17 @@
   color: var(--color-text-secondary);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.progress-ui .progress-area-row__hint {
+  width: fit-content;
+  padding: 0.18rem 0.46rem;
+  color: var(--color-primary-hover);
+  background: rgba(219, 234, 254, 0.72);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 
 .progress-ui .progress-area-score {
@@ -552,7 +590,7 @@
   }
 
   .progress-ui .progress-metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .progress-ui .progress-detail-grid {
@@ -601,7 +639,41 @@
 
   .progress-ui .progress-metric-card {
     min-height: auto;
-    padding: 0.88rem;
+    gap: 0.54rem;
+    padding: 0.78rem 0.82rem;
+  }
+
+  .progress-ui .progress-metric-icon {
+    width: 2.18rem;
+    height: 2.18rem;
+  }
+
+  .progress-ui .progress-status-card {
+    gap: 0.34rem;
+    padding: 0.9rem;
+  }
+
+  .progress-ui .progress-status-card p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .progress-ui .progress-status-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .progress-ui .progress-history-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .progress-ui .progress-history-score {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 0.18rem;
   }
 
   .progress-ui .progress-area-row__top {

@@ -449,7 +449,6 @@
     const priorityArea = data.priorityArea || getPriorityArea(data.areaSummary || { areas: [] });
     const totalQuestions = Number(latestSession?.total_questions_answered || 0);
     const totalCorrect = Number(latestSession?.total_correct || 0);
-    const score = formatPercent(latestSession?.score_percent);
 
     return [
       {
@@ -458,13 +457,6 @@
         label: "Diagnósticos realizados",
         value: data.diagnosticCount ? String(data.diagnosticCount) : "0",
         note: data.diagnosticCount ? `${totalQuestions || 0} perguntas no último diagnóstico.` : EMPTY_MESSAGE
-      },
-      {
-        icon: "badge-check",
-        tone: "green",
-        label: "Nível atual",
-        value: latestSession?.overall_level || latestSession?.identified_profile || "Sem diagnóstico",
-        note: score ? `${score} geral no último resultado.` : "Seu nível aparecerá após o diagnóstico."
       },
       {
         icon: "trending-up",
@@ -533,7 +525,7 @@
         <section class="progress-hero-card">
           <div class="progress-hero-copy">
             <span class="section-kicker">Meu Progresso</span>
-            <h1>Meu Progresso</h1>
+            <h1>Aluno</h1>
             <p class="progress-user-email">
               <i data-lucide="mail" aria-hidden="true"></i>
               <span>${email}</span>
@@ -562,11 +554,11 @@
         ${sessions.map((session) => `
           <li>
             <span class="progress-history-dot" aria-hidden="true"></span>
-            <div>
+            <div class="progress-history-main">
               <span>${escapeHtml(formatDate(getSessionDate(session)))}</span>
               <strong>${escapeHtml(session.overall_level || session.identified_profile || "Resultado registrado")}</strong>
-              <p>${escapeHtml(formatPercent(session.score_percent) || "sem percentual")} geral</p>
             </div>
+            <p class="progress-history-score">${escapeHtml(formatPercent(session.score_percent) || "sem percentual")} geral</p>
           </li>
         `).join("")}
       </ul>
@@ -580,8 +572,12 @@
 
     return `
       <div class="progress-area-list">
-        ${areas.map((area) => `
-          <article class="progress-area-row">
+        ${areas.map((area) => {
+          const percent = clampPercent(area.percent);
+          const isZeroProgress = percent === 0;
+
+          return `
+          <article class="progress-area-row${isZeroProgress ? " progress-area-row--empty" : ""}">
             <div class="progress-area-row__top">
               <div>
                 <strong>${escapeHtml(getAreaDisplayName(area.area))}</strong>
@@ -592,11 +588,13 @@
                 ${Number.isFinite(Number(area.correct)) && Number.isFinite(Number(area.total)) ? `<span>${escapeHtml(`${area.correct}/${area.total} acertos`)}</span>` : ""}
               </div>
             </div>
+            ${isZeroProgress ? `<span class="progress-area-row__hint">Primeiro desafio disponível</span>` : ""}
             <div class="progress-area-bar" aria-hidden="true">
-              <span style="width: ${clampPercent(area.percent)}%"></span>
+              <span style="width: ${percent}%"></span>
             </div>
           </article>
-        `).join("")}
+        `;
+        }).join("")}
       </div>
     `;
   }
@@ -605,7 +603,7 @@
     const user = session?.user || {};
     const displayName = pickDisplayName(data.profile, user);
     const email = user.email || data.profile?.email || "Usuário autenticado";
-    const userLabel = displayName ? `${displayName} • ${email}` : email;
+    const studentName = displayName || "Aluno";
     const latestSession = data.diagnosticSessions[0] || null;
     const priorityAreas = data.areaSummary?.areas || [];
     const priorityArea = data.priorityArea || getPriorityArea(data.areaSummary || { areas: [] });
@@ -641,10 +639,10 @@
         <section class="progress-hero-card">
           <div class="progress-hero-copy">
             <span class="section-kicker">Meu Progresso</span>
-            <h1>Meu Progresso</h1>
+            <h1>${escapeHtml(studentName)}</h1>
             <p class="progress-user-email">
               <i data-lucide="mail" aria-hidden="true"></i>
-              <span>${escapeHtml(userLabel)}</span>
+              <span>${escapeHtml(email)}</span>
             </p>
             <p class="progress-hero-text">${escapeHtml(data.diagnosticCount ? "Seu painel foi atualizado com seus dados reais de diagnóstico e trilha." : EMPTY_MESSAGE)}</p>
             <div class="progress-hero-summary" aria-label="Resumo do nível atual">
