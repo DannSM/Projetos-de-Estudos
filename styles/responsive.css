@@ -472,6 +472,72 @@
     width: 100%;
   }
 
+  .learning-paths-shell {
+    gap: 0.66rem;
+  }
+
+  .learning-paths-summary,
+  .learning-paths-empty,
+  .learning-path-card {
+    padding: 0.74rem;
+  }
+
+  .learning-paths-summary h3,
+  .learning-path-card h3 {
+    margin-bottom: 0.2rem;
+    font-size: 1rem;
+    line-height: 1.24;
+  }
+
+  .learning-paths-summary p,
+  .learning-path-card p,
+  .learning-path-empty p {
+    font-size: 0.84rem;
+    line-height: 1.38;
+  }
+
+  .learning-path-meta {
+    gap: 0.28rem;
+  }
+
+  .learning-path-meta span {
+    padding: 0.24rem 0.42rem;
+    font-size: 0.7rem;
+  }
+
+  .learning-path-progress-block {
+    gap: 0.36rem;
+    padding: 0.56rem;
+  }
+
+  .learning-paths-summary-progress {
+    gap: 0.28rem;
+    padding: 0.58rem;
+  }
+
+  .learning-paths-summary-progress strong,
+  .learning-path-progress-block strong {
+    font-size: 1rem;
+  }
+
+  .learning-path-step-list {
+    gap: 0.32rem;
+  }
+
+  .learning-path-step-list li {
+    padding: 0.42rem 0.48rem;
+  }
+
+  .learning-path-step-list span {
+    font-size: 0.64rem;
+    text-transform: none;
+  }
+
+  .learning-path-step-list strong {
+    font-size: 0.8rem;
+    line-height: 1.22;
+  }
+
   .track-grid,
   .home-journey-grid,
   .recommendation-grid,
@@ -683,6 +749,100 @@
   .feedback-toast {
     bottom: calc(0.68rem + env(safe-area-inset-bottom));
     width: calc(100% - 1.5rem);
+  }
+
+  .result-card.result-dashboard {
+    gap: 0.74rem;
+    padding: 0.74rem;
+  }
+
+  .result-hero-panel {
+    gap: 0.62rem;
+    padding: 0.76rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .result-hero-panel h2 {
+    font-size: clamp(1.48rem, 8vw, 1.9rem);
+  }
+
+  .result-hero-panel .profile-detail,
+  .next-action-grid p,
+  .evolution-plan .recommendation-card p,
+  .review-card p,
+  .question-review-card p {
+    font-size: 0.84rem;
+    line-height: 1.38;
+  }
+
+  .result-hero-meta,
+  .result-actions {
+    gap: 0.42rem;
+  }
+
+  .result-score-card,
+  .metric-card,
+  .next-action-card,
+  .result-block,
+  .priority-card,
+  .review-card,
+  .question-history-block {
+    padding: 0.7rem;
+  }
+
+  .result-score-card strong {
+    font-size: 2.05rem;
+  }
+
+  .result-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .result-actions .restart-button,
+  .result-actions .filter-button {
+    min-height: 2.42rem;
+    padding-block: 0.54rem;
+  }
+
+  .next-action-card {
+    gap: 0.55rem;
+  }
+
+  .next-action-grid {
+    gap: 0.45rem;
+  }
+
+  .next-action-grid div,
+  .review-detail-grid div {
+    padding: 0.52rem;
+  }
+
+  .evolution-plan {
+    padding: 0.7rem;
+  }
+
+  .evolution-plan .recommendation-card {
+    padding: 0.66rem;
+    gap: 0.32rem;
+  }
+
+  .evolution-steps {
+    gap: 0.45rem;
+  }
+
+  .evolution-steps li {
+    padding: 0.58rem 0.62rem;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .review-list,
+  .question-review-list {
+    gap: 0.55rem;
+  }
+
+  .question-history-block[open] summary {
+    margin-bottom: 0.58rem;
   }
 }
 

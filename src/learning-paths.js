@@ -46,6 +46,18 @@
     return `${String(hours).replace(".", ",")} h`;
   }
 
+  function formatContentType(value) {
+    const labels = {
+      lesson: "Aula",
+      practice: "Prática",
+      project: "Projeto",
+      quiz: "Quiz",
+      external: "Externo"
+    };
+    const key = String(value || "lesson").trim().toLowerCase();
+    return labels[key] || value || "Aula";
+  }
+
   function getClient() {
     if (globalScope.authService && typeof globalScope.authService.getClient === "function") {
       return globalScope.authService.getClient();
@@ -358,7 +370,7 @@
           <ol class="learning-path-step-list">
             ${steps.slice(0, 3).map((step) => `
               <li>
-                <span>${escapeHtml(step.content_type || "lesson")}</span>
+                <span>${escapeHtml(formatContentType(step.content_type))}</span>
                 <strong>${escapeHtml(step.title)}</strong>
               </li>
             `).join("")}
