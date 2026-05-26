@@ -75,6 +75,30 @@
     }
   }
 
+  async function signInWithGoogle() {
+    const client = getClient();
+    if (!client) {
+      return missingClientResult("Supabase nao configurado para autenticacao.");
+    }
+
+    const currentUrl = new URL(globalScope.location.href);
+    currentUrl.hash = "";
+
+    try {
+      const { data, error } = await client.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: currentUrl.toString()
+        }
+      });
+
+      if (error) return { ok: false, data: null, error };
+      return { ok: true, data: data || null, error: null };
+    } catch (error) {
+      return { ok: false, data: null, error: normalizeError(error) };
+    }
+  }
+
   async function signUp(email, password, metadata = {}) {
     const client = getClient();
     if (!client) {
@@ -171,6 +195,7 @@
     isConfigured,
     getClient,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
     getCurrentSession,

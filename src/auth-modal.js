@@ -72,7 +72,7 @@
     status.className = message ? `auth-modal-status ${type}` : "auth-modal-status hidden";
   }
 
-  function setLoading(isLoading) {
+  function setLoading(isLoading, loadingLabel = "Aguarde...") {
     state.isLoading = isLoading;
 
     const overlay = document.getElementById(MODAL_ID);
@@ -84,7 +84,13 @@
 
     const submitButton = overlay.querySelector("#authModalSubmit");
     if (submitButton) {
-      submitButton.textContent = isLoading ? "Aguarde..." : getCopy(state.mode).submitLabel;
+      submitButton.textContent = isLoading ? loadingLabel : getCopy(state.mode).submitLabel;
+    }
+
+    const googleButton = overlay.querySelector("#authModalGoogle");
+    const googleButtonLabel = googleButton?.querySelector("[data-auth-google-label]");
+    if (googleButtonLabel) {
+      googleButtonLabel.textContent = isLoading ? loadingLabel : "Continuar com Google";
     }
   }
 
@@ -105,6 +111,20 @@
         </div>
 
         <form id="authModalForm" class="auth-modal-form" novalidate>
+          <button type="button" class="auth-google-button" id="authModalGoogle">
+            <span class="auth-google-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.14H12v4.05h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.24c1.9-1.75 2.97-4.32 2.97-7.44z"/>
+                <path fill="#34A853" d="M12 22c2.7 0 4.96-.89 6.62-2.33l-3.24-2.51c-.9.6-2.04.95-3.38.95-2.6 0-4.81-1.76-5.6-4.12H3.06v2.59A9.99 9.99 0 0 0 12 22z"/>
+                <path fill="#FBBC05" d="M6.4 13.99A6.01 6.01 0 0 1 6.08 12c0-.69.12-1.36.32-1.99V7.42H3.06A9.99 9.99 0 0 0 2 12c0 1.61.38 3.14 1.06 4.58l3.34-2.59z"/>
+                <path fill="#EA4335" d="M12 5.89c1.47 0 2.78.5 3.81 1.49l2.87-2.87C16.95 2.9 14.7 2 12 2a9.99 9.99 0 0 0-8.94 5.42l3.34 2.59c.79-2.36 3-4.12 5.6-4.12z"/>
+              </svg>
+            </span>
+            <span data-auth-google-label>Continuar com Google</span>
+          </button>
+
+          <div class="auth-modal-divider"><span>ou</span></div>
+
           ${isSignUp ? `
             <label for="authModalName">Nome (opcional)</label>
             <input id="authModalName" name="name" type="text" autocomplete="name" placeholder="Como podemos chamar voce?">
@@ -230,6 +250,25 @@
     closeAuthModal();
   }
 
+  async function handleGoogleSignIn() {
+    if (state.isLoading) return;
+
+    if (!globalScope.authService || typeof globalScope.authService.signInWithGoogle !== "function") {
+      setStatus("Servico de autenticacao indisponivel nesta pagina.");
+      return;
+    }
+
+    setStatus("");
+    setLoading(true, "Redirecionando...");
+
+    const result = await globalScope.authService.signInWithGoogle();
+    if (!result || !result.ok) {
+      console.error("Falha ao iniciar login com Google:", result?.error);
+      setLoading(false);
+      setStatus("Não foi possível iniciar o login com Google. Tente novamente.");
+    }
+  }
+
   function onOverlayClick(event) {
     if (event.target === event.currentTarget && !state.isLoading) {
       closeAuthModal();
@@ -245,10 +284,12 @@
   function bindModalEvents(overlay) {
     const closeButton = overlay.querySelector("#authModalClose");
     const toggleButton = overlay.querySelector("#authModalToggle");
+    const googleButton = overlay.querySelector("#authModalGoogle");
     const form = overlay.querySelector("#authModalForm");
 
     overlay.addEventListener("click", onOverlayClick);
     closeButton?.addEventListener("click", closeAuthModal);
+    googleButton?.addEventListener("click", handleGoogleSignIn);
     toggleButton?.addEventListener("click", () => {
       showMode(state.mode === "login" ? "signup" : "login");
     });

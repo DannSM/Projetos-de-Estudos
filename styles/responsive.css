@@ -661,6 +661,7 @@
   }
 
   .auth-modal-form input,
+  .auth-google-button,
   .auth-modal-actions .submit-button,
   .auth-modal-secondary {
     min-height: 2.9rem;
