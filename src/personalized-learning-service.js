@@ -10,6 +10,13 @@
 
   const FALLBACK_PATH_SLUG = "fundamentos-de-dados";
   const HIGH_SCORE_THRESHOLD = 75;
+  const AREA_ALIASES = [
+    { area: "Indicadores", terms: ["indicadores", "kpi", "kpis"] },
+    { area: "SQL", terms: ["sql"] },
+    { area: "Estatística", terms: ["estatistica", "estatisticas", "estatística", "estatísticas"] },
+    { area: "Lógica de dados", terms: ["logica de dados", "lógica de dados", "fundamentos", "fundamentos de dados"] },
+    { area: "Excel", terms: ["excel", "bi"] }
+  ];
 
   function normalizeList(value) {
     return Array.isArray(value) ? value : [];
@@ -24,6 +31,21 @@
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
+  }
+
+  function normalizeTextForMatch(value) {
+    return cleanText(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
+  function normalizeArea(value) {
+    const normalized = normalizeTextForMatch(value);
+    if (!normalized) return "";
+
+    const matched = AREA_ALIASES.find((item) => item.terms.some((term) => normalized.includes(normalizeTextForMatch(term))));
+    return matched?.area || cleanText(value);
   }
 
   function unique(values) {
@@ -63,6 +85,18 @@
     return cleanText(result?.stoppedAtLevel || result?.priorityLevel || result?.level);
   }
 
+  function getPriorityArea(result) {
+    const sources = [
+      result?.priorityArea,
+      result?.studyRecommendation,
+      result?.study_recommendation,
+      result?.priorityText,
+      result?.priority_text
+    ];
+
+    return sources.map(normalizeArea).find(Boolean) || "";
+  }
+
   function collectDiagnosticSignals(result, diagnosticRecommendations) {
     const weakAnswers = getWeakAnswers(result);
     const recommendationRows = normalizeList(diagnosticRecommendations);
@@ -77,7 +111,7 @@
         ...recommendationRows.map((row) => row.skill_code)
       ]),
       weakAreas: unique([
-        result?.priorityArea,
+        getPriorityArea(result),
         ...weakAnswers.map((answer) => answer.area),
         ...recommendationRows.map((row) => row.area)
       ]),
@@ -93,7 +127,7 @@
     const weakAnswers = getWeakAnswers(result);
     const recommendationKeys = unique(weakAnswers.map((answer) => answer.recommendationKey || answer.recommendation_key));
     const skillCodes = unique(weakAnswers.map((answer) => answer.skillCode || answer.skill_code));
-    const priorityArea = cleanText(result?.priorityArea);
+    const priorityArea = getPriorityArea(result);
     const priorityLevel = getPriorityLevel(result);
     const selectColumns = "recommendation_key,skill_code,area,level,concept,recommendation_type,severity,title,study_guidance,next_step,priority";
 
@@ -160,6 +194,15 @@
     return unique(path?.metadata?.[key]);
   }
 
+  function pathMatchesArea(path, area) {
+    const priorityArea = normalizeArea(area);
+    if (!priorityArea || !path) return false;
+
+    const pathArea = normalizeArea(path.skill_area);
+    const relatedAreas = getMetadataList(path, "related_areas").map(normalizeArea);
+    return pathArea === priorityArea || relatedAreas.includes(priorityArea);
+  }
+
   function isBasicLevel(value) {
     return normalizeLevel(value) === "basico";
   }
@@ -168,12 +211,37 @@
     return normalizeLevel(value) === "intermediario";
   }
 
+  function isBeginnerResult(result) {
+    const scorePercent = Number(result?.scorePercent ?? result?.score_percent);
+    return normalizeLevel(getPriorityLevel(result)) === "basico"
+      || normalizeTextForMatch(result?.overallLevel || result?.overall_level).includes("iniciante")
+      || (Number.isFinite(scorePercent) && scorePercent < HIGH_SCORE_THRESHOLD);
+  }
+
+  function isLevelCompatible(path, result) {
+    const priorityLevel = normalizeLevel(getPriorityLevel(result));
+    const beginner = isBeginnerResult(result);
+
+    if (beginner && isIntermediateLevel(path?.level)) {
+      return false;
+    }
+
+    if (priorityLevel === "basico" && isIntermediateLevel(path?.level)) {
+      return false;
+    }
+
+    return true;
+  }
+
   function scorePath(path, signals, result) {
     const pathRecommendationKeys = getMetadataList(path, "related_recommendation_keys");
     const pathSkillCodes = getMetadataList(path, "related_skill_codes");
     const recommendationMatches = signals.recommendationKeys.filter((key) => pathRecommendationKeys.includes(key)).length;
     const skillMatches = signals.skillCodes.filter((key) => pathSkillCodes.includes(key)).length;
     const totalMatches = recommendationMatches + skillMatches;
+    const priorityArea = getPriorityArea(result);
+    const priorityAreaMatch = pathMatchesArea(path, priorityArea);
+    const levelCompatible = isLevelCompatible(path, result);
     const isIntegrationTrack = Boolean(path?.metadata?.integration_track);
     const scorePercent = Number(result?.scorePercent ?? result?.score_percent);
     const intermediateSignals = signals.weakLevels.filter((level) => isIntermediateLevel(level)).length;
@@ -190,16 +258,26 @@
       recommendationMatches,
       skillMatches,
       totalMatches,
+      priorityAreaMatch,
+      levelCompatible,
       isIntegrationTrack
     };
   }
 
   function compareCandidates(a, b, result) {
+    if (a.priorityAreaMatch !== b.priorityAreaMatch) {
+      return a.priorityAreaMatch ? -1 : 1;
+    }
+
     if (b.recommendationMatches !== a.recommendationMatches) {
       return b.recommendationMatches - a.recommendationMatches;
     }
     if (b.totalMatches !== a.totalMatches) {
       return b.totalMatches - a.totalMatches;
+    }
+
+    if (a.levelCompatible !== b.levelCompatible) {
+      return a.levelCompatible ? -1 : 1;
     }
 
     const aOrder = Number.isFinite(Number(a.path.display_order)) ? Number(a.path.display_order) : 9999;
@@ -221,17 +299,57 @@
   }
 
   function chooseRecommendedPath(paths, signals, result) {
+    const priorityArea = getPriorityArea(result);
     const candidates = normalizeList(paths)
       .map((path) => scorePath(path, signals, result))
       .filter(Boolean)
-      .filter((candidate) => candidate.totalMatches > 0)
+      .filter((candidate) => {
+        if (priorityArea) {
+          return candidate.priorityAreaMatch && candidate.levelCompatible;
+        }
+        return candidate.totalMatches > 0 && candidate.levelCompatible;
+      })
       .sort((a, b) => compareCandidates(a, b, result));
 
     if (candidates.length) {
       return {
         path: candidates[0].path,
         fallback: false,
-        reason: candidates[0].recommendationMatches ? "match_by_recommendation_key" : "match_by_skill_code"
+        reason: candidates[0].priorityAreaMatch
+          ? "match_by_final_priority_area"
+          : candidates[0].recommendationMatches
+            ? "match_by_recommendation_key"
+            : "match_by_skill_code"
+      };
+    }
+
+    const matchedByPriorityArea = priorityArea
+      ? normalizeList(paths)
+        .map((path) => scorePath(path, signals, result))
+        .filter(Boolean)
+        .filter((candidate) => candidate.priorityAreaMatch)
+        .sort((a, b) => compareCandidates(a, b, result))[0]
+      : null;
+
+    if (matchedByPriorityArea?.path) {
+      return {
+        path: matchedByPriorityArea.path,
+        fallback: false,
+        reason: "match_by_final_priority_area_level_fallback"
+      };
+    }
+
+    const matchedBySignals = normalizeList(paths)
+      .map((path) => scorePath(path, signals, result))
+      .filter(Boolean)
+      .filter((candidate) => candidate.totalMatches > 0)
+      .sort((a, b) => compareCandidates(a, b, result))[0];
+
+    if (matchedBySignals?.path) {
+      return {
+        path: matchedBySignals.path,
+        fallback: false,
+        reason: matchedBySignals.recommendationMatches ? "match_by_recommendation_key" : "match_by_skill_code"
       };
     }
 
@@ -240,6 +358,20 @@
       fallback: true,
       reason: "fallback_fundamentos_de_dados"
     };
+  }
+
+  function findRecommendationForPath(path, diagnosticRecommendations) {
+    if (!path) return null;
+
+    const pathRecommendationKeys = getMetadataList(path, "related_recommendation_keys");
+    const pathSkillCodes = getMetadataList(path, "related_skill_codes");
+    const pathArea = normalizeArea(path.skill_area);
+    const rows = normalizeList(diagnosticRecommendations);
+
+    return rows.find((row) => pathRecommendationKeys.includes(row.recommendation_key))
+      || rows.find((row) => pathSkillCodes.includes(row.skill_code))
+      || rows.find((row) => normalizeArea(row.area) === pathArea)
+      || null;
   }
 
   async function fetchActivePaths(client) {
@@ -276,7 +408,19 @@
     }
 
     const now = new Date().toISOString();
-    const existingRows = await fetchOrThrow(
+    const sourceAttemptId = result?.attemptId || result?.attempt_id || null;
+    const existingRows = sourceAttemptId
+      ? await fetchOrThrow(
+        client
+          .from(TABLES.learningProgress)
+          .select("id,status,progress_percent,started_at,metadata")
+          .eq("user_id", userId)
+          .eq("source_attempt_id", sourceAttemptId)
+          .limit(1),
+        TABLES.learningProgress
+      )
+      : [];
+    const existingByPathRows = existingRows.length ? existingRows : await fetchOrThrow(
       client
         .from(TABLES.learningProgress)
         .select("id,status,progress_percent,started_at,metadata")
@@ -286,7 +430,7 @@
         .limit(1),
       TABLES.learningProgress
     );
-    const existing = normalizeList(existingRows)[0] || null;
+    const existing = normalizeList(existingByPathRows)[0] || null;
     const payload = {
       user_id: userId,
       path_id: path.id,
@@ -295,7 +439,7 @@
       progress_percent: existing?.status === "completed" ? existing.progress_percent : 0,
       started_at: existing?.started_at || now,
       last_activity_at: now,
-      source_attempt_id: result?.attemptId || result?.attempt_id || null,
+      source_attempt_id: sourceAttemptId,
       metadata: {
         ...(existing?.metadata || {}),
         source: "diagnostic_personalized_learning_bridge",
@@ -356,12 +500,12 @@
     const existing = normalizeList(existingRows)[0] || null;
     const payload = {
       user_id: userId,
-      skill_area: path.skill_area || diagnosticRecommendation?.area || result?.priorityArea || "Dados",
+      skill_area: path.skill_area || diagnosticRecommendation?.area || getPriorityArea(result) || "Dados",
       recommendation_type: "path",
       priority: 1,
       title: path.title ? `Trilha recomendada: ${path.title}` : "Trilha recomendada",
       description: step?.title ? `Comece por: ${step.title}.` : path.description,
-      reason: diagnosticRecommendation?.study_guidance || diagnosticRecommendation?.next_step || result?.priorityText || "Gerado a partir do diagnostico concluido.",
+      reason: diagnosticRecommendation?.study_guidance || diagnosticRecommendation?.next_step || result?.priorityText || result?.studyRecommendation || path.description || "Gerado a partir do diagnostico concluido.",
       source_attempt_id: sourceAttemptId,
       status: "active",
       metadata: {
@@ -456,13 +600,13 @@
       const selected = chooseRecommendedPath(paths, signals, result);
       const path = selected.path;
       const step = await fetchFirstStep(client, path?.id);
+      const pathDiagnosticRecommendation = findRecommendationForPath(path, diagnosticRecommendations);
       const recommendationMeta = {
         reason: selected.reason,
         fallback: selected.fallback,
         recommendationKeys: signals.recommendationKeys,
         skillCodes: signals.skillCodes
       };
-      const primaryDiagnosticRecommendation = diagnosticRecommendations[0] || null;
       const writes = {};
 
       try {
@@ -473,7 +617,7 @@
       }
 
       try {
-        writes.learningRecommendations = await upsertLearningRecommendation(client, user.id, path, step, primaryDiagnosticRecommendation, result, recommendationMeta);
+        writes.learningRecommendations = await upsertLearningRecommendation(client, user.id, path, step, pathDiagnosticRecommendation, result, recommendationMeta);
       } catch (error) {
         console.warn("[Aprendizado] Falha ao gravar learning_recommendations respeitando RLS.", error);
         writes.learningRecommendations = { ok: false, error };
