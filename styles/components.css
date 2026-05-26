@@ -1459,6 +1459,70 @@
   gap: 0.9rem;
 }
 
+.error-review-details {
+  padding: 0.85rem;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.error-review-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.error-review-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.error-review-summary-copy {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.error-review-summary-copy strong {
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.error-review-summary-copy span {
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.38;
+}
+
+.error-review-summary-action {
+  flex: 0 0 auto;
+  width: fit-content;
+  padding: 0.4rem 0.62rem;
+  color: var(--color-primary-hover);
+  background: var(--color-primary-light);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.error-review-details[open] .error-review-summary-action {
+  font-size: 0;
+}
+
+.error-review-details[open] .error-review-summary-action::before {
+  content: attr(data-close-label);
+  font-size: 0.78rem;
+}
+
+.error-review-details[open] summary {
+  margin-bottom: 0.78rem;
+}
+
 .question-review-list {
   display: grid;
   gap: 0.72rem;
@@ -2087,6 +2151,10 @@
   flex-wrap: wrap;
   gap: 0.42rem;
   margin-bottom: 0.62rem;
+}
+
+.challenge-mobile-actions {
+  display: none;
 }
 
 .filter-button {
@@ -3284,17 +3352,17 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 @media (max-width: 640px) {
   .contact-footer {
-    margin-top: 32px;
-    border-radius: 22px 22px 0 0;
+    margin-top: 26px;
+    border-radius: 18px 18px 0 0;
   }
 
   .contact-footer__content {
     width: min(1120px, calc(100% - 28px));
-    padding: 28px 0 24px;
+    padding: 22px 0 18px;
   }
 
   .contact-footer__intro {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
 
   .contact-footer__eyebrow {
@@ -3309,14 +3377,14 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .contact-footer__intro p {
-    margin-top: 10px;
-    font-size: 0.88rem;
-    line-height: 1.45;
+    margin-top: 8px;
+    font-size: 0.84rem;
+    line-height: 1.38;
   }
 
   .contact-footer__brand {
     gap: 4px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
 
   .contact-footer__brand strong {
@@ -3330,13 +3398,13 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .contact-footer__grid {
     grid-template-columns: 1fr;
-    gap: 8px;
-    margin-bottom: 18px;
+    gap: 7px;
+    margin-bottom: 14px;
   }
 
   .contact-footer__item {
-    min-height: 42px;
-    padding: 10px 12px;
+    min-height: 38px;
+    padding: 8px 10px;
     border-radius: 13px;
     font-size: 0.84rem;
   }
@@ -3352,16 +3420,16 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .contact-footer__bottom {
-    padding: 12px 72px 12px 14px;
-    font-size: 0.74rem;
+    padding: 10px 64px 10px 14px;
+    font-size: 0.72rem;
     line-height: 1.35;
   }
 
   .contact-footer__whatsapp {
-    width: 46px;
-    height: 46px;
+    width: 42px;
+    height: 42px;
     right: 16px;
-    bottom: 10px;
+    bottom: 8px;
     border-width: 2px;
   }
 
@@ -3372,7 +3440,7 @@ body.analytics-auth-locked .analytics-hero-copy {
     grid-template-columns: 1fr auto;
     width: min(1120px, calc(100% - 28px));
     gap: 0.52rem;
-    padding: 0.56rem 0 0.5rem;
+    padding: 0.46rem 0 0.42rem;
   }
 
   .diagnostic-ui .contact-footer__brand strong,
@@ -3415,18 +3483,18 @@ body.analytics-auth-locked .analytics-hero-copy {
   .analytics-ui .contact-footer__bottom,
   .progress-ui .contact-footer__bottom,
   .contact-footer--compact .contact-footer__bottom {
-    padding: 0.52rem 3.9rem 0.52rem 0.9rem;
-    font-size: 0.72rem;
+    padding: 0.44rem 3.7rem 0.44rem 0.9rem;
+    font-size: 0.7rem;
   }
 
   .diagnostic-ui .contact-footer__whatsapp,
   .analytics-ui .contact-footer__whatsapp,
   .progress-ui .contact-footer__whatsapp,
   .contact-footer--compact .contact-footer__whatsapp {
-    height: 2rem;
-    padding: 0 0.52rem;
+    height: 1.88rem;
+    padding: 0 0.46rem;
     align-self: center;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
   }
 
   .diagnostic-overview-progress .area-list,

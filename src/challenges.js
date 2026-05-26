@@ -1,7 +1,11 @@
 const challengeMount = document.querySelector("#challengeMount");
 const challengeScore = document.querySelector("#challengeScore");
 const challengeToolbar = document.querySelector(".challenge-toolbar");
+const challengeMobileActions = document.querySelector("#challengeMobileActions");
 const CHALLENGE_SURVEY_MIN_ATTEMPTS = 3;
+const MOBILE_CHALLENGE_LIMIT = 3;
+
+let showAllMobileChallenges = false;
 
 function cleanText(value) {
   if (typeof value !== "string") return "";
@@ -45,7 +49,9 @@ function normalizeChallengeCategory(category) {
   if (typeof category !== "string" || !category.trim()) {
     return "Geral";
   }
-  return category.trim();
+  const normalized = category.trim();
+  if (normalized === "Indicadores") return "Indicadores e KPIs";
+  return normalized;
 }
 
 function getChallengeCategories(questionPool) {
@@ -98,8 +104,40 @@ function bindFilters() {
     button.addEventListener("click", () => {
       challengeToolbar.querySelectorAll(".filter-button").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
+      showAllMobileChallenges = false;
       renderChallenges(button.dataset.filter);
     });
+  });
+}
+
+function isMobileChallengeView() {
+  return window.matchMedia("(max-width: 620px)").matches;
+}
+
+function renderChallengeMobileActions(totalVisible, activeFilter) {
+  if (!challengeMobileActions) return;
+
+  if (totalVisible <= MOBILE_CHALLENGE_LIMIT) {
+    challengeMobileActions.innerHTML = "";
+    return;
+  }
+
+  const isLimited = isMobileChallengeView() && !showAllMobileChallenges;
+  const label = showAllMobileChallenges ? "Mostrar menos desafios" : "Ver todos os desafios";
+  const filterText = activeFilter !== "Todos" ? ` em ${activeFilter}` : "";
+  const helperText = isLimited
+    ? `Mostrando ${MOBILE_CHALLENGE_LIMIT} de ${totalVisible} desafios${filterText}.`
+    : `Mostrando ${totalVisible} desafios${filterText}.`;
+
+  challengeMobileActions.innerHTML = `
+    <p>${helperText}</p>
+    <button class="filter-button challenge-toggle-button" type="button">${label}</button>
+  `;
+
+  const toggleButton = challengeMobileActions.querySelector(".challenge-toggle-button");
+  toggleButton?.addEventListener("click", () => {
+    showAllMobileChallenges = !showAllMobileChallenges;
+    renderChallenges(activeFilter);
   });
 }
 
@@ -129,7 +167,11 @@ function renderChallenges(filter = "Todos") {
       return normalizeChallengeCategory(entry.challenge.category) === activeFilter;
     });
 
-  challengeMount.innerHTML = visibleChallenges.map(({ challenge, index }) => {
+  const renderedChallenges = isMobileChallengeView() && !showAllMobileChallenges
+    ? visibleChallenges.slice(0, MOBILE_CHALLENGE_LIMIT)
+    : visibleChallenges;
+
+  challengeMount.innerHTML = renderedChallenges.map(({ challenge, index }) => {
     const answered = state.completedChallenges.has(index);
     const challengeCategory = normalizeChallengeCategory(challenge.category);
     const cleanedQuestion = cleanText(challenge.question);
@@ -162,6 +204,8 @@ function renderChallenges(filter = "Todos") {
   if (!visibleChallenges.length) {
     challengeMount.innerHTML = `<p class="question-meta">Nenhum desafio encontrado para esta categoria.</p>`;
   }
+
+  renderChallengeMobileActions(visibleChallenges.length, activeFilter);
 
   challengeMount.querySelectorAll("[data-challenge]").forEach((button) => {
     button.addEventListener("click", () => selectChallengeAnswer(Number(button.dataset.challenge), Number(button.dataset.option)));

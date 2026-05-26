@@ -911,7 +911,19 @@ function getPriorityDisplayLabel(area) {
     SQL: "SQL prático",
     "Estatística": "Estatística aplicada",
     Excel: "Excel e BI operacional",
-    "Lógica de dados": "Lógica aplicada aos dados",
+    "Lógica de dados": "Lógica de dados",
+    Indicadores: "Indicadores e KPIs"
+  };
+
+  return labels[area] || area;
+}
+
+function getAreaDisplayLabel(area) {
+  const labels = {
+    SQL: "SQL",
+    "Estatística": "Estatística",
+    Excel: "Excel",
+    "Lógica de dados": "Lógica de dados",
     Indicadores: "Indicadores e KPIs"
   };
 
@@ -1069,7 +1081,7 @@ function showResult({ blocked } = { blocked: false }) {
     },
     {
       level: profile.name,
-      title: "Trilha sugerida",
+      title: "Sequência sugerida",
       text: getTrackTextForProfile(profile.name, priorityArea),
       next: "Depois conecte a revisão a um mini-projeto com pergunta de negócio e conclusão."
     }
@@ -1191,7 +1203,7 @@ function showResult({ blocked } = { blocked: false }) {
         </div>
         <div class="metric-card">
           <span>Área mais forte</span>
-          <strong>${strongest.area}</strong>
+          <strong>${getAreaDisplayLabel(strongest.area)}</strong>
         </div>
         <div class="metric-card metric-card-priority">
           <span>Prioridade recomendada</span>
@@ -1240,13 +1252,13 @@ function showResult({ blocked } = { blocked: false }) {
               <span class="area-score-marker" aria-hidden="true">${getAreaMarker(item.area)}</span>
               <div class="score-row-header">
                 <div>
-                  <strong>${item.area}</strong>
+                  <strong>${getAreaDisplayLabel(item.area)}</strong>
                   <span>${item.correct}/${item.total}</span>
                 </div>
                 <strong class="score-percent">${item.percent}%</strong>
               </div>
               <span class="score-status">${getAreaStatusText(item.percent)}</span>
-              <div class="score-track" aria-label="${item.area}: ${item.percent}%">
+              <div class="score-track" aria-label="${getAreaDisplayLabel(item.area)}: ${item.percent}%">
                 <div class="score-fill" style="width: ${item.percent}%"></div>
               </div>
             </div>
@@ -1256,11 +1268,11 @@ function showResult({ blocked } = { blocked: false }) {
 
       <section class="result-block evolution-plan">
         <div class="result-section-heading">
-          <span class="section-kicker">Plano de evolução</span>
+          <span class="section-kicker">Plano sugerido</span>
           <h3>Uma sequência objetiva para transformar lacunas em prática</h3>
         </div>
         <div class="priority-card">
-          <span class="section-kicker">Prioridade recomendada</span>
+          <span class="section-kicker">Foco sugerido</span>
           <h3>${priorityLabel}</h3>
           <p>${priorityRecommendationText}</p>
         </div>
@@ -1279,13 +1291,21 @@ function showResult({ blocked } = { blocked: false }) {
         </ol>
       </section>
 
-      <section class="result-block error-review-block">
-        <h3>Revisão dos erros</h3>
+      <details class="result-block error-review-block error-review-details">
+        <summary>
+          <span class="error-review-summary-copy">
+            <strong>Revisão dos erros</strong>
+            <span>${missedAnswers.length ? `Você errou ${missedAnswers.length} ${missedAnswers.length === 1 ? "questão" : "questões"}. Veja onde revisar.` : "Você não errou perguntas neste diagnóstico."}</span>
+          </span>
+          <span class="error-review-summary-action" data-open-label="Ver erros do diagnóstico" data-close-label="Recolher revisão">
+            ${missedAnswers.length ? "Ver erros do diagnóstico" : "Ver resumo"}
+          </span>
+        </summary>
         ${missedAnswers.length ? `
           <div class="review-list">
             ${missedAnswers.map((item) => `
               <article class="review-card error-review-card">
-                <span class="concept-tag">${item.area} - ${item.level}</span>
+                <span class="concept-tag">${getAreaDisplayLabel(item.area)} - ${item.level}</span>
                 <h4>${item.question}</h4>
                 <div class="review-detail-grid">
                   <div>
@@ -1309,7 +1329,7 @@ function showResult({ blocked } = { blocked: false }) {
             `).join("")}
           </div>
         ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
-      </section>
+      </details>
 
       <details class="result-block question-history-block">
         <summary>Ver histórico completo</summary>

@@ -468,6 +468,37 @@
     width: 100%;
   }
 
+  .hero-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.38rem;
+    margin-top: 0.64rem;
+  }
+
+  .hero-metrics div {
+    align-content: center;
+    justify-items: center;
+    gap: 0.08rem;
+    min-height: 4.15rem;
+    padding: 0.48rem 0.34rem;
+    text-align: center;
+    border-radius: var(--radius-md);
+  }
+
+  .hero-metrics .metric-icon {
+    width: 0.82rem;
+    height: 0.82rem;
+  }
+
+  .hero-metrics strong {
+    font-size: 1rem;
+  }
+
+  .hero-metrics span {
+    margin-top: 0.08rem;
+    font-size: 0.66rem;
+    line-height: 1.18;
+  }
+
   .learning-paths-summary-progress {
     width: 100%;
   }
@@ -558,6 +589,10 @@
 
   .analytics-filters-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .analytics-filters-top {
@@ -751,6 +786,87 @@
     width: calc(100% - 1.5rem);
   }
 
+  .challenge-toolbar {
+    flex-wrap: nowrap;
+    gap: 0.34rem;
+    margin-bottom: 0.48rem;
+    overflow-x: auto;
+    padding-bottom: 0.08rem;
+    scrollbar-width: none;
+  }
+
+  .challenge-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .challenge-toolbar .filter-button {
+    flex: 0 0 auto;
+    min-height: 1.95rem;
+    padding: 0.34rem 0.52rem;
+    font-size: 0.78rem;
+  }
+
+  .challenge-score {
+    margin-bottom: 0.46rem;
+    padding: 0.28rem 0.52rem;
+    font-size: 0.78rem;
+  }
+
+  .challenge-grid {
+    gap: 0.58rem;
+  }
+
+  .challenge-card {
+    gap: 0.42rem;
+    padding: 0.68rem;
+  }
+
+  .challenge-card h3 {
+    font-size: 0.94rem;
+    line-height: 1.28;
+  }
+
+  .challenge-card .question-meta,
+  .challenge-card .answer-button,
+  .challenge-card .feedback-box p {
+    font-size: 0.82rem;
+    line-height: 1.34;
+  }
+
+  .challenge-card .answer-list {
+    gap: 0.42rem;
+  }
+
+  .challenge-card .answer-button {
+    min-height: 2.42rem;
+    padding: 0.62rem 0.68rem;
+  }
+
+  .challenge-card .submit-button {
+    min-height: 2.36rem;
+    margin-top: 0.22rem;
+    padding-block: 0.52rem;
+  }
+
+  .challenge-mobile-actions {
+    display: grid;
+    gap: 0.42rem;
+    margin-top: 0.62rem;
+  }
+
+  .challenge-mobile-actions p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .challenge-mobile-actions .filter-button {
+    width: 100%;
+    min-height: 2.28rem;
+  }
+
   .result-card.result-dashboard {
     gap: 0.74rem;
     padding: 0.74rem;
@@ -784,6 +900,7 @@
   .metric-card,
   .next-action-card,
   .result-block,
+  .error-review-details,
   .priority-card,
   .review-card,
   .question-history-block {
@@ -839,6 +956,31 @@
   .review-list,
   .question-review-list {
     gap: 0.55rem;
+  }
+
+  .error-review-details summary {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .error-review-summary-copy strong {
+    font-size: 0.98rem;
+  }
+
+  .error-review-summary-copy span {
+    font-size: 0.82rem;
+    line-height: 1.34;
+  }
+
+  .error-review-summary-action {
+    width: 100%;
+    padding: 0.48rem 0.58rem;
+    text-align: center;
+  }
+
+  .error-review-details[open] summary {
+    margin-bottom: 0.58rem;
   }
 
   .question-history-block[open] summary {
