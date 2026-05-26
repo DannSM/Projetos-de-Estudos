@@ -802,6 +802,225 @@
   font-weight: 800;
 }
 
+.learning-paths-shell {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.learning-paths-loading,
+.learning-paths-empty,
+.learning-paths-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: clamp(0.9rem, 1.6vw, 1.08rem);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.learning-paths-loading {
+  justify-content: center;
+  min-height: 5.5rem;
+}
+
+.learning-paths-loading .progress-loading-icon {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(37, 99, 235, 0.16);
+  border-top-color: var(--color-primary);
+  border-radius: 999px;
+  animation: spin 700ms linear infinite;
+}
+
+.learning-paths-loading strong {
+  color: var(--color-text-primary);
+}
+
+.learning-paths-empty {
+  justify-content: flex-start;
+}
+
+.learning-paths-empty-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 999px;
+}
+
+.learning-paths-empty h3,
+.learning-paths-summary h3 {
+  margin-bottom: 0.32rem;
+}
+
+.learning-paths-empty p,
+.learning-paths-summary p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.learning-paths-summary {
+  align-items: stretch;
+}
+
+.learning-paths-summary > div:first-child {
+  min-width: 0;
+}
+
+.learning-paths-summary .button {
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.learning-paths-summary-progress {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  min-width: min(16rem, 100%);
+  padding: 0.75rem;
+  background: var(--color-surface-muted);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: var(--radius-md);
+}
+
+.learning-paths-summary-progress span,
+.learning-path-progress-block span {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.learning-paths-summary-progress strong,
+.learning-path-progress-block strong {
+  color: var(--color-primary);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.learning-path-card {
+  gap: 0.58rem;
+}
+
+.learning-path-card.is-featured {
+  border-color: rgba(37, 99, 235, 0.36);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.14);
+}
+
+.learning-path-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.learning-path-card-top .track-number {
+  margin-bottom: 0;
+}
+
+.learning-path-badge {
+  width: fit-content;
+  padding: 0.22rem 0.48rem;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.learning-path-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.learning-path-meta span {
+  padding: 0.25rem 0.46rem;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.learning-path-progress-block {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.learning-path-progress-block > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.learning-path-progress {
+  height: 0.45rem;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  border-radius: 999px;
+}
+
+.learning-path-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: inherit;
+}
+
+.learning-path-step-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-path-step-list li {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.52rem 0.58rem;
+  background: rgba(248, 250, 252, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.learning-path-step-list span {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.learning-path-step-list strong {
+  color: var(--color-text-primary);
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+
+.learning-path-empty-steps {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .result-section {
   padding-top: 0;
 }

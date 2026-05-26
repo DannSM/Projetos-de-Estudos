@@ -172,7 +172,8 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
         <p>As trilhas combinam fundamentos, prática e leitura analítica para formar repertório aplicável.</p>
       </div>
 
-      <div class="track-grid">
+      <div id="learningPathsMount" class="learning-paths-shell">
+        <div class="track-grid" data-learning-paths-fallback>
         <article class="track-card">
           <span class="track-number">01</span>
           <h3>Fundamentos de Dados</h3>
@@ -203,6 +204,7 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
           <h3>Projetos Práticos</h3>
           <p>Análise de vendas, NPS, dashboard operacional e geração de insights acionáveis.</p>
         </article>
+        </div>
       </div>
     </section>
 
@@ -288,6 +290,7 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
   <script src="src/auth-service.js"></script>
   <script src="src/auth-modal.js"></script>
   <script src="src/supabase-service.js"></script>
+  <script src="src/learning-paths.js"></script>
   <script src="src/question-bank-service.js"></script>
   <script src="src/feedback-modal.js"></script>
   <script src="src/hero-preview.js"></script>

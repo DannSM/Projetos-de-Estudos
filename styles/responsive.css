@@ -321,7 +321,9 @@
   }
 
   .section-heading,
-  .app-footer {
+  .app-footer,
+  .learning-paths-summary,
+  .learning-paths-empty {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -461,7 +463,12 @@
   .hero-actions,
   .button,
   .submit-button,
-  .restart-button {
+  .restart-button,
+  .learning-paths-summary .button {
+    width: 100%;
+  }
+
+  .learning-paths-summary-progress {
     width: 100%;
   }
 
