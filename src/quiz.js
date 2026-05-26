@@ -717,6 +717,8 @@ function confirmDiagnosticAnswer() {
     area: cleanArea,
     level: cleanText(question.level),
     concept: cleanConcept,
+    skillCode: cleanText(question.skillCode || question.skill_code),
+    recommendationKey: cleanText(question.recommendationKey || question.recommendation_key),
     question: cleanQuestion,
     selected: cleanOptions[selectedIndex],
     correctAnswer: cleanOptions[question.correct],
@@ -1015,6 +1017,14 @@ function getReviewContextText(item) {
   return `A questão avaliava ${item.concept}; vale revisar o raciocínio por trás desse conceito antes de avançar.`;
 }
 
+async function generatePersonalizedLearningBridge(resultPayload) {
+  if (!window.personalizedLearningService || typeof window.personalizedLearningService.generateFromDiagnosticResult !== "function") {
+    return { ok: false, skipped: true, reason: "service_unavailable" };
+  }
+
+  return window.personalizedLearningService.generateFromDiagnosticResult(resultPayload);
+}
+
 function showResult({ blocked } = { blocked: false }) {
   const finishedAt = new Date().toISOString();
   const totalCorrect = getTotalCorrect();
@@ -1084,7 +1094,7 @@ function showResult({ blocked } = { blocked: false }) {
     }
   });
 
-  persistDiagnosticSessionRecord({
+  const diagnosticSessionPayload = {
     attempt_id: state.currentDiagnosticAttemptId,
     anonymous_user_id: getAnonymousUserId(),
     finished_at: finishedAt,
@@ -1102,6 +1112,38 @@ function showResult({ blocked } = { blocked: false }) {
     stopped_at_level: stopped ? stopped.name : null,
     level_results: state.levelResults,
     area_score_snapshot: buildAreaScoreSnapshot()
+  };
+  const personalizedResultPayload = {
+    attemptId: state.currentDiagnosticAttemptId,
+    finishedAt,
+    totalQuestionsAnswered: answered,
+    totalCorrect,
+    totalWrong,
+    scorePercent,
+    overallLevel: profile.name,
+    priorityArea,
+    priorityLevel: stopped ? stopped.name : null,
+    priorityText: recommendations.priority.text,
+    studyRecommendation: recommendations.priority.title,
+    areaScoreSnapshot: diagnosticSessionPayload.area_score_snapshot,
+    levelResults: state.levelResults,
+    answers: state.diagnosticAnswers
+  };
+
+  void persistDiagnosticSessionRecord(diagnosticSessionPayload);
+  void generatePersonalizedLearningBridge(personalizedResultPayload).then((result) => {
+    if (result && result.ok) {
+      window.dispatchEvent(new CustomEvent("data-skill-map-learning-updated", {
+        detail: {
+          path: result.path || null,
+          step: result.step || null,
+          fallback: Boolean(result.fallback),
+          reason: result.reason || null,
+          writes: result.writes || null
+        }
+      }));
+    }
+    return result;
   });
 
   quizMount.innerHTML = "";
@@ -1160,6 +1202,8 @@ function showResult({ blocked } = { blocked: false }) {
       <div class="result-actions">
         <button class="restart-button result-restart-button" id="restartDiagnostic">↻ Refazer diagnóstico</button>
         <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">☆ Avaliar experiência</button>
+        <a class="filter-button result-learning-button" href="index.html#trilhas">Ver trilha recomendada</a>
+        <a class="filter-button result-learning-button" href="meu-progresso.html">Meu Progresso</a>
       </div>
 
       <section class="next-action-card">

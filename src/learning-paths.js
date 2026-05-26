@@ -132,12 +132,17 @@
       return paths.find((path) => path.id === activeProgress.path_id) || null;
     }
 
+    const recommendedPathId = recommendation?.metadata?.recommended_path_id;
+    if (recommendedPathId) {
+      return paths.find((path) => path.id === recommendedPathId) || null;
+    }
+
     const recommendedArea = recommendation?.skill_area || getPriorityAreaFromSession(latestSession);
     if (recommendedArea) {
       return paths.find((path) => path.skill_area === recommendedArea) || null;
     }
 
-    return paths[0] || null;
+    return null;
   }
 
   function getPathProgress(path, progressByPath) {
@@ -209,7 +214,7 @@
       fetchOptional(
         client
           .from(TABLES.recommendations)
-          .select("skill_area,recommendation_type,priority,title,description,reason,status,source_attempt_id,updated_at")
+          .select("skill_area,recommendation_type,priority,title,description,reason,status,source_attempt_id,metadata,updated_at")
           .eq("user_id", user.id)
           .eq("status", "active")
           .order("priority", { ascending: true })
@@ -402,6 +407,9 @@
   }
 
   globalScope.addEventListener("data-skill-map-auth-changed", () => {
+    void refreshLearningPaths();
+  });
+  globalScope.addEventListener("data-skill-map-learning-updated", () => {
     void refreshLearningPaths();
   });
 

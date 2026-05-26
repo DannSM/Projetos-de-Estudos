@@ -192,12 +192,12 @@
   }
 
   function buildNextStep({ learningRecommendation, diagnosticRecommendation, learningProgress, path, step, latestSession, priorityArea }) {
-    if (diagnosticRecommendation) {
+    if (step) {
       return {
-        title: diagnosticRecommendation.title,
-        text: diagnosticRecommendation.next_step || diagnosticRecommendation.study_guidance || "Próximo passo recomendado pelo diagnóstico.",
-        href: "diagnostico.html",
-        cta: "Refazer diagnóstico"
+        title: step.title,
+        text: step.description || (path ? `Continue a trilha ${path.title}.` : "Continue sua trilha de estudos."),
+        href: step.content_url || "index.html#trilhas",
+        cta: "Ver trilhas"
       };
     }
 
@@ -210,24 +210,6 @@
       };
     }
 
-    if (priorityArea?.area && latestSession) {
-      return {
-        title: `Reforçar ${getAreaDisplayName(priorityArea.area)}`,
-        text: `Revise os conceitos de ${getAreaDisplayName(priorityArea.area)} e resolva exercícios curtos antes de avançar.`,
-        href: "diagnostico.html",
-        cta: "Refazer diagnóstico"
-      };
-    }
-
-    if (step) {
-      return {
-        title: step.title,
-        text: step.description || (path ? `Continue a trilha ${path.title}.` : "Continue sua trilha de estudos."),
-        href: step.content_url || "index.html#trilhas",
-        cta: "Ver trilhas"
-      };
-    }
-
     if (learningProgress && path) {
       const percent = formatPercent(learningProgress.progress_percent) || "0%";
       return {
@@ -235,6 +217,24 @@
         text: `Você está com ${percent} de progresso nesta trilha.`,
         href: "index.html#trilhas",
         cta: "Ver trilhas"
+      };
+    }
+
+    if (diagnosticRecommendation) {
+      return {
+        title: diagnosticRecommendation.title,
+        text: diagnosticRecommendation.next_step || diagnosticRecommendation.study_guidance || "Próximo passo recomendado pelo diagnóstico.",
+        href: "diagnostico.html",
+        cta: "Refazer diagnóstico"
+      };
+    }
+
+    if (priorityArea?.area && latestSession) {
+      return {
+        title: `Reforçar ${getAreaDisplayName(priorityArea.area)}`,
+        text: `Revise os conceitos de ${getAreaDisplayName(priorityArea.area)} e resolva exercícios curtos antes de avançar.`,
+        href: "diagnostico.html",
+        cta: "Refazer diagnóstico"
       };
     }
 
@@ -294,7 +294,7 @@
 
     const learningRecommendationsQuery = client
       .from("learning_recommendations")
-      .select("skill_area,recommendation_type,priority,title,description,reason,status,updated_at,created_at")
+      .select("skill_area,recommendation_type,priority,title,description,reason,status,metadata,updated_at,created_at")
       .eq("user_id", userId)
       .eq("status", "active")
       .order("priority", { ascending: true })
@@ -599,6 +599,33 @@
     `;
   }
 
+  function renderRecommendedPath(data) {
+    if (!data.path && !data.learningRecommendation) {
+      return `<p class="progress-empty-text">Finalize um diagnóstico logado para gerar uma trilha recomendada.</p>`;
+    }
+
+    const progress = formatPercent(data.learningProgress?.progress_percent) || "0%";
+    const title = data.path?.title || data.learningRecommendation?.title || "Trilha recomendada";
+    const stepTitle = data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
+
+    return `
+      <ul class="progress-detail-list">
+        <li>
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(data.path?.description || data.learningRecommendation?.reason || "Recomendação gerada pelo diagnóstico.")}</span>
+        </li>
+        <li>
+          <strong>Próximo passo</strong>
+          <span>${escapeHtml(stepTitle)}</span>
+        </li>
+        <li>
+          <strong>Progresso inicial</strong>
+          <span>${escapeHtml(progress)}</span>
+        </li>
+      </ul>
+    `;
+  }
+
   function renderAuthenticatedState(session, data) {
     const user = session?.user || {};
     const displayName = pickDisplayName(data.profile, user);
@@ -684,6 +711,10 @@
           <article class="progress-detail-card">
             <span class="progress-panel-label">Progresso por área</span>
             ${renderAreas(priorityAreas)}
+          </article>
+          <article class="progress-detail-card">
+            <span class="progress-panel-label">Trilha recomendada</span>
+            ${renderRecommendedPath(data)}
           </article>
         </section>
       </div>

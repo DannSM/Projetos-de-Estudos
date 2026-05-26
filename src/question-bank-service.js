@@ -60,6 +60,8 @@
         area,
         level,
         concept: normalizeText(row.concept),
+        skillCode: normalizeText(row.skill_code),
+        recommendationKey: normalizeText(row.recommendation_key),
         question,
         options: options.map((option) => normalizeText(option)),
         correct: correctIndex,
