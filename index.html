@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Skill Map</title>
-  <meta name="description" content="Data Skill Map: Seu mapa prático para evoluir em dados. Descubra seu nível, siga a trilha certa e pratique com desafios reais de SQL, estatística e análise de dados.">
+  <title>Data Skill Map | Diagnóstico e trilha personalizada em dados</title>
+  <meta name="description" content="Descubra seu nível em dados, identifique lacunas reais e siga uma trilha personalizada com próximos passos práticos no Data Skill Map.">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -15,8 +15,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-  <header class="app-header">
+<body class="commercial-home">
+  <header class="app-header commercial-header">
     <a class="brand" href="index.html" aria-label="Data Skill Map">
       <span class="brand-logo-wrap" aria-hidden="true">
         <img class="brand-logo" src="assets/header-logo.png" alt="Data Skill Map">
@@ -29,22 +29,18 @@
     </a>
 
     <nav class="header-nav" aria-label="Navegação principal">
-      <a data-nav-key="home" href="index.html">Início</a>
-      <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
+      <a data-nav-key="como-funciona" href="index.html#como-funciona">Como funciona</a>
       <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-      <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
-      <a data-nav-key="progresso" href="meu-progresso.html">Meu Progresso</a>
-      <a data-nav-key="analytics" href="analytics.html">Analytics</a>
+      <a data-nav-key="para-quem" href="index.html#para-quem">Para quem é</a>
+      <button class="auth-entry-button header-auth-link" type="button" data-auth-entry aria-label="Entrar ou criar conta">
+        <i data-lucide="user-circle" aria-hidden="true"></i>
+        <span data-auth-entry-label>Entrar</span>
+      </button>
     </nav>
 
-    <div class="header-context">Plataforma interativa para aprender dados na prática.</div>
-    <button class="auth-entry-button" type="button" data-auth-entry aria-label="Entrar ou criar conta">
-      <i data-lucide="user-circle" aria-hidden="true"></i>
-      <span data-auth-entry-label>Entrar</span>
-    </button>
-    <a class="header-cta" href="diagnostico.html" aria-label="Iniciar diagnóstico" title="Iniciar diagnóstico">
-      <i data-lucide="play" aria-hidden="true"></i>
-      <span class="header-cta-text">Iniciar</span>
+    <a class="header-cta commercial-header-cta" href="diagnostico.html" aria-label="Fazer diagnóstico grátis" title="Fazer diagnóstico grátis">
+      <i data-lucide="clipboard-list" aria-hidden="true"></i>
+      <span class="header-cta-text">Fazer diagnóstico grátis</span>
     </a>
     <button
       class="mobile-nav-toggle"
@@ -59,185 +55,290 @@
 
   <div class="mobile-nav-backdrop" hidden></div>
   <nav id="mobileGlobalNav" class="mobile-nav-panel" aria-label="Menu principal">
-    <a data-nav-key="home" href="index.html">Início</a>
-    <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
+    <a data-nav-key="como-funciona" href="index.html#como-funciona">Como funciona</a>
     <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-    <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
-    <a data-nav-key="progresso" href="meu-progresso.html">Meu Progresso</a>
-    <a data-nav-key="analytics" href="analytics.html">Analytics</a>
+    <a data-nav-key="para-quem" href="index.html#para-quem">Para quem é</a>
     <button class="auth-entry-button mobile-auth-entry" type="button" data-auth-entry aria-label="Entrar ou criar conta">
       <i data-lucide="user-circle" aria-hidden="true"></i>
       <span data-auth-entry-label>Entrar / Criar conta</span>
     </button>
     <a class="mobile-cta-link" href="diagnostico.html">
-      <i data-lucide="play" aria-hidden="true"></i>
-      <span>Iniciar diagnóstico</span>
+      <i data-lucide="clipboard-list" aria-hidden="true"></i>
+      <span>Fazer diagnóstico grátis</span>
     </a>
   </nav>
 
   <main>
-    <section id="home" class="hero section-shell">
-      <div class="hero-content">
-        <div class="eyebrow">Data Skill Map</div>
-        <h1>Transforme estudo em progresso real com desafios curtos.</h1>
-        <p class="hero-lead">Seu mapa prático para evoluir em dados.</p>
-        <p class="hero-copy">
-          Descubra seu nível, siga a trilha certa e pratique com desafios reais de SQL, estatística e análise de dados.
+    <section id="home" class="hero commercial-hero section-shell">
+      <div class="hero-content commercial-hero-content">
+        <div class="eyebrow commercial-eyebrow">Diagnóstico -> prioridade -> trilha -> progresso</div>
+        <h1>Descubra seu nível em dados e saiba exatamente o que estudar depois.</h1>
+        <p class="hero-copy commercial-hero-copy">
+          O Data Skill Map avalia suas habilidades, identifica lacunas reais e cria uma trilha personalizada com próximos passos práticos.
         </p>
-        <div class="hero-actions">
+        <div class="hero-actions commercial-hero-actions">
           <a class="button button-primary" href="diagnostico.html">
             <i data-lucide="clipboard-list" aria-hidden="true"></i>
-            <span>Fazer diagnóstico</span>
+            <span>Fazer diagnóstico grátis</span>
           </a>
-          <a class="button button-secondary" href="#trilhas">
-            <i data-lucide="route" aria-hidden="true"></i>
-            <span>Ver trilhas</span>
+          <a class="button button-secondary" href="#como-funciona">
+            <i data-lucide="arrow-down" aria-hidden="true"></i>
+            <span>Ver como funciona</span>
           </a>
         </div>
-        <div class="hero-metrics" aria-label="Resumo da experiência">
-          <div>
-            <i class="metric-icon" data-lucide="clipboard-list" aria-hidden="true"></i>
-            <strong>15</strong>
-            <span>perguntas no diagnóstico</span>
-          </div>
-          <div>
-            <i class="metric-icon" data-lucide="activity" aria-hidden="true"></i>
-            <strong>5</strong>
-            <span>áreas avaliadas</span>
-          </div>
-          <div>
-            <i class="metric-icon" data-lucide="target" aria-hidden="true"></i>
-            <strong id="homeChallengeCount">--</strong>
-            <span>desafios práticos</span>
-          </div>
+        <div class="hero-benefits" aria-label="Benefícios principais">
+          <span><i data-lucide="layers-3" aria-hidden="true"></i>Diagnóstico por nível</span>
+          <span><i data-lucide="route" aria-hidden="true"></i>Trilha personalizada</span>
+          <span><i data-lucide="line-chart" aria-hidden="true"></i>Progresso salvo</span>
         </div>
       </div>
 
-      <aside class="hero-panel hero-preview-card" aria-label="Prévia dinâmica de desafios">
-        <div class="preview-progress" aria-hidden="true"><span id="heroPreviewProgress"></span></div>
-        <div class="preview-ribbon">
-          <span>Desafios em destaque</span>
-          <strong id="heroPreviewPoints">20 pontos</strong>
+      <aside class="platform-preview" aria-label="Preview real da plataforma">
+        <div class="platform-preview__top">
+          <span>Diagnóstico concluído</span>
+          <strong>Prioridade: SQL Essencial</strong>
         </div>
-        <p class="preview-subtitle">Exemplos de questões para praticar com feedback imediato.</p>
-        <div class="challenge-preview-top">
-          <span class="category-tag badge-sql" id="heroPreviewCategory">SQL Intermediário</span>
-          <span class="level-tag" id="heroPreviewLevel">Intermediário</span>
+        <div class="platform-preview__score">
+          <div>
+            <span>Nível atual</span>
+            <strong>Intermediário inicial</strong>
+          </div>
+          <div class="platform-preview__meter" aria-hidden="true"><span></span></div>
         </div>
-        <div class="hero-preview-body" id="heroPreviewBody" aria-live="polite">
-          <h2 id="heroPreviewQuestion">Qual é o resultado da query?</h2>
-          <code class="code-block" id="heroPreviewCode">SELECT COUNT(*)
-FROM cliente c
-LEFT JOIN compra cp
-ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
-          <div class="preview-options" id="heroPreviewOptions" aria-hidden="true"></div>
-          <p id="heroPreviewHint">O LEFT JOIN preserva clientes sem compra e pode multiplicar linhas quando há mais de uma compra relacionada.</p>
+        <div class="platform-preview__grid">
+          <article>
+            <small>Trilha recomendada</small>
+            <strong>SQL Essencial</strong>
+            <p>SELECT, filtros, agregações e leitura de resultados.</p>
+          </article>
+          <article>
+            <small>Próximo passo</small>
+            <strong>Praticar GROUP BY</strong>
+            <p>Resolver um desafio curto com feedback imediato.</p>
+          </article>
         </div>
-        <div class="preview-controls" id="heroPreviewControls" aria-label="Alternar desafio em destaque"></div>
+        <div class="platform-preview__progress">
+          <span>Meu Progresso</span>
+          <strong>3 de 6 trilhas iniciadas</strong>
+          <div aria-hidden="true"><span></span></div>
+        </div>
       </aside>
     </section>
 
-    <section class="section-shell home-journey" aria-label="Como funciona">
-      <div class="section-heading compact">
+    <section class="section-shell pain-section" aria-label="Dor principal">
+      <div class="pain-section__content">
+        <span class="section-kicker">Direção antes de volume</span>
+        <h2>Você não precisa estudar mais. Precisa estudar na ordem certa.</h2>
+        <p>
+          Conteúdo de dados existe em excesso. O difícil é entender o que falta agora, qual assunto desbloqueia o próximo passo e como transformar estudo em prática sem pular fundamentos importantes.
+        </p>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="section-shell home-journey anchor-section" aria-label="Como funciona">
+      <div class="section-heading commercial-section-heading">
         <div>
           <span class="section-kicker">Como funciona</span>
-          <h2>Comece rápido e avance com clareza.</h2>
+          <h2>Um fluxo simples para sair da dúvida e entrar em progresso.</h2>
         </div>
       </div>
-      <div class="home-journey-grid">
-        <article class="journey-card">
+      <div class="home-journey-grid commercial-step-grid">
+        <article class="journey-card commercial-step-card">
           <span class="journey-index">01</span>
           <h3>Diagnostique</h3>
-          <p>Responda 5 perguntas por nível e encontre suas lacunas reais.</p>
+          <p>Responda perguntas por nível e veja onde suas habilidades estão fortes ou pedindo atenção.</p>
         </article>
-        <article class="journey-card">
+        <article class="journey-card commercial-step-card">
           <span class="journey-index">02</span>
           <h3>Priorize</h3>
-          <p>Receba um mapa objetivo de estudo para evitar conteúdo sem foco.</p>
+          <p>Receba uma prioridade clara para não cair em conteúdo solto ou sequências genéricas.</p>
         </article>
-        <article class="journey-card">
+        <article class="journey-card commercial-step-card">
           <span class="journey-index">03</span>
           <h3>Pratique</h3>
-          <p>Resolva desafios curtos e valide evolução com feedback imediato.</p>
+          <p>Resolva desafios curtos de SQL, estatística, indicadores e análise aplicada.</p>
         </article>
+        <article class="journey-card commercial-step-card">
+          <span class="journey-index">04</span>
+          <h3>Acompanhe</h3>
+          <p>Use Meu Progresso para retomar pela trilha certa, com prioridade e próximo passo visíveis.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="produto" class="product-proof-section anchor-section">
+      <div class="section-shell">
+        <div class="section-heading commercial-section-heading">
+          <div>
+            <span class="section-kicker">Produto real</span>
+            <h2>O diagnóstico vira plano, prática e acompanhamento.</h2>
+          </div>
+          <p>Previews baseados nas telas e no fluxo atual da plataforma, conectando pergunta, trilha recomendada e progresso.</p>
+        </div>
+
+        <div class="product-proof-grid">
+          <aside class="hero-panel hero-preview-card product-proof-challenge" aria-label="Prévia dinâmica de desafios">
+            <div class="preview-progress" aria-hidden="true"><span id="heroPreviewProgress"></span></div>
+            <div class="preview-ribbon">
+              <span>Desafio com feedback</span>
+              <strong id="heroPreviewPoints">20 pontos</strong>
+            </div>
+            <p class="preview-subtitle">Exemplo de questão para praticar com explicação logo após responder.</p>
+            <div class="challenge-preview-top">
+              <span class="category-tag badge-sql" id="heroPreviewCategory">SQL Intermediário</span>
+              <span class="level-tag" id="heroPreviewLevel">Intermediário</span>
+            </div>
+            <div class="hero-preview-body" id="heroPreviewBody" aria-live="polite">
+              <h2 id="heroPreviewQuestion">Qual é o resultado da query?</h2>
+              <code class="code-block" id="heroPreviewCode">SELECT COUNT(*)
+FROM cliente c
+LEFT JOIN compra cp
+ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
+              <div class="preview-options" id="heroPreviewOptions" aria-hidden="true"></div>
+              <p id="heroPreviewHint">O LEFT JOIN preserva clientes sem compra e pode multiplicar linhas quando há mais de uma compra relacionada.</p>
+            </div>
+            <div class="preview-controls" id="heroPreviewControls" aria-label="Alternar desafio em destaque"></div>
+          </aside>
+
+          <div class="proof-stack">
+            <article class="proof-card proof-card--path">
+              <span>Trilha personalizada</span>
+              <h3>SQL Essencial primeiro</h3>
+              <p>Prioridade definida pelo diagnóstico para fortalecer filtros, agregações e leitura de consultas.</p>
+              <div class="proof-tags">
+                <span>SELECT</span>
+                <span>GROUP BY</span>
+                <span>COUNT</span>
+              </div>
+            </article>
+            <article class="proof-card proof-card--progress">
+              <span>Meu Progresso</span>
+              <h3>Próximo passo visível</h3>
+              <p>Retome pelos estudos ativos, veja prioridade e acompanhe trilhas iniciadas.</p>
+              <div class="proof-progress" aria-hidden="true"><span></span></div>
+            </article>
+          </div>
+        </div>
+
+        <div class="topic-highlight-row" aria-label="Temas em destaque">
+          <span>SQL</span>
+          <span>Estatística</span>
+          <span>Indicadores e KPIs</span>
+          <span>Projetos Práticos</span>
+        </div>
       </div>
     </section>
 
     <section id="trilhas" class="section-shell anchor-section">
-      <div class="section-heading">
+      <div class="section-heading commercial-section-heading">
         <div>
-          <span class="section-kicker">Trilhas sugeridas</span>
-          <h2>Estude por prioridade, não por volume.</h2>
+          <span class="section-kicker">Trilhas</span>
+          <h2>Seis caminhos para evoluir com ordem e prática.</h2>
         </div>
-        <p>As trilhas combinam fundamentos, prática e leitura analítica para formar repertório aplicável.</p>
+        <p>As trilhas combinam fundamentos, SQL, estatística, indicadores e projetos para formar repertório aplicável.</p>
       </div>
 
       <div id="learningPathsMount" class="learning-paths-shell">
-        <div class="track-grid" data-learning-paths-fallback>
-        <article class="track-card">
-          <span class="track-number">01</span>
-          <h3>Fundamentos de Dados</h3>
-          <p>Tipos de dados, tabelas, linhas, colunas, qualidade da informação e indicadores básicos.</p>
-        </article>
-        <article class="track-card">
-          <span class="track-number">02</span>
-          <h3>SQL Essencial</h3>
-          <p>SELECT, WHERE, ORDER BY, GROUP BY, COUNT, SUM e AVG para análises do dia a dia.</p>
-        </article>
-        <article class="track-card">
-          <span class="track-number">03</span>
-          <h3>SQL Intermediário</h3>
-          <p>JOIN, LEFT JOIN, cardinalidade, COUNT DISTINCT, subqueries e CTEs.</p>
-        </article>
-        <article class="track-card">
-          <span class="track-number">04</span>
-          <h3>Estatística para Dados</h3>
-          <p>Média, mediana, moda, desvio padrão, distribuição e correlação.</p>
-        </article>
-        <article class="track-card">
-          <span class="track-number">05</span>
-          <h3>Indicadores e KPIs</h3>
-          <p>Metas, gaps, variação percentual, evolução histórica, ranking e leitura de contexto.</p>
-        </article>
-        <article class="track-card">
-          <span class="track-number">06</span>
-          <h3>Projetos Práticos</h3>
-          <p>Análise de vendas, NPS, dashboard operacional e geração de insights acionáveis.</p>
-        </article>
+        <div class="track-grid commercial-track-grid" data-learning-paths-fallback>
+          <article class="track-card">
+            <span class="track-number">01</span>
+            <h3>Fundamentos de Dados</h3>
+            <p>Tipos de dados, tabelas, qualidade da informação e indicadores básicos.</p>
+          </article>
+          <article class="track-card">
+            <span class="track-number">02</span>
+            <h3>SQL Essencial</h3>
+            <p>SELECT, WHERE, ORDER BY, GROUP BY, COUNT, SUM e AVG para análises do dia a dia.</p>
+          </article>
+          <article class="track-card">
+            <span class="track-number">03</span>
+            <h3>SQL Intermediário</h3>
+            <p>JOIN, LEFT JOIN, cardinalidade, COUNT DISTINCT, subqueries e CTEs.</p>
+          </article>
+          <article class="track-card">
+            <span class="track-number">04</span>
+            <h3>Estatística para Dados</h3>
+            <p>Média, mediana, moda, desvio padrão, distribuição e correlação.</p>
+          </article>
+          <article class="track-card">
+            <span class="track-number">05</span>
+            <h3>Indicadores e KPIs</h3>
+            <p>Metas, gaps, variação percentual, histórico, ranking e leitura de contexto.</p>
+          </article>
+          <article class="track-card">
+            <span class="track-number">06</span>
+            <h3>Projetos Práticos</h3>
+            <p>Análise de vendas, NPS, dashboard operacional e insights acionáveis.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section id="desafios" class="section-shell anchor-section">
-      <div class="section-heading">
+    <section id="para-quem" class="section-shell audience-section anchor-section">
+      <div class="section-heading commercial-section-heading">
         <div>
-          <span class="section-kicker">Desafios práticos</span>
-          <h2>Resolva cards curtos com feedback imediato.</h2>
+          <span class="section-kicker">Para quem é</span>
+          <h2>Feito para quem precisa de clareza antes de estudar.</h2>
         </div>
-        <p>Escolha uma categoria, marque uma alternativa e use o botão responder para ver a explicação didática.</p>
       </div>
-
-      <div class="challenge-toolbar" role="group" aria-label="Categorias de desafios">
-        <button class="filter-button active" data-filter="Todos">Todos</button>
+      <div class="audience-grid">
+        <article>Iniciantes em dados.</article>
+        <article>Pessoas em transição de carreira.</article>
+        <article>Estudantes que precisam de direção.</article>
+        <article>Analistas em início de carreira.</article>
+        <article>Profissionais que usam Excel, SQL e indicadores no trabalho.</article>
       </div>
+    </section>
 
-      <div class="challenge-score" id="challengeScore">Pontuação dos desafios: 0</div>
-      <div class="challenge-grid" id="challengeMount"></div>
-      <div class="challenge-mobile-actions" id="challengeMobileActions"></div>
+    <section class="comparison-section">
+      <div class="section-shell">
+        <div class="section-heading commercial-section-heading">
+          <div>
+            <span class="section-kicker">Diferenciação</span>
+            <h2>Mais direção do que um curso. Mais prática do que um roadmap solto.</h2>
+          </div>
+        </div>
+        <div class="comparison-grid">
+          <article>
+            <span>Curso comum</span>
+            <p>Conteúdo para assistir, muitas vezes sem diagnosticar sua lacuna atual.</p>
+          </article>
+          <article>
+            <span>Roadmap solto</span>
+            <p>Sequência genérica que não sabe seu nível, sua prioridade ou seu histórico.</p>
+          </article>
+          <article class="comparison-grid__featured">
+            <span>Data Skill Map</span>
+            <p>Diagnóstico, trilha, prática e progresso conectados em um fluxo único.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell final-cta-section">
+      <div class="final-cta-panel">
+        <span class="section-kicker">Comece pelo próximo passo certo</span>
+        <h2>Transforme estudo em progresso real.</h2>
+        <p>Faça o diagnóstico, descubra sua prioridade e comece pela trilha certa.</p>
+        <a class="button button-primary" href="diagnostico.html">
+          <i data-lucide="clipboard-list" aria-hidden="true"></i>
+          <span>Começar diagnóstico grátis</span>
+        </a>
+      </div>
     </section>
   </main>
 
-  <footer class="contact-footer">
+  <footer class="contact-footer commercial-footer">
     <div class="contact-footer__content">
       <div class="contact-footer__intro">
         <p class="contact-footer__eyebrow">Data Skill Map</p>
         <h2>Continue sua evolução em Dados.</h2>
-        <p>Estude SQL, Estatística, Analytics e desenvolva seu raciocínio com desafios práticos.</p>
+        <p>Diagnóstico, trilhas e desafios práticos para estudar com mais direção.</p>
       </div>
 
       <div class="contact-footer__brand">
         <strong>Daniellysson Souza Mendes</strong>
-        <span>Consultor de Qualidade • Dados • Analytics • Melhoria Contínua</span>
+        <span>Consultor de Qualidade - Dados - Analytics - Melhoria Contínua</span>
       </div>
 
       <div class="contact-footer__grid">
@@ -263,10 +364,10 @@ ON c.ID_CLIENTE = cp.ID_CLIENTE;</code>
       </div>
 
       <nav class="contact-footer__links" aria-label="Links úteis">
-        <a href="index.html#home">Sobre a plataforma</a>
+        <a href="index.html#como-funciona">Como funciona</a>
         <a href="index.html#trilhas">Trilhas de estudo</a>
+        <a href="index.html#para-quem">Para quem é</a>
         <a href="diagnostico.html">Diagnóstico</a>
-        <a href="index.html#desafios">Desafios</a>
       </nav>
     </div>
 

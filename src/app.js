@@ -52,6 +52,14 @@ function getCurrentNavKey() {
       return "trilhas";
     }
 
+    if (hash === "#como-funciona") {
+      return "como-funciona";
+    }
+
+    if (hash === "#para-quem") {
+      return "para-quem";
+    }
+
     if (hash === "#desafios") {
       return "desafios";
     }

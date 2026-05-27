@@ -246,6 +246,31 @@
     gap: 1rem;
   }
 
+  .commercial-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .commercial-hero {
+    gap: 1rem;
+    padding-top: 1rem;
+  }
+
+  .commercial-hero-content h1 {
+    font-size: clamp(2.15rem, 7.6vw, 3.4rem);
+    line-height: 1;
+  }
+
+  .commercial-step-grid,
+  .product-proof-grid,
+  .audience-grid,
+  .comparison-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platform-preview__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .track-grid,
   .home-journey-grid,
   .recommendation-grid,
@@ -466,6 +491,103 @@
   .restart-button,
   .learning-paths-summary .button {
     width: 100%;
+  }
+
+  .commercial-hero {
+    padding-top: 0.72rem;
+    padding-bottom: 0.72rem;
+  }
+
+  .commercial-hero-content h1 {
+    margin-bottom: 0.58rem;
+    font-size: clamp(2rem, 10vw, 2.75rem);
+  }
+
+  .commercial-hero-copy {
+    font-size: 0.98rem;
+    line-height: 1.45;
+  }
+
+  .commercial-hero-actions {
+    gap: 0.48rem;
+    margin-top: 0.66rem;
+  }
+
+  .commercial-hero-actions .button {
+    min-height: 2.74rem;
+  }
+
+  .hero-benefits {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.38rem;
+    margin-top: 0.62rem;
+  }
+
+  .hero-benefits span {
+    padding: 0.4rem 0.56rem;
+    font-size: 0.78rem;
+  }
+
+  .platform-preview {
+    gap: 0.58rem;
+    padding: 0.78rem;
+    border-radius: 16px;
+  }
+
+  .platform-preview__top,
+  .platform-preview__grid,
+  .product-proof-grid,
+  .commercial-step-grid,
+  .audience-grid,
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-preview__top {
+    display: grid;
+  }
+
+  .platform-preview__top,
+  .platform-preview__score,
+  .platform-preview__progress,
+  .platform-preview__grid article,
+  .proof-card,
+  .audience-grid article,
+  .comparison-grid article {
+    min-height: 0;
+    padding: 0.7rem;
+  }
+
+  .pain-section h2,
+  .commercial-section-heading h2,
+  .final-cta-panel h2 {
+    font-size: clamp(1.55rem, 8vw, 2.2rem);
+  }
+
+  .pain-section p,
+  .final-cta-panel p {
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .product-proof-section,
+  .comparison-section {
+    padding: 0.95rem 0;
+  }
+
+  .topic-highlight-row {
+    gap: 0.34rem;
+  }
+
+  .topic-highlight-row span {
+    flex: 1 1 9rem;
+    text-align: center;
+  }
+
+  .final-cta-panel {
+    padding: 1rem;
+    border-radius: 16px;
   }
 
   .hero-metrics {
