@@ -495,22 +495,23 @@
 
   .commercial-hero {
     padding-top: 0.72rem;
-    padding-bottom: 0.72rem;
+    padding-bottom: 0.5rem;
+    gap: 0.72rem;
   }
 
   .commercial-hero-content h1 {
-    margin-bottom: 0.58rem;
-    font-size: clamp(2rem, 10vw, 2.75rem);
+    margin-bottom: 0.42rem;
+    font-size: clamp(1.9rem, 9.2vw, 2.55rem);
   }
 
   .commercial-hero-copy {
-    font-size: 0.98rem;
-    line-height: 1.45;
+    font-size: 0.92rem;
+    line-height: 1.4;
   }
 
   .commercial-hero-actions {
-    gap: 0.48rem;
-    margin-top: 0.66rem;
+    gap: 0.42rem;
+    margin-top: 0.54rem;
   }
 
   .commercial-hero-actions .button {
@@ -519,19 +520,23 @@
 
   .hero-benefits {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.38rem;
-    margin-top: 0.62rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.32rem;
+    margin-top: 0.5rem;
   }
 
   .hero-benefits span {
-    padding: 0.4rem 0.56rem;
-    font-size: 0.78rem;
+    justify-content: center;
+    min-height: 2.25rem;
+    padding: 0.34rem 0.38rem;
+    font-size: 0.68rem;
+    line-height: 1.12;
+    text-align: center;
   }
 
   .platform-preview {
-    gap: 0.58rem;
-    padding: 0.78rem;
+    gap: 0.42rem;
+    padding: 0.64rem;
     border-radius: 16px;
   }
 
@@ -546,6 +551,7 @@
 
   .platform-preview__top {
     display: grid;
+    gap: 0.18rem;
   }
 
   .platform-preview__top,
@@ -556,7 +562,32 @@
   .audience-grid article,
   .comparison-grid article {
     min-height: 0;
-    padding: 0.7rem;
+    padding: 0.62rem;
+  }
+
+  .platform-preview__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem;
+  }
+
+  .platform-preview p {
+    display: none;
+  }
+
+  .platform-preview span,
+  .platform-preview small {
+    font-size: 0.64rem;
+    text-transform: none;
+  }
+
+  .platform-preview strong {
+    font-size: 0.88rem;
+  }
+
+  .platform-preview__meter,
+  .platform-preview__progress div {
+    height: 0.4rem;
+    margin-top: 0.42rem;
   }
 
   .pain-section h2,
@@ -573,7 +604,91 @@
 
   .product-proof-section,
   .comparison-section {
-    padding: 0.95rem 0;
+    padding: 0.78rem 0;
+  }
+
+  .product-proof-section .section-heading {
+    margin-bottom: 0.62rem;
+  }
+
+  .product-proof-challenge {
+    gap: 0.5rem;
+    padding: 0.66rem;
+  }
+
+  .preview-ribbon {
+    padding: 0.52rem 0.62rem;
+    font-size: 0.78rem;
+  }
+
+  .preview-subtitle,
+  #heroPreviewHint {
+    display: none;
+  }
+
+  .challenge-preview-top {
+    gap: 0.34rem;
+  }
+
+  .category-tag,
+  .level-tag {
+    padding: 0.26rem 0.46rem;
+    font-size: 0.68rem;
+  }
+
+  .hero-preview-body {
+    gap: 0.48rem;
+  }
+
+  .hero-preview-body h2 {
+    font-size: 0.98rem;
+    line-height: 1.22;
+  }
+
+  .hero-preview-body .code-block {
+    max-height: 5.8rem;
+    padding: 0.62rem;
+    font-size: 0.72rem;
+    line-height: 1.42;
+  }
+
+  .preview-options {
+    gap: 0.34rem;
+  }
+
+  .preview-options span {
+    min-height: 2.1rem;
+    padding: 0.42rem 0.48rem;
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+
+  .preview-controls {
+    gap: 0.32rem;
+  }
+
+  .proof-stack {
+    gap: 0.52rem;
+  }
+
+  .proof-card {
+    gap: 0.26rem;
+  }
+
+  .proof-card p {
+    margin-bottom: 0;
+    font-size: 0.82rem;
+    line-height: 1.32;
+  }
+
+  .proof-tags {
+    gap: 0.3rem;
+  }
+
+  .proof-tags span,
+  .topic-highlight-row span {
+    padding: 0.26rem 0.42rem;
+    font-size: 0.68rem;
   }
 
   .topic-highlight-row {
@@ -681,6 +796,11 @@
     padding: 0.42rem 0.48rem;
   }
 
+  .learning-path-step-list li:nth-child(n + 2),
+  .learning-path-card .learning-path-progress-block {
+    display: none;
+  }
+
   .learning-path-step-list span {
     font-size: 0.64rem;
     text-transform: none;
@@ -689,6 +809,15 @@
   .learning-path-step-list strong {
     font-size: 0.8rem;
     line-height: 1.22;
+  }
+
+  .audience-grid article {
+    gap: 0.24rem;
+  }
+
+  .audience-grid article p {
+    font-size: 0.8rem;
+    line-height: 1.32;
   }
 
   .track-grid,

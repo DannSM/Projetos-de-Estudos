@@ -1000,7 +1000,6 @@
   color: var(--color-text-muted);
   font-size: 0.68rem;
   font-weight: 800;
-  text-transform: uppercase;
 }
 
 .learning-path-step-list strong {
@@ -1013,6 +1012,25 @@
   margin: 0;
   color: var(--color-text-secondary);
   font-size: 0.86rem;
+}
+
+.audience-grid article {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.audience-grid article strong {
+  color: #164e63;
+  font-weight: 850;
+  line-height: 1.26;
+}
+
+.audience-grid article p {
+  margin: 0;
+  color: #52646b;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.38;
 }
 
 @keyframes spin {
