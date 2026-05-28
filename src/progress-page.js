@@ -47,6 +47,20 @@
     }).format(date);
   }
 
+  function formatDateTime(value) {
+    if (!value) return "Sem atividade";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Sem atividade";
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Sao_Paulo"
+    }).format(date).replace(",", " às");
+  }
+
   function clampPercent(value) {
     const numberValue = Number(value);
     if (!Number.isFinite(numberValue)) return 0;
@@ -59,6 +73,31 @@
 
   function pickDisplayName(profile, user) {
     return profile?.display_name || user?.user_metadata?.display_name || user?.user_metadata?.name || "";
+  }
+
+  function getAvatarUrl(user) {
+    return user?.user_metadata?.avatar_url || user?.user_metadata?.picture || "";
+  }
+
+  function getInitials(name, email) {
+    const source = String(name || email || "Aluno").trim();
+    const parts = source.includes("@") ? [source[0]] : source.split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
+  }
+
+  function renderUserAvatar(user, displayName, email) {
+    const avatarUrl = getAvatarUrl(user);
+    const initials = getInitials(displayName, email);
+
+    if (avatarUrl) {
+      return `
+        <span class="progress-user-avatar">
+          <img src="${escapeHtml(avatarUrl)}" alt="">
+        </span>
+      `;
+    }
+
+    return `<span class="progress-user-avatar progress-user-avatar--fallback" aria-hidden="true">${escapeHtml(initials)}</span>`;
   }
 
   function getSessionDate(session) {
@@ -555,7 +594,7 @@
           <li>
             <span class="progress-history-dot" aria-hidden="true"></span>
             <div class="progress-history-main">
-              <span>${escapeHtml(formatDate(getSessionDate(session)))}</span>
+              <span>${escapeHtml(formatDateTime(getSessionDate(session)))}</span>
               <strong>${escapeHtml(session.overall_level || session.identified_profile || "Resultado registrado")}</strong>
             </div>
             <p class="progress-history-score">${escapeHtml(formatPercent(session.score_percent) || "sem percentual")} geral</p>
@@ -666,11 +705,16 @@
         <section class="progress-hero-card">
           <div class="progress-hero-copy">
             <span class="section-kicker">Meu Progresso</span>
-            <h1>${escapeHtml(studentName)}</h1>
-            <p class="progress-user-email">
-              <i data-lucide="mail" aria-hidden="true"></i>
-              <span>${escapeHtml(email)}</span>
-            </p>
+            <div class="progress-user-heading">
+              ${renderUserAvatar(user, displayName, email)}
+              <div>
+                <h1>${escapeHtml(studentName)}</h1>
+                <p class="progress-user-email">
+                  <i data-lucide="mail" aria-hidden="true"></i>
+                  <span>${escapeHtml(email)}</span>
+                </p>
+              </div>
+            </div>
             <p class="progress-hero-text">${escapeHtml(data.diagnosticCount ? "Seu painel foi atualizado com seus dados reais de diagnóstico e trilha." : EMPTY_MESSAGE)}</p>
             <div class="progress-hero-summary" aria-label="Resumo do nível atual">
               <div>

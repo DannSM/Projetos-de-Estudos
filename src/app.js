@@ -85,6 +85,34 @@ function updateGlobalNavActiveState() {
   });
 }
 
+function setAdminNavVisible(isVisible) {
+  document.querySelectorAll("[data-admin-nav]").forEach((link) => {
+    link.hidden = !isVisible;
+  });
+  updateGlobalNavActiveState();
+}
+
+async function refreshAdminNavigation() {
+  setAdminNavVisible(false);
+
+  try {
+    if (!window.authService || typeof window.authService.getCurrentSession !== "function" || typeof window.authService.checkAdminAuthorization !== "function") {
+      return;
+    }
+
+    const sessionResult = await window.authService.getCurrentSession();
+    if (!sessionResult || !sessionResult.ok || !sessionResult.session) {
+      return;
+    }
+
+    const authCheck = await window.authService.checkAdminAuthorization();
+    const isAuthorized = Boolean(authCheck?.ok && Array.isArray(authCheck.data) && authCheck.data.some((row) => row?.is_authorized === true));
+    setAdminNavVisible(isAuthorized);
+  } catch (error) {
+    setAdminNavVisible(false);
+  }
+}
+
 function setupGlobalNavigation() {
   const toggle = document.querySelector(".mobile-nav-toggle");
   const panel = document.querySelector("#mobileGlobalNav");
@@ -268,6 +296,7 @@ async function setupAuthEntryPoints() {
   const refreshAuthState = async () => {
     const sessionResult = await window.authService.getCurrentSession();
     setAuthButtonState(sessionResult && sessionResult.ok ? sessionResult.session : null);
+    await refreshAdminNavigation();
   };
 
   window.addEventListener("data-skill-map-auth-changed", () => {
@@ -281,6 +310,7 @@ async function setupAuthEntryPoints() {
       if (currentSession) {
         await window.authService.signOut();
         setAuthButtonState(null);
+        setAdminNavVisible(false);
         window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
           detail: { session: null, user: null }
         }));
@@ -318,6 +348,7 @@ async function init() {
   bindHeaderHeightSync();
   setupGlobalNavigation();
   await setupAuthEntryPoints();
+  await refreshAdminNavigation();
   renderIcons();
   if (window.supabaseDataService && typeof window.supabaseDataService.getAnonymousUserId === "function") {
     state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();

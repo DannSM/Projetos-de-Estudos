@@ -25,9 +25,23 @@
 
 ## 4. Validacoes padrao
 
+- Priorizar validacoes deterministicas antes da validacao visual:
+  - `git diff --check`.
+  - `node --check` nos JS alterados.
+  - `node --check` em todos os JS de `src` quando houver alteracao JS.
+  - Smoke test Node, se existir.
 - Rodar `git diff --check`.
 - Rodar `node --check` nos JS alterados.
 - Rodar `node --check` em todos os JS de `src` quando houver alteracao JS.
+- Para paginas estaticas, preferir Node como primeira opcao.
+- Nao usar Python como primeira opcao, pois pode nao estar disponivel no ambiente do Codex mesmo que esteja instalado na maquina local.
+- Quando precisar subir servidor local, tentar primeiro comandos Node ja disponiveis no projeto ou servidor estatico simples em Node.
+- Considerar `127.0.0.1`/`localhost` como ambiente local de validacao, mas nao insistir se o navegador embutido bloquear.
+- Tentar navegador embutido ou Playwright apenas se estiver disponivel.
+- Se navegador embutido, Playwright, localhost, `127.0.0.1` ou sandbox falhar uma vez, nao repetir varias tentativas.
+- Parar, reportar a limitacao e marcar validacao visual como pendente/manual.
+- Nao gastar limite tentando multiplas alternativas de browser quando o ambiente bloquear.
+- Informar no relatorio final quais validacoes automaticas foram executadas e se a validacao visual ficou pendente.
 - Validar desktop e mobile quando houver alteracao visual.
 - Conferir console sem erros quando possivel.
 - Confirmar que arquivos sensiveis nao foram alterados.

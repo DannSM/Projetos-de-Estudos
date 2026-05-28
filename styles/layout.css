@@ -760,7 +760,15 @@ h3 {
 .commercial-step-card .journey-index,
 .track-number {
   color: #0f766e;
+}
+
+.commercial-step-card .journey-index {
   background: rgba(204, 251, 241, 0.8);
+}
+
+.track-number {
+  background: transparent;
+  color: #2563eb;
 }
 
 .product-proof-section,
@@ -790,6 +798,10 @@ h3 {
 
 .product-proof-challenge {
   box-shadow: 0 24px 58px rgba(2, 6, 23, 0.22);
+}
+
+.product-proof-challenge .hero-preview-body h2 {
+  color: #0f172a;
 }
 
 .proof-stack {

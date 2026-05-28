@@ -611,9 +611,14 @@
     margin-bottom: 0.62rem;
   }
 
+  .product-proof-section .section-heading p {
+    font-size: 0.84rem;
+    line-height: 1.34;
+  }
+
   .product-proof-challenge {
-    gap: 0.5rem;
-    padding: 0.66rem;
+    gap: 0.42rem;
+    padding: 0.58rem;
   }
 
   .preview-ribbon {
@@ -646,10 +651,10 @@
   }
 
   .hero-preview-body .code-block {
-    max-height: 5.8rem;
-    padding: 0.62rem;
+    max-height: 4.7rem;
+    padding: 0.52rem;
     font-size: 0.72rem;
-    line-height: 1.42;
+    line-height: 1.34;
   }
 
   .preview-options {
@@ -675,6 +680,11 @@
     gap: 0.26rem;
   }
 
+  .proof-card h3 {
+    margin-bottom: 0.06rem;
+    font-size: 0.98rem;
+  }
+
   .proof-card p {
     margin-bottom: 0;
     font-size: 0.82rem;
@@ -691,6 +701,27 @@
     font-size: 0.68rem;
   }
 
+  .commercial-step-card {
+    padding: 0.68rem;
+  }
+
+  .commercial-step-card .journey-index {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-bottom: 0.42rem;
+    font-size: 0.74rem;
+  }
+
+  .commercial-step-card h3 {
+    margin-bottom: 0.24rem;
+    font-size: 0.98rem;
+  }
+
+  .commercial-step-card p {
+    font-size: 0.82rem;
+    line-height: 1.34;
+  }
+
   .topic-highlight-row {
     gap: 0.34rem;
   }
@@ -703,6 +734,11 @@
   .final-cta-panel {
     padding: 1rem;
     border-radius: 16px;
+  }
+
+  .final-cta-section {
+    padding-top: 1rem;
+    scroll-margin-top: calc(var(--header-height) + 72px);
   }
 
   .hero-metrics {
