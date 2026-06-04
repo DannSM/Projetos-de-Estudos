@@ -96,7 +96,7 @@ main > .section-shell:first-child {
 
 .diagnostic-auth-notice__actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(11.5rem, 1fr));
+  grid-template-columns: minmax(12rem, 1fr);
   justify-content: stretch;
   align-items: center;
   gap: 0.6rem;

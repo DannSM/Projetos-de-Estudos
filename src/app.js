@@ -177,11 +177,7 @@ function setAdminNavVisible(isVisible) {
   updateGlobalNavActiveState();
 }
 
-function setAuthenticatedNavVisible(isAuthenticated, options = {}) {
-    const showDiagnosticNotice = isAuthenticated
-    ? false
-    : Boolean(options.showDiagnosticNotice);
-
+function setAuthenticatedNavVisible(isAuthenticated) {
   document.querySelectorAll("[data-authenticated-nav]").forEach((element) => {
     element.hidden = !isAuthenticated;
   });
@@ -197,7 +193,9 @@ function setAuthenticatedNavVisible(isAuthenticated, options = {}) {
   });
 
   document.querySelectorAll("[data-anonymous-diagnostic-notice]").forEach((element) => {
-    element.hidden = !showDiagnosticNotice || element.dataset.dismissed === "true";
+    if (isAuthenticated) {
+      element.hidden = true;
+    }
   });
 
   updateGlobalNavActiveState();
@@ -213,7 +211,7 @@ async function refreshAdminNavigation() {
 
     const sessionResult = await window.authService.getCurrentSession();
     if (!sessionResult || !sessionResult.ok || !sessionResult.session) {
-      setAuthenticatedNavVisible(false, { showDiagnosticNotice: true });
+      setAuthenticatedNavVisible(false);
       return false;
     }
 
@@ -370,14 +368,13 @@ async function setupAuthEntryPoints() {
   renderGlobalNavigation(null, false);
 
   if (!window.authService) {
-    setAuthenticatedNavVisible(false, { showDiagnosticNotice: true });
+    setAuthenticatedNavVisible(false);
     setAdminNavVisible(false);
     return;
   }
 
   let currentSession = null;
   let currentIsAdmin = false;
-  let hasDismissedAnonymousDiagnosticNotice = false;
 
   const closeMobileMenu = () => {
     const toggle = document.querySelector(".mobile-nav-toggle");
@@ -397,9 +394,7 @@ async function setupAuthEntryPoints() {
     currentIsAdmin = Boolean(currentSession && isAdmin);
     const isAuthenticated = Boolean(currentSession);
 
-    setAuthenticatedNavVisible(isAuthenticated, {
-      showDiagnosticNotice: false
-    });
+    setAuthenticatedNavVisible(isAuthenticated);
     renderGlobalNavigation(currentSession, currentIsAdmin);
     setAdminNavVisible(currentIsAdmin);
   };
@@ -418,10 +413,6 @@ async function setupAuthEntryPoints() {
   };
 
   window.addEventListener("data-skill-map-auth-changed", () => {
-    hasDismissedAnonymousDiagnosticNotice = false;
-    document.querySelectorAll("[data-anonymous-diagnostic-notice]").forEach((element) => {
-      delete element.dataset.dismissed;
-    });
     void refreshAuthState();
   });
 
@@ -463,19 +454,7 @@ function setupAnonymousDiagnosticNotice() {
     return;
   }
 
-  const continueButton = notice.querySelector("[data-continue-anonymous]");
   const signInButton = notice.querySelector("[data-login-to-save-progress]");
-
-  continueButton?.addEventListener("click", () => {
-    notice.hidden = true;
-    notice.dataset.dismissed = "true";
-    try {
-      window.sessionStorage.setItem("data_skill_map_continue_anonymous_diagnostic", "true");
-    } catch (error) {
-      // Session storage can be blocked in strict browser modes.
-    }
-    window.dispatchEvent(new CustomEvent("data-skill-map-continue-anonymous-diagnostic"));
-  });
 
   signInButton?.addEventListener("click", () => {
     if (window.authModal && typeof window.authModal.openAuthModal === "function") {

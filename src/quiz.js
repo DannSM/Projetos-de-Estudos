@@ -606,14 +606,6 @@ function renderDiagnosticIntro() {
   document.querySelector("#startDiagnostic").addEventListener("click", startDiagnostic);
 }
 
-function hasChosenAnonymousDiagnostic() {
-  try {
-    return window.sessionStorage.getItem("data_skill_map_continue_anonymous_diagnostic") === "true";
-  } catch (error) {
-    return false;
-  }
-}
-
 async function isCurrentUserAuthenticated() {
   if (!window.authService || typeof window.authService.getCurrentSession !== "function") {
     return false;
@@ -623,37 +615,26 @@ async function isCurrentUserAuthenticated() {
   return Boolean(sessionResult?.ok && sessionResult.session);
 }
 
-function showAnonymousDiagnosticChoice() {
+async function showAnonymousDiagnosticNoticeIfNeeded() {
+  if (await isCurrentUserAuthenticated()) {
+    return;
+  }
+
   const notice = document.querySelector("[data-anonymous-diagnostic-notice]");
   if (!notice) {
-    return false;
+    return;
   }
 
   notice.hidden = false;
   delete notice.dataset.dismissed;
-  notice.scrollIntoView({ behavior: "smooth", block: "center" });
 
-  const continueButton = notice.querySelector("[data-continue-anonymous]");
-  window.setTimeout(() => continueButton?.focus(), 240);
-  return true;
-}
-
-async function shouldPauseForAnonymousChoice() {
-  if (hasChosenAnonymousDiagnostic()) {
-    return false;
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
   }
-
-  if (await isCurrentUserAuthenticated()) {
-    return false;
-  }
-
-  return showAnonymousDiagnosticChoice();
 }
 
 async function startDiagnostic() {
-  if (await shouldPauseForAnonymousChoice()) {
-    return;
-  }
+  void showAnonymousDiagnosticNoticeIfNeeded();
 
   state.diagnosticStarted = true;
   state.diagnosticCompleted = false;
@@ -694,12 +675,6 @@ async function startDiagnostic() {
   renderAreaProgress();
   renderQuestion();
 }
-
-window.addEventListener("data-skill-map-continue-anonymous-diagnostic", () => {
-  if (!state.diagnosticStarted && quizMount?.querySelector("#startDiagnostic")) {
-    void startDiagnostic();
-  }
-});
 
 function renderQuestion() {
   const level = getCurrentLevel();
