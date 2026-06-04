@@ -153,28 +153,38 @@ async function persistAuthenticatedRecord(tableKey, payload) {
   }
 }
 
-function persistDiagnosticAnswerRecord(payload) {
+async function persistDiagnosticAnswerRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticAnswer !== "function") {
-    return;
+    return { ok: false, skipped: true };
   }
-  void persistAuthenticatedRecord("diagnosticAnswers", payload).then((result) => {
-    if (!result || !result.ok) {
+
+  try {
+    const result = await persistAuthenticatedRecord("diagnosticAnswers", payload);
+    if (result && result.skipped) {
       return window.supabaseDataService.saveDiagnosticAnswer(payload);
     }
     return result;
-  });
+  } catch (error) {
+    console.warn("[Diagnóstico] Falha ao salvar resposta; tentando gravacao anonima.", error);
+    return window.supabaseDataService.saveDiagnosticAnswer(payload);
+  }
 }
 
-function persistDiagnosticSessionRecord(payload) {
+async function persistDiagnosticSessionRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveDiagnosticSession !== "function") {
-    return;
+    return { ok: false, skipped: true };
   }
-  void persistAuthenticatedRecord("diagnosticSessions", payload).then((result) => {
-    if (!result || !result.ok) {
+
+  try {
+    const result = await persistAuthenticatedRecord("diagnosticSessions", payload);
+    if (result && result.skipped) {
       return window.supabaseDataService.saveDiagnosticSession(payload);
     }
     return result;
-  });
+  } catch (error) {
+    console.warn("[Diagnóstico] Falha ao salvar sessao; tentando gravacao anonima.", error);
+    return window.supabaseDataService.saveDiagnosticSession(payload);
+  }
 }
 
 function trackDiagnosticFunnelEvent(eventType, payload = {}) {
@@ -209,7 +219,32 @@ function persistSatisfactionFeedbackRecord(payload) {
   if (!window.supabaseDataService || typeof window.supabaseDataService.saveSatisfactionFeedback !== "function") {
     return Promise.resolve({ ok: false, skipped: true });
   }
-  return window.supabaseDataService.saveSatisfactionFeedback(payload);
+
+  return persistAuthenticatedRecord("satisfactionFeedback", payload).then((result) => {
+    if (result && result.skipped) {
+      return window.supabaseDataService.saveSatisfactionFeedback(payload);
+    }
+    return result;
+  }).catch((error) => {
+    console.warn("[Diagnóstico] Falha ao salvar satisfacao autenticada; tentando gravacao anonima.", error);
+    return window.supabaseDataService.saveSatisfactionFeedback(payload);
+  });
+}
+
+function trackDiagnosticAbandonment() {
+  if (!state.diagnosticStarted || state.diagnosticCompleted || !state.currentDiagnosticAttemptId) {
+    return;
+  }
+
+  trackDiagnosticFunnelEvent("abandoned_marker", {
+    level: getCurrentLevel() ? getCurrentLevel().name : null,
+    question_index: state.currentQuestion,
+    total_questions_answered: getTotalAnswered(),
+    metadata: {
+      reason: "page_hidden_before_result",
+      currentLevel: getCurrentLevel() ? getCurrentLevel().name : null
+    }
+  });
 }
 
 function getDiagnosticFeedbackStorageKey() {
@@ -438,6 +473,7 @@ function resetDiagnostic() {
   state.currentQuestion = 0;
   state.currentLevelIndex = 0;
   state.diagnosticStarted = false;
+  state.diagnosticCompleted = false;
   state.currentDiagnosticAttemptId = null;
   state.diagnosticQuestionSets = [];
   state.selectedDiagnosticAnswer = null;
@@ -564,6 +600,7 @@ function renderDiagnosticIntro() {
 
 function startDiagnostic() {
   state.diagnosticStarted = true;
+  state.diagnosticCompleted = false;
   state.currentLevelIndex = 0;
   state.currentQuestion = 0;
   state.currentDiagnosticAttemptId = window.supabaseDataService && typeof window.supabaseDataService.createAttemptId === "function"
@@ -675,7 +712,7 @@ function getCurrentAnswerKey() {
   ].join(":");
 }
 
-function confirmDiagnosticAnswer() {
+async function confirmDiagnosticAnswer() {
   const selectedIndex = state.selectedDiagnosticAnswer;
   if (selectedIndex === null || selectedIndex === undefined) return;
   if (!state.confirmedDiagnosticAnswerKeys) {
@@ -729,7 +766,7 @@ function confirmDiagnosticAnswer() {
 
   state.diagnosticAnswers.push(answerRecord);
 
-  persistDiagnosticAnswerRecord({
+  const persistenceResult = await persistDiagnosticAnswerRecord({
     attempt_id: state.currentDiagnosticAttemptId,
     anonymous_user_id: getAnonymousUserId(),
     answered_at: answeredAt,
@@ -742,6 +779,10 @@ function confirmDiagnosticAnswer() {
     correct_answer: answerRecord.correctAnswer,
     is_correct: answerRecord.correct
   });
+
+  if (!persistenceResult || (!persistenceResult.ok && !persistenceResult.skipped)) {
+    console.warn("[Diagnóstico] Resposta mantida em memoria, mas nao confirmada no Supabase.", persistenceResult?.error || persistenceResult);
+  }
 
   renderAreaProgress();
 
@@ -902,7 +943,7 @@ function showResultLoading({ blocked }) {
 
   state.resultRenderTimer = setTimeout(() => {
     state.resultRenderTimer = null;
-    showResult({ blocked });
+    void showResult({ blocked });
   }, RESULT_RENDER_DELAY_MS);
 }
 
@@ -1037,7 +1078,8 @@ async function generatePersonalizedLearningBridge(resultPayload) {
   return window.personalizedLearningService.generateFromDiagnosticResult(resultPayload);
 }
 
-function showResult({ blocked } = { blocked: false }) {
+async function showResult({ blocked } = { blocked: false }) {
+  state.diagnosticCompleted = true;
   const finishedAt = new Date().toISOString();
   const totalCorrect = getTotalCorrect();
   const answered = getTotalAnswered();
@@ -1142,7 +1184,10 @@ function showResult({ blocked } = { blocked: false }) {
     answers: state.diagnosticAnswers
   };
 
-  void persistDiagnosticSessionRecord(diagnosticSessionPayload);
+  const sessionPersistenceResult = await persistDiagnosticSessionRecord(diagnosticSessionPayload);
+  if (!sessionPersistenceResult || (!sessionPersistenceResult.ok && !sessionPersistenceResult.skipped)) {
+    console.warn("[Diagnóstico] Resultado calculado, mas sessao nao confirmada no Supabase.", sessionPersistenceResult?.error || sessionPersistenceResult);
+  }
   void generatePersonalizedLearningBridge(personalizedResultPayload).then((result) => {
     if (result && result.ok) {
       window.dispatchEvent(new CustomEvent("data-skill-map-learning-updated", {
@@ -1355,6 +1400,8 @@ function showResult({ blocked } = { blocked: false }) {
   resultSection.classList.remove("hidden");
   scrollToResultStart();
 }
+
+window.addEventListener("pagehide", trackDiagnosticAbandonment);
 
 function renderLevelSummary() {
   return `

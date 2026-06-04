@@ -4,6 +4,7 @@
   };
 
   let authClient = null;
+  const ensuredProfileUserIds = new Set();
 
   function getConfig() {
     return globalScope.DATA_SKILL_MAP_SUPABASE || {};
@@ -54,6 +55,68 @@
     };
   }
 
+  function getProfileDisplayName(user) {
+    return user?.user_metadata?.display_name || user?.user_metadata?.name || null;
+  }
+
+  async function ensureProfileForUser(user) {
+    const client = getClient();
+    if (!client || !user?.id || ensuredProfileUserIds.has(user.id)) {
+      return { ok: Boolean(user?.id), skipped: true };
+    }
+
+    const payload = {
+      id: user.id,
+      email: user.email || null,
+      display_name: getProfileDisplayName(user)
+    };
+
+    try {
+      const { data, error } = await client
+        .from("profiles")
+        .select("id,display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("[Auth] Nao foi possivel conferir profile.", error);
+        return { ok: false, error };
+      }
+
+      if (data?.id) {
+        if (!data.display_name && payload.display_name) {
+          const { error: updateError } = await client
+            .from("profiles")
+            .update({ email: payload.email, display_name: payload.display_name })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.warn("[Auth] Nao foi possivel atualizar profile.", updateError);
+            return { ok: false, error: updateError };
+          }
+        }
+        ensuredProfileUserIds.add(user.id);
+        return { ok: true, profile: data };
+      }
+
+      const { error: insertError } = await client
+        .from("profiles")
+        .insert(payload);
+
+      if (insertError) {
+        console.warn("[Auth] Nao foi possivel criar profile.", insertError);
+        return { ok: false, error: insertError };
+      }
+
+      ensuredProfileUserIds.add(user.id);
+      return { ok: true };
+    } catch (error) {
+      const normalized = normalizeError(error, "Falha ao garantir profile.");
+      console.warn("[Auth] Erro inesperado ao garantir profile.", normalized);
+      return { ok: false, error: normalized };
+    }
+  }
+
   async function signIn(email, password) {
     const client = getClient();
     if (!client) {
@@ -63,6 +126,9 @@
     try {
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) return { ok: false, data: null, session: null, user: null, error };
+      if (data?.user) {
+        await ensureProfileForUser(data.user);
+      }
       return {
         ok: true,
         data: data || null,
@@ -110,6 +176,10 @@
     try {
       const { data, error } = await client.auth.signUp({ email, password, options });
       if (error) return { ok: false, data: null, session: null, user: null, error };
+      if (data?.user) {
+        await ensureProfileForUser(data.user);
+      }
+
       return {
         ok: true,
         data: data || null,
@@ -145,6 +215,9 @@
       const { data, error } = await client.auth.getSession();
       if (error) return { ok: false, session: null, user: null, error };
       const session = data?.session || null;
+      if (session?.user) {
+        await ensureProfileForUser(session.user);
+      }
       return { ok: true, session, user: session?.user || null, error: null };
     } catch (error) {
       return { ok: false, session: null, user: null, error: normalizeError(error) };
@@ -200,6 +273,7 @@
     signOut,
     getCurrentSession,
     getProfile,
+    ensureProfileForUser,
     checkAdminAuthorization
   };
 })(window);

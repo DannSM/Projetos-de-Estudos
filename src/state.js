@@ -2,6 +2,7 @@ const state = {
   currentQuestion: 0,
   currentLevelIndex: 0,
   diagnosticStarted: false,
+  diagnosticCompleted: false,
   diagnosticQuestionSets: [],
   selectedDiagnosticAnswer: null,
   diagnosticAnswers: [],
