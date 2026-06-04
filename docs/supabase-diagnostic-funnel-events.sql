@@ -142,21 +142,21 @@ create or replace view public.vw_diagnostic_funnel_daily
 with (security_invoker = true)
 as
 select
-  date_trunc('day', created_at)::date as event_date,
+  date_trunc('day', created_at at time zone 'America/Sao_Paulo')::date as event_date,
   event_type,
   count(*)::bigint as total_events,
   count(distinct attempt_id)::bigint as total_attempts,
-  count(distinct user_id)::bigint as authenticated_users,
-  count(distinct anonymous_user_id)::bigint as anonymous_users,
+  count(distinct user_id) filter (where user_id is not null)::bigint as authenticated_users,
+  count(distinct anonymous_user_id) filter (where user_id is null)::bigint as anonymous_users,
   count(*) filter (where level = 'Básico')::bigint as basic_events,
   count(*) filter (where level = 'Intermediário')::bigint as intermediate_events,
   count(*) filter (where level = 'Avançado')::bigint as advanced_events,
   count(*) filter (where level = 'Final')::bigint as final_events,
   round(avg(score_percent), 2) as avg_score_percent
 from public.diagnostic_funnel_events
-group by date_trunc('day', created_at)::date, event_type;
+group by date_trunc('day', created_at at time zone 'America/Sao_Paulo')::date, event_type;
 
 comment on view public.vw_diagnostic_funnel_daily is
-  'Agregado diario de eventos do funil do Diagnostico 2.0 para analytics interno.';
+  'Agregado diario de eventos do funil do Diagnostico 2.0 para analytics interno. anonymous_users conta apenas eventos sem user_id; authenticated_users conta eventos com user_id.';
 
 revoke all on public.vw_diagnostic_funnel_daily from anon, authenticated;
