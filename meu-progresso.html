@@ -29,23 +29,8 @@
       </span>
     </a>
 
-    <nav class="header-nav" aria-label="Navegação principal">
-      <a data-nav-key="home" href="index.html">Início</a>
-      <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
-      <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-      <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
-      <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
-    </nav>
-
-    <div class="header-context">Seu espaço para acompanhar evolução em dados.</div>
-    <button class="auth-entry-button" type="button" data-auth-entry aria-label="Entrar ou criar conta">
-      <i data-lucide="user-circle" aria-hidden="true"></i>
-      <span data-auth-entry-label>Entrar</span>
-    </button>
-    <a class="header-cta" href="diagnostico.html" aria-label="Iniciar diagnóstico" title="Iniciar diagnóstico">
-      <i data-lucide="play" aria-hidden="true"></i>
-      <span class="header-cta-text">Iniciar</span>
-    </a>
+    <nav class="header-nav" data-global-nav="desktop" aria-label="Navegação principal"></nav>
+    <div class="header-actions" data-global-actions="desktop"></div>
     <button
       class="mobile-nav-toggle"
       type="button"
@@ -58,21 +43,7 @@
   </header>
 
   <div class="mobile-nav-backdrop" hidden></div>
-  <nav id="mobileGlobalNav" class="mobile-nav-panel" aria-label="Menu principal">
-    <a data-nav-key="home" href="index.html">Início</a>
-    <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
-    <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-    <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
-    <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
-    <button class="auth-entry-button mobile-auth-entry" type="button" data-auth-entry aria-label="Entrar ou criar conta">
-      <i data-lucide="user-circle" aria-hidden="true"></i>
-      <span data-auth-entry-label>Entrar / Criar conta</span>
-    </button>
-    <a class="mobile-cta-link" data-anonymous-nav href="diagnostico.html">
-      <i data-lucide="play" aria-hidden="true"></i>
-      <span>Iniciar diagnóstico</span>
-    </a>
-  </nav>
+  <nav id="mobileGlobalNav" class="mobile-nav-panel" data-global-nav="mobile" aria-label="Menu principal"></nav>
 
   <main class="progress-page">
     <section class="section-shell progress-shell" aria-live="polite">
@@ -119,7 +90,6 @@
         <a href="index.html#home">Sobre a plataforma</a>
         <a href="index.html#trilhas">Trilhas de estudo</a>
         <a href="diagnostico.html">Diagnóstico</a>
-        <a href="index.html#desafios">Desafios</a>
         <a data-admin-nav href="analytics.html" hidden>Analytics</a>
       </nav>
 

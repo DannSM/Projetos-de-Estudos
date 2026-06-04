@@ -30,6 +30,95 @@ function renderIcons() {
   }
 }
 
+const GLOBAL_NAV_ITEMS = [
+  { key: "home", label: "Início", href: "index.html", states: ["anonymous", "student", "admin"] },
+  { key: "como-funciona", label: "Como funciona", href: "index.html#como-funciona", states: ["anonymous"] },
+  { key: "diagnostico", label: "Diagnóstico", href: "diagnostico.html", states: ["anonymous", "student", "admin"] },
+  { key: "trilhas", label: "Trilhas", href: "index.html#trilhas", states: ["anonymous", "student", "admin"] },
+  { key: "progresso", label: "Meu Progresso", href: "meu-progresso.html", states: ["student", "admin"] },
+  { key: "analytics", label: "Analytics", href: "analytics.html", states: ["admin"] }
+];
+
+function escapeAttribute(value) {
+  return String(value || "").replace(/"/g, "&quot;");
+}
+
+function getNavigationState(session, isAdmin) {
+  if (!session) return "anonymous";
+  return isAdmin ? "admin" : "student";
+}
+
+function getPrimaryCta(session) {
+  const fileName = ((window.location.pathname || "").split("/").pop() || "index.html").toLowerCase();
+  const isAuthenticated = Boolean(session);
+
+  if (!isAuthenticated) {
+    return {
+      href: "diagnostico.html",
+      label: "Fazer diagnóstico grátis",
+      icon: "clipboard-list"
+    };
+  }
+
+  return {
+    href: "diagnostico.html",
+    label: fileName === "meu-progresso.html" ? "Iniciar diagnóstico" : "Refazer diagnóstico",
+    icon: fileName === "meu-progresso.html" ? "play" : "clipboard-list"
+  };
+}
+
+function renderNavLink(item) {
+  return `<a data-nav-key="${escapeAttribute(item.key)}" href="${escapeAttribute(item.href)}">${item.label}</a>`;
+}
+
+function renderAuthButton(session, variant) {
+  const isAuthenticated = Boolean(session);
+  const isMobile = variant === "mobile";
+  const label = isAuthenticated ? "Sair" : (isMobile ? "Entrar / Criar conta" : "Entrar");
+  const icon = isAuthenticated ? "log-out" : "user-circle";
+  const className = `auth-entry-button${isMobile ? " mobile-auth-entry" : ""}${isAuthenticated ? " is-authenticated" : ""}`;
+  const ariaLabel = isAuthenticated ? "Sair da conta" : "Entrar ou criar conta";
+
+  return `
+    <button class="${className}" type="button" data-auth-entry aria-label="${ariaLabel}" title="${ariaLabel}">
+      <i data-lucide="${icon}" aria-hidden="true"></i>
+      <span data-auth-entry-label>${label}</span>
+    </button>
+  `;
+}
+
+function renderPrimaryCta(session, variant) {
+  const cta = getPrimaryCta(session);
+  const className = variant === "mobile" ? "mobile-cta-link" : "header-cta";
+  return `
+    <a class="${className}" href="${escapeAttribute(cta.href)}" aria-label="${escapeAttribute(cta.label)}" title="${escapeAttribute(cta.label)}">
+      <i data-lucide="${escapeAttribute(cta.icon)}" aria-hidden="true"></i>
+      <span class="header-cta-text">${cta.label}</span>
+    </a>
+  `;
+}
+
+function renderGlobalNavigation(session = null, isAdmin = false) {
+  const state = getNavigationState(session, isAdmin);
+  const visibleItems = GLOBAL_NAV_ITEMS.filter((item) => item.states.includes(state));
+  const navHtml = visibleItems.map(renderNavLink).join("");
+
+  document.querySelectorAll("[data-global-nav='desktop']").forEach((nav) => {
+    nav.innerHTML = navHtml;
+  });
+
+  document.querySelectorAll("[data-global-actions='desktop']").forEach((container) => {
+    container.innerHTML = `${renderAuthButton(session, "desktop")}${renderPrimaryCta(session, "desktop")}`;
+  });
+
+  document.querySelectorAll("[data-global-nav='mobile']").forEach((nav) => {
+    nav.innerHTML = `${navHtml}${renderAuthButton(session, "mobile")}${renderPrimaryCta(session, "mobile")}`;
+  });
+
+  updateGlobalNavActiveState();
+  renderIcons();
+}
+
 function getCurrentNavKey() {
   const path = (window.location.pathname || "").toLowerCase();
   const fileName = path.split("/").pop() || "index.html";
@@ -60,10 +149,6 @@ function getCurrentNavKey() {
       return "para-quem";
     }
 
-    if (hash === "#desafios") {
-      return "desafios";
-    }
-
     return "home";
   }
 
@@ -81,45 +166,6 @@ function updateGlobalNavActiveState() {
       link.setAttribute("aria-current", "page");
     } else {
       link.removeAttribute("aria-current");
-    }
-  });
-}
-
-function ensureAuthIdentityChips() {
-  document.querySelectorAll("[data-auth-entry]").forEach((button) => {
-    const parent = button.parentElement;
-    if (!parent || parent.querySelector("[data-auth-identity-chip]")) {
-      return;
-    }
-
-    const chip = document.createElement("span");
-    chip.className = button.classList.contains("mobile-auth-entry")
-      ? "auth-identity-chip mobile-auth-identity-chip"
-      : "auth-identity-chip";
-    chip.setAttribute("data-auth-identity-chip", "");
-    chip.hidden = true;
-    parent.insertBefore(chip, button);
-  });
-}
-
-function setAuthIdentityState(session, isAdmin) {
-  document.querySelectorAll("[data-auth-identity-chip]").forEach((chip) => {
-    if (!session) {
-      chip.hidden = true;
-      chip.textContent = "";
-      chip.removeAttribute("title");
-      return;
-    }
-
-    chip.hidden = false;
-    chip.textContent = isAdmin ? "Admin" : (chip.classList.contains("mobile-auth-identity-chip") ? "Conta" : "Conta gratuita");
-    chip.classList.toggle("is-admin", Boolean(isAdmin));
-
-    const displayName = session.user?.user_metadata?.display_name || session.user?.user_metadata?.name || session.user?.email || "";
-    if (displayName) {
-      chip.setAttribute("title", displayName);
-    } else {
-      chip.removeAttribute("title");
     }
   });
 }
@@ -168,7 +214,6 @@ async function refreshAdminNavigation() {
     const sessionResult = await window.authService.getCurrentSession();
     if (!sessionResult || !sessionResult.ok || !sessionResult.session) {
       setAuthenticatedNavVisible(false, { showDiagnosticNotice: true });
-      setAuthIdentityState(null, false);
       return false;
     }
 
@@ -239,44 +284,44 @@ function setupGlobalNavigation() {
 
   backdrop.addEventListener("click", () => setMenuOpen(false));
 
-  panel.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      setMenuOpen(false);
-    });
-  });
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest(".header-nav a, .mobile-nav-panel a, a[href^=\"#\"]");
+    if (!link) {
+      return;
+    }
 
-  document.querySelectorAll(".header-nav a, .mobile-nav-panel a, a[href^=\"#\"]").forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const href = link.getAttribute("href") || "";
-      const [rawPath, rawHash] = href.split("#");
-      const hash = rawHash ? `#${rawHash}` : "";
+    const href = link.getAttribute("href") || "";
+    const [rawPath, rawHash] = href.split("#");
+    const hash = rawHash ? `#${rawHash}` : "";
 
-      if (hash) {
-        const currentPath = (window.location.pathname || "").toLowerCase();
-        const linkPath = (rawPath || window.location.pathname || "").toLowerCase();
-        const isSamePage = !rawPath
-          || rawPath === "."
-          || linkPath === currentPath
-          || (currentPath.endsWith("/index.html") && (linkPath === "/" || linkPath.endsWith("/index.html")));
+    if (hash) {
+      const currentPath = (window.location.pathname || "").toLowerCase();
+      const linkPath = (rawPath || window.location.pathname || "").toLowerCase();
+      const isSamePage = !rawPath
+        || rawPath === "."
+        || linkPath === currentPath
+        || (currentPath.endsWith("/index.html") && (linkPath === "/" || linkPath.endsWith("/index.html")));
 
-        if (isSamePage) {
-          event.preventDefault();
-          setMenuOpen(false);
+      if (isSamePage) {
+        event.preventDefault();
+        setMenuOpen(false);
 
-          if (window.location.hash !== hash) {
-            window.history.pushState(null, "", hash);
-          }
-
-          window.setTimeout(() => {
-            scrollToAnchor(hash);
-            updateGlobalNavActiveState();
-          }, 70);
-          return;
+        if (window.location.hash !== hash) {
+          window.history.pushState(null, "", hash);
         }
-      }
 
-      window.setTimeout(updateGlobalNavActiveState, 0);
-    });
+        window.setTimeout(() => {
+          scrollToAnchor(hash);
+          updateGlobalNavActiveState();
+        }, 70);
+        return;
+      }
+    }
+
+    if (panel.contains(link)) {
+      setMenuOpen(false);
+    }
+    window.setTimeout(updateGlobalNavActiveState, 0);
   });
 
   document.addEventListener("click", (event) => {
@@ -322,17 +367,16 @@ function setupGlobalNavigation() {
 }
 
 async function setupAuthEntryPoints() {
-  const authButtons = document.querySelectorAll("[data-auth-entry]");
-  ensureAuthIdentityChips();
+  renderGlobalNavigation(null, false);
 
-  if (!authButtons.length || !window.authService) {
+  if (!window.authService) {
     setAuthenticatedNavVisible(false, { showDiagnosticNotice: true });
     setAdminNavVisible(false);
-    setAuthIdentityState(null, false);
     return;
   }
 
   let currentSession = null;
+  let currentIsAdmin = false;
   let hasDismissedAnonymousDiagnosticNotice = false;
 
   const closeMobileMenu = () => {
@@ -348,36 +392,29 @@ async function setupAuthEntryPoints() {
     }
   };
 
-  const setAuthButtonState = (session) => {
+  const setAuthState = (session, isAdmin = false) => {
     currentSession = session || null;
+    currentIsAdmin = Boolean(currentSession && isAdmin);
     const isAuthenticated = Boolean(currentSession);
 
     setAuthenticatedNavVisible(isAuthenticated, {
       showDiagnosticNotice: !hasDismissedAnonymousDiagnosticNotice
     });
-
-    authButtons.forEach((button) => {
-      const isMobileButton = button.classList.contains("mobile-auth-entry");
-      const label = button.querySelector("[data-auth-entry-label]");
-
-      button.classList.toggle("is-authenticated", isAuthenticated);
-      button.setAttribute("aria-label", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
-      button.setAttribute("title", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
-
-      if (label) {
-        label.textContent = isAuthenticated
-          ? (isMobileButton ? "Sair da conta" : "Sair")
-          : (isMobileButton ? "Entrar / Criar conta" : "Entrar");
-      }
-    });
+    renderGlobalNavigation(currentSession, currentIsAdmin);
+    setAdminNavVisible(currentIsAdmin);
   };
 
   const refreshAuthState = async () => {
     const sessionResult = await window.authService.getCurrentSession();
     const session = sessionResult && sessionResult.ok ? sessionResult.session : null;
-    setAuthButtonState(session);
-    const isAdmin = await refreshAdminNavigation();
-    setAuthIdentityState(session, isAdmin);
+    let isAdmin = false;
+
+    if (session && typeof window.authService.checkAdminAuthorization === "function") {
+      const authCheck = await window.authService.checkAdminAuthorization();
+      isAdmin = Boolean(authCheck?.ok && Array.isArray(authCheck.data) && authCheck.data.some((row) => row?.is_authorized === true));
+    }
+
+    setAuthState(session, isAdmin);
   };
 
   window.addEventListener("data-skill-map-auth-changed", () => {
@@ -388,32 +425,33 @@ async function setupAuthEntryPoints() {
     void refreshAuthState();
   });
 
-  authButtons.forEach((button) => {
-    button.addEventListener("click", async () => {
-      closeMobileMenu();
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-auth-entry]");
+    if (!button) {
+      return;
+    }
 
-      if (currentSession) {
-        await window.authService.signOut();
-        setAuthButtonState(null);
-        setAdminNavVisible(false);
-        setAuthIdentityState(null, false);
-        window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-          detail: { session: null, user: null }
-        }));
-        return;
-      }
+    closeMobileMenu();
 
-      if (window.authModal && typeof window.authModal.openAuthModal === "function") {
-        window.authModal.openAuthModal({
-          onSuccess: async ({ session, user } = {}) => {
-            await refreshAuthState();
-            window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-              detail: { session: session || null, user: user || null }
-            }));
-          }
-        });
-      }
-    });
+    if (currentSession) {
+      await window.authService.signOut();
+      setAuthState(null, false);
+      window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+        detail: { session: null, user: null }
+      }));
+      return;
+    }
+
+    if (window.authModal && typeof window.authModal.openAuthModal === "function") {
+      window.authModal.openAuthModal({
+        onSuccess: async ({ session, user } = {}) => {
+          await refreshAuthState();
+          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+            detail: { session: session || null, user: user || null }
+          }));
+        }
+      });
+    }
   });
 
   await refreshAuthState();

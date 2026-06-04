@@ -28,23 +28,8 @@
       </span>
     </a>
 
-    <nav class="header-nav" aria-label="Navegação principal">
-      <a data-nav-key="home" href="index.html">Início</a>
-      <a data-nav-key="como-funciona" data-anonymous-nav href="index.html#como-funciona">Como funciona</a>
-      <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
-      <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-      <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
-      <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
-      <button class="auth-entry-button header-auth-link" type="button" data-auth-entry aria-label="Entrar ou criar conta">
-        <i data-lucide="user-circle" aria-hidden="true"></i>
-        <span data-auth-entry-label>Entrar</span>
-      </button>
-    </nav>
-
-    <a class="header-cta commercial-header-cta" href="diagnostico.html" aria-label="Fazer diagnóstico grátis" title="Fazer diagnóstico grátis">
-      <i data-lucide="clipboard-list" aria-hidden="true"></i>
-      <span class="header-cta-text" data-auth-cta-label data-anonymous-label="Fazer diagnóstico grátis" data-authenticated-label="Refazer diagnóstico">Fazer diagnóstico grátis</span>
-    </a>
+    <nav class="header-nav" data-global-nav="desktop" aria-label="Navegação principal"></nav>
+    <div class="header-actions" data-global-actions="desktop"></div>
     <button
       class="mobile-nav-toggle"
       type="button"
@@ -57,22 +42,7 @@
   </header>
 
   <div class="mobile-nav-backdrop" hidden></div>
-  <nav id="mobileGlobalNav" class="mobile-nav-panel" aria-label="Menu principal">
-    <a data-nav-key="home" href="index.html">Início</a>
-    <a data-nav-key="como-funciona" data-anonymous-nav href="index.html#como-funciona">Como funciona</a>
-    <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
-    <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-    <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
-    <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
-    <button class="auth-entry-button mobile-auth-entry" type="button" data-auth-entry aria-label="Entrar ou criar conta">
-      <i data-lucide="user-circle" aria-hidden="true"></i>
-      <span data-auth-entry-label>Entrar / Criar conta</span>
-    </button>
-    <a class="mobile-cta-link" data-anonymous-nav href="diagnostico.html">
-      <i data-lucide="clipboard-list" aria-hidden="true"></i>
-      <span data-auth-cta-label data-anonymous-label="Fazer diagnóstico grátis" data-authenticated-label="Refazer diagnóstico">Fazer diagnóstico grátis</span>
-    </a>
-  </nav>
+  <nav id="mobileGlobalNav" class="mobile-nav-panel" data-global-nav="mobile" aria-label="Menu principal"></nav>
 
   <main>
     <section id="home" class="hero commercial-hero section-shell">
@@ -119,7 +89,7 @@
           </article>
           <article>
             <small>Próximo passo</small>
-            <strong>Praticar GROUP BY</strong>
+            <strong>Estudar GROUP BY</strong>
             <p>Resolver um desafio curto com feedback imediato.</p>
           </article>
         </div>

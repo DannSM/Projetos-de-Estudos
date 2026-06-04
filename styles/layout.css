@@ -95,16 +95,18 @@ main > .section-shell:first-child {
 }
 
 .diagnostic-auth-notice__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(11.5rem, 1fr));
+  justify-content: stretch;
   align-items: center;
   gap: 0.6rem;
 }
 
 .diagnostic-auth-notice__actions .filter-button,
 .diagnostic-auth-notice__actions .submit-button {
+  width: 100%;
   min-height: 2.52rem;
+  padding-inline: 0.9rem;
   white-space: nowrap;
 }
 
