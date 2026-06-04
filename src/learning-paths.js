@@ -272,15 +272,17 @@
     }
 
     mount.innerHTML = `
-      <div class="track-grid" data-learning-paths-fallback>
-        <article class="track-card"><span class="track-number">01</span><h3>Fundamentos de Dados</h3><p>Tipos de dados, tabelas, linhas, colunas, qualidade da informação e indicadores básicos.</p></article>
-        <article class="track-card"><span class="track-number">02</span><h3>SQL Essencial</h3><p>SELECT, WHERE, ORDER BY, GROUP BY, COUNT, SUM e AVG para análises do dia a dia.</p></article>
-        <article class="track-card"><span class="track-number">03</span><h3>SQL Intermediário</h3><p>JOIN, LEFT JOIN, cardinalidade, COUNT DISTINCT, subqueries e CTEs.</p></article>
-        <article class="track-card"><span class="track-number">04</span><h3>Estatística para Dados</h3><p>Média, mediana, moda, desvio padrão, distribuição e correlação.</p></article>
-        <article class="track-card"><span class="track-number">05</span><h3>Indicadores e KPIs</h3><p>Metas, gaps, variação percentual, evolução histórica, ranking e leitura de contexto.</p></article>
-        <article class="track-card"><span class="track-number">06</span><h3>Projetos Práticos</h3><p>Análise de vendas, NPS, dashboard operacional e geração de insights acionáveis.</p></article>
-      </div>
+      <article class="learning-paths-empty" data-learning-paths-fallback>
+        <span class="learning-paths-empty-icon" aria-hidden="true">
+          <i data-lucide="refresh-circle"></i>
+        </span>
+        <div>
+          <h3>Nao foi possivel carregar as trilhas agora.</h3>
+          <p>Tente atualizar a pagina.</p>
+        </div>
+      </article>
     `;
+    refreshIcons();
   }
 
   function renderEmptyState() {

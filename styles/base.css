@@ -275,6 +275,7 @@ video {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   min-height: 2.18rem;
   padding: 0.36rem 0.62rem;
   color: #0f766e;
@@ -443,9 +444,7 @@ video {
 }
 
 .mobile-auth-identity-chip {
-  width: 100%;
-  min-height: 2.2rem;
-  margin-top: 0.18rem;
+  display: none;
 }
 
 body.menu-open {

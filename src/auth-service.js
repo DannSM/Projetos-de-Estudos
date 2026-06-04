@@ -59,7 +59,12 @@
     return user?.user_metadata?.display_name || user?.user_metadata?.name || null;
   }
 
-  async function ensureProfileForUser(user) {
+  function isEmailConfirmationPending(user) {
+    if (!user?.email) return false;
+    return !user.email_confirmed_at && !user.confirmed_at && Boolean(user.confirmation_sent_at);
+  }
+
+  async function ensureProfileForUser(user, options = {}) {
     const client = getClient();
     if (!client || !user?.id || ensuredProfileUserIds.has(user.id)) {
       return { ok: Boolean(user?.id), skipped: true };
@@ -68,7 +73,9 @@
     const payload = {
       id: user.id,
       email: user.email || null,
-      display_name: getProfileDisplayName(user)
+      display_name: getProfileDisplayName(user),
+      role: "student",
+      plan: "free"
     };
 
     try {
@@ -79,7 +86,9 @@
         .maybeSingle();
 
       if (error) {
-        console.warn("[Auth] Nao foi possivel conferir profile.", error);
+        if (!options.quiet) {
+          console.warn("[Auth] Nao foi possivel conferir profile.", error);
+        }
         return { ok: false, error };
       }
 
@@ -91,7 +100,9 @@
             .eq("id", user.id);
 
           if (updateError) {
-            console.warn("[Auth] Nao foi possivel atualizar profile.", updateError);
+            if (!options.quiet) {
+              console.warn("[Auth] Nao foi possivel atualizar profile.", updateError);
+            }
             return { ok: false, error: updateError };
           }
         }
@@ -104,7 +115,9 @@
         .insert(payload);
 
       if (insertError) {
-        console.warn("[Auth] Nao foi possivel criar profile.", insertError);
+        if (!options.quiet) {
+          console.warn("[Auth] Nao foi possivel criar profile.", insertError);
+        }
         return { ok: false, error: insertError };
       }
 
@@ -112,7 +125,9 @@
       return { ok: true };
     } catch (error) {
       const normalized = normalizeError(error, "Falha ao garantir profile.");
-      console.warn("[Auth] Erro inesperado ao garantir profile.", normalized);
+      if (!options.quiet) {
+        console.warn("[Auth] Erro inesperado ao garantir profile.", normalized);
+      }
       return { ok: false, error: normalized };
     }
   }
@@ -176,8 +191,17 @@
     try {
       const { data, error } = await client.auth.signUp({ email, password, options });
       if (error) return { ok: false, data: null, session: null, user: null, error };
-      if (data?.user) {
-        await ensureProfileForUser(data.user);
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return {
+          ok: false,
+          data: data || null,
+          session: null,
+          user: data.user,
+          error: { message: "User already registered", code: "user_already_registered" }
+        };
+      }
+      if (data?.user && (data?.session || !isEmailConfirmationPending(data.user))) {
+        await ensureProfileForUser(data.user, { quiet: isEmailConfirmationPending(data.user) });
       }
 
       return {

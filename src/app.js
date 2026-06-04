@@ -112,7 +112,7 @@ function setAuthIdentityState(session, isAdmin) {
     }
 
     chip.hidden = false;
-    chip.textContent = isAdmin ? "Admin" : "Conta gratuita";
+    chip.textContent = isAdmin ? "Admin" : (chip.classList.contains("mobile-auth-identity-chip") ? "Conta" : "Conta gratuita");
     chip.classList.toggle("is-admin", Boolean(isAdmin));
 
     const displayName = session.user?.user_metadata?.display_name || session.user?.user_metadata?.name || session.user?.email || "";
@@ -167,6 +167,8 @@ async function refreshAdminNavigation() {
 
     const sessionResult = await window.authService.getCurrentSession();
     if (!sessionResult || !sessionResult.ok || !sessionResult.session) {
+      setAuthenticatedNavVisible(false, { showDiagnosticNotice: true });
+      setAuthIdentityState(null, false);
       return false;
     }
 
@@ -364,7 +366,7 @@ async function setupAuthEntryPoints() {
 
       if (label) {
         label.textContent = isAuthenticated
-          ? (isMobileButton ? "Logado - Sair" : "Sair")
+          ? (isMobileButton ? "Sair da conta" : "Sair")
           : (isMobileButton ? "Entrar / Criar conta" : "Entrar");
       }
     });

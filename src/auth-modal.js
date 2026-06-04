@@ -31,13 +31,18 @@
 
   function normalizeErrorMessage(error, mode) {
     const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
+    const code = typeof error?.code === "string" ? error.code.toLowerCase() : "";
+
+    if (message.includes("not confirmed") || message.includes("not_confirmed") || code.includes("not_confirmed")) {
+      return "E-mail ainda nao confirmado. Verifique sua caixa de entrada para ativar a conta.";
+    }
 
     if (message.includes("invalid") || message.includes("login")) {
-      return "E-mail ou senha invalidos. Confira os dados e tente novamente.";
+      return "E-mail ou senha invalidos. Verifique os dados e tente novamente.";
     }
 
     if (message.includes("already") || message.includes("registered")) {
-      return "Este e-mail ja possui cadastro. Tente entrar na sua conta.";
+      return "Ja existe uma conta com este e-mail. Tente entrar.";
     }
 
     if (message.includes("password")) {
@@ -51,6 +56,12 @@
     return mode === "signup"
       ? "Nao foi possivel criar a conta agora. Tente novamente em instantes."
       : "Nao foi possivel entrar agora. Tente novamente em instantes.";
+  }
+
+  function isPendingEmailConfirmation(result) {
+    const user = result?.user || result?.data?.user || null;
+    if (!user?.email) return false;
+    return !result?.session && !result?.data?.session && !user.email_confirmed_at && !user.confirmed_at;
   }
 
   function getOrCreateModalRoot() {
@@ -234,9 +245,18 @@
       return;
     }
 
+    if (state.mode === "signup" && isPendingEmailConfirmation(result)) {
+      setStatus("Conta criada com sucesso. Confirme seu e-mail antes de entrar.", "success");
+      return;
+    }
+
     const sessionResult = typeof globalScope.authService.getCurrentSession === "function"
       ? await globalScope.authService.getCurrentSession()
       : { ok: true, session: result.session || null, user: result.user || null };
+
+    if (state.mode === "signup" && (sessionResult.session || result.session)) {
+      setStatus("Conta criada com sucesso. Voce ja esta conectado.", "success");
+    }
 
     if (typeof state.options.onSuccess === "function") {
       await state.options.onSuccess({
