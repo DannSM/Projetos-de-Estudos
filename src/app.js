@@ -92,6 +92,28 @@ function setAdminNavVisible(isVisible) {
   updateGlobalNavActiveState();
 }
 
+function setAuthenticatedNavVisible(isAuthenticated) {
+  document.querySelectorAll("[data-authenticated-nav]").forEach((element) => {
+    element.hidden = !isAuthenticated;
+  });
+
+  document.querySelectorAll("[data-anonymous-nav]").forEach((element) => {
+    element.hidden = isAuthenticated;
+  });
+
+  document.querySelectorAll("[data-auth-cta-label]").forEach((element) => {
+    const loggedLabel = element.dataset.authenticatedLabel || element.textContent;
+    const anonymousLabel = element.dataset.anonymousLabel || element.textContent;
+    element.textContent = isAuthenticated ? loggedLabel : anonymousLabel;
+  });
+
+  document.querySelectorAll("[data-anonymous-diagnostic-notice]").forEach((element) => {
+    element.hidden = isAuthenticated;
+  });
+
+  updateGlobalNavActiveState();
+}
+
 async function refreshAdminNavigation() {
   setAdminNavVisible(false);
 
@@ -255,6 +277,8 @@ function setupGlobalNavigation() {
 async function setupAuthEntryPoints() {
   const authButtons = document.querySelectorAll("[data-auth-entry]");
   if (!authButtons.length || !window.authService) {
+    setAuthenticatedNavVisible(false);
+    setAdminNavVisible(false);
     return;
   }
 
@@ -275,11 +299,13 @@ async function setupAuthEntryPoints() {
 
   const setAuthButtonState = (session) => {
     currentSession = session || null;
+    const isAuthenticated = Boolean(currentSession);
+
+    setAuthenticatedNavVisible(isAuthenticated);
 
     authButtons.forEach((button) => {
       const isMobileButton = button.classList.contains("mobile-auth-entry");
       const label = button.querySelector("[data-auth-entry-label]");
-      const isAuthenticated = Boolean(currentSession);
 
       button.classList.toggle("is-authenticated", isAuthenticated);
       button.setAttribute("aria-label", isAuthenticated ? "Sair da conta" : "Entrar ou criar conta");
@@ -333,6 +359,32 @@ async function setupAuthEntryPoints() {
   await refreshAuthState();
 }
 
+function setupAnonymousDiagnosticNotice() {
+  const notice = document.querySelector("[data-anonymous-diagnostic-notice]");
+  if (!notice) {
+    return;
+  }
+
+  const continueButton = notice.querySelector("[data-continue-anonymous]");
+  const signInButton = notice.querySelector("[data-login-to-save-progress]");
+
+  continueButton?.addEventListener("click", () => {
+    notice.hidden = true;
+  });
+
+  signInButton?.addEventListener("click", () => {
+    if (window.authModal && typeof window.authModal.openAuthModal === "function") {
+      window.authModal.openAuthModal({
+        onSuccess: ({ session, user } = {}) => {
+          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+            detail: { session: session || null, user: user || null }
+          }));
+        }
+      });
+    }
+  });
+}
+
 function updateHomeChallengeCount() {
   const challengeCountMount = document.querySelector("#homeChallengeCount");
   if (!challengeCountMount) return;
@@ -347,6 +399,7 @@ function updateHomeChallengeCount() {
 async function init() {
   bindHeaderHeightSync();
   setupGlobalNavigation();
+  setupAnonymousDiagnosticNotice();
   await setupAuthEntryPoints();
   await refreshAdminNavigation();
   renderIcons();

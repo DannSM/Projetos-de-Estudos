@@ -45,6 +45,44 @@ main > .section-shell:first-child {
   font-size: 1rem;
 }
 
+.diagnostic-auth-notice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.4rem;
+  padding: 0.95rem;
+  color: #1e293b;
+  background: #f8fafc;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.diagnostic-auth-notice[hidden] {
+  display: none;
+}
+
+.diagnostic-auth-notice strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.96rem;
+}
+
+.diagnostic-auth-notice p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.diagnostic-auth-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
 .diagnostic-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

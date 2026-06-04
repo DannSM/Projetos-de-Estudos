@@ -32,12 +32,15 @@
       <a data-nav-key="home" href="index.html">Início</a>
       <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
       <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-      <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
-      <a data-nav-key="progresso" href="meu-progresso.html">Meu Progresso</a>
-      <a data-nav-key="analytics" href="analytics.html">Analytics</a>
+      <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
+      <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
     </nav>
 
     <div class="header-context">Painel interno com acesso autenticado e dados agregados.</div>
+    <button class="auth-entry-button" type="button" data-auth-entry aria-label="Entrar ou criar conta">
+      <i data-lucide="user-circle" aria-hidden="true"></i>
+      <span data-auth-entry-label>Entrar</span>
+    </button>
     <a class="header-cta" href="index.html" aria-label="Voltar para início" title="Voltar para início">
       <i data-lucide="home" aria-hidden="true"></i>
       <span class="header-cta-text">Início</span>
@@ -58,9 +61,12 @@
     <a data-nav-key="home" href="index.html">Início</a>
     <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
     <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-    <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
-    <a data-nav-key="progresso" href="meu-progresso.html">Meu Progresso</a>
-    <a data-nav-key="analytics" href="analytics.html">Analytics</a>
+    <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
+    <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
+    <button class="auth-entry-button mobile-auth-entry" type="button" data-auth-entry aria-label="Entrar ou criar conta">
+      <i data-lucide="user-circle" aria-hidden="true"></i>
+      <span data-auth-entry-label>Entrar / Criar conta</span>
+    </button>
     <a class="mobile-cta-link" href="index.html">
       <i data-lucide="home" aria-hidden="true"></i>
       <span>Ir para início</span>
@@ -247,6 +253,7 @@
   <script src="src/state.js"></script>
   <script src="src/supabase-config.js"></script>
   <script src="src/auth-service.js"></script>
+  <script src="src/auth-modal.js"></script>
   <script src="src/analytics-service.js"></script>
   <script src="src/analytics-admin.js"></script>
   <script src="src/app.js"></script>

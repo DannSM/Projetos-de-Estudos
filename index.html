@@ -29,9 +29,11 @@
     </a>
 
     <nav class="header-nav" aria-label="Navegação principal">
-      <a data-nav-key="como-funciona" href="index.html#como-funciona">Como funciona</a>
+      <a data-nav-key="home" href="index.html">Início</a>
+      <a data-nav-key="como-funciona" data-anonymous-nav href="index.html#como-funciona">Como funciona</a>
+      <a data-nav-key="diagnostico" data-authenticated-nav href="diagnostico.html" hidden>Diagnóstico</a>
       <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-      <a data-nav-key="para-quem" href="index.html#para-quem">Para quem é</a>
+      <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
       <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
       <button class="auth-entry-button header-auth-link" type="button" data-auth-entry aria-label="Entrar ou criar conta">
         <i data-lucide="user-circle" aria-hidden="true"></i>
@@ -41,7 +43,7 @@
 
     <a class="header-cta commercial-header-cta" href="diagnostico.html" aria-label="Fazer diagnóstico grátis" title="Fazer diagnóstico grátis">
       <i data-lucide="clipboard-list" aria-hidden="true"></i>
-      <span class="header-cta-text">Fazer diagnóstico grátis</span>
+      <span class="header-cta-text" data-auth-cta-label data-anonymous-label="Fazer diagnóstico grátis" data-authenticated-label="Refazer diagnóstico">Fazer diagnóstico grátis</span>
     </a>
     <button
       class="mobile-nav-toggle"
@@ -56,9 +58,11 @@
 
   <div class="mobile-nav-backdrop" hidden></div>
   <nav id="mobileGlobalNav" class="mobile-nav-panel" aria-label="Menu principal">
-    <a data-nav-key="como-funciona" href="index.html#como-funciona">Como funciona</a>
+    <a data-nav-key="home" href="index.html">Início</a>
+    <a data-nav-key="como-funciona" data-anonymous-nav href="index.html#como-funciona">Como funciona</a>
+    <a data-nav-key="diagnostico" data-authenticated-nav href="diagnostico.html" hidden>Diagnóstico</a>
     <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-    <a data-nav-key="para-quem" href="index.html#para-quem">Para quem é</a>
+    <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
     <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
     <button class="auth-entry-button mobile-auth-entry" type="button" data-auth-entry aria-label="Entrar ou criar conta">
       <i data-lucide="user-circle" aria-hidden="true"></i>
@@ -66,7 +70,7 @@
     </button>
     <a class="mobile-cta-link" href="diagnostico.html">
       <i data-lucide="clipboard-list" aria-hidden="true"></i>
-      <span>Fazer diagnóstico grátis</span>
+      <span data-auth-cta-label data-anonymous-label="Fazer diagnóstico grátis" data-authenticated-label="Refazer diagnóstico">Fazer diagnóstico grátis</span>
     </a>
   </nav>
 

@@ -32,8 +32,7 @@
       <a data-nav-key="home" href="index.html">Início</a>
       <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
       <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-      <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
-      <a data-nav-key="progresso" href="meu-progresso.html">Meu Progresso</a>
+      <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
       <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
     </nav>
 
@@ -62,8 +61,7 @@
     <a data-nav-key="home" href="index.html">Início</a>
     <a data-nav-key="diagnostico" href="diagnostico.html">Diagnóstico</a>
     <a data-nav-key="trilhas" href="index.html#trilhas">Trilhas</a>
-    <a data-nav-key="desafios" href="index.html#desafios">Desafios</a>
-    <a data-nav-key="progresso" href="meu-progresso.html">Meu Progresso</a>
+    <a data-nav-key="progresso" data-authenticated-nav href="meu-progresso.html" hidden>Meu Progresso</a>
     <a data-nav-key="analytics" data-admin-nav href="analytics.html" hidden>Analytics</a>
     <button class="auth-entry-button mobile-auth-entry" type="button" data-auth-entry aria-label="Entrar ou criar conta">
       <i data-lucide="user-circle" aria-hidden="true"></i>
@@ -80,6 +78,16 @@
       <span class="section-kicker">Diagnóstico adaptativo</span>
       <h1>Mapa objetivo do seu nível em dados.</h1>
       <p class="diagnostic-hero-copy">Cada etapa testa fundamentos e libera a próxima somente quando sua base estiver consistente.</p>
+      <aside class="diagnostic-auth-notice" data-anonymous-diagnostic-notice hidden>
+        <div>
+          <strong>Você pode fazer o diagnóstico sem login.</strong>
+          <p>Para salvar seu resultado, acompanhar sua evolução e acessar seu progresso depois, entre ou crie uma conta gratuita.</p>
+        </div>
+        <div class="diagnostic-auth-notice__actions">
+          <button type="button" class="filter-button" data-continue-anonymous>Continuar sem login</button>
+          <button type="button" class="submit-button" data-login-to-save-progress>Entrar para salvar progresso</button>
+        </div>
+      </aside>
     </section>
 
     <section class="section-shell diagnostic-shell">

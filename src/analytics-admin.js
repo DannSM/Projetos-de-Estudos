@@ -195,7 +195,12 @@
         return;
       }
 
-      await bootstrapAuthenticatedAdmin(dom);
+      globalScope.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+        detail: {
+          session: signInResult.session || signInResult.data?.session || null,
+          user: signInResult.user || signInResult.data?.user || null
+        }
+      }));
     });
   }
 
@@ -677,6 +682,19 @@
       await globalScope.analyticsService.signOutAdmin();
       uiState.currentAdminEmail = null;
       renderAccessGate(dom, { mode: "login", message: "Sessão encerrada." });
+      globalScope.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+        detail: { session: null, user: null }
+      }));
+    });
+
+    globalScope.addEventListener("data-skill-map-auth-changed", async (event) => {
+      if (event.detail?.session) {
+        await bootstrapAuthenticatedAdmin(dom);
+        return;
+      }
+
+      uiState.currentAdminEmail = null;
+      renderAccessGate(dom, { mode: "login", message: "Sessão encerrada." });
     });
 
     dom.usersPrevButton.addEventListener("click", () => {
@@ -712,6 +730,9 @@
         mode: "login",
         message: "Usuário autenticado sem permissão admin para analytics."
       });
+      globalScope.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+        detail: { session: null, user: null }
+      }));
       return;
     }
 

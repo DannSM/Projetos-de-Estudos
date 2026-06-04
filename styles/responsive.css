@@ -231,6 +231,20 @@
     padding-top: 0.2rem;
   }
 
+  .diagnostic-auth-notice {
+    grid-template-columns: 1fr;
+    gap: 0.78rem;
+  }
+
+  .diagnostic-auth-notice__actions {
+    justify-content: stretch;
+  }
+
+  .diagnostic-auth-notice__actions .filter-button,
+  .diagnostic-auth-notice__actions .submit-button {
+    width: 100%;
+  }
+
   .diagnostic-card {
     min-height: 0;
   }
