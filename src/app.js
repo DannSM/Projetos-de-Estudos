@@ -192,12 +192,6 @@ function setAuthenticatedNavVisible(isAuthenticated) {
     element.textContent = isAuthenticated ? loggedLabel : anonymousLabel;
   });
 
-  document.querySelectorAll("[data-anonymous-diagnostic-notice]").forEach((element) => {
-    if (isAuthenticated) {
-      element.hidden = true;
-    }
-  });
-
   updateGlobalNavActiveState();
 }
 
@@ -448,27 +442,6 @@ async function setupAuthEntryPoints() {
   await refreshAuthState();
 }
 
-function setupAnonymousDiagnosticNotice() {
-  const notice = document.querySelector("[data-anonymous-diagnostic-notice]");
-  if (!notice) {
-    return;
-  }
-
-  const signInButton = notice.querySelector("[data-login-to-save-progress]");
-
-  signInButton?.addEventListener("click", () => {
-    if (window.authModal && typeof window.authModal.openAuthModal === "function") {
-      window.authModal.openAuthModal({
-        onSuccess: ({ session, user } = {}) => {
-          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-            detail: { session: session || null, user: user || null }
-          }));
-        }
-      });
-    }
-  });
-}
-
 function updateHomeChallengeCount() {
   const challengeCountMount = document.querySelector("#homeChallengeCount");
   if (!challengeCountMount) return;
@@ -483,7 +456,6 @@ function updateHomeChallengeCount() {
 async function init() {
   bindHeaderHeightSync();
   setupGlobalNavigation();
-  setupAnonymousDiagnosticNotice();
   await setupAuthEntryPoints();
   await refreshAdminNavigation();
   renderIcons();

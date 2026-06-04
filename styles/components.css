@@ -2199,6 +2199,93 @@
   border-color: rgba(22, 163, 74, 0.25);
 }
 
+.anonymous-diagnostic-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 68;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.anonymous-diagnostic-modal-overlay.hidden {
+  display: none;
+}
+
+.anonymous-diagnostic-modal-open {
+  overflow: hidden;
+}
+
+.anonymous-diagnostic-modal-sheet {
+  display: grid;
+  gap: 0.9rem;
+  width: min(34rem, calc(100% - 1rem));
+  padding: 1.1rem;
+  color: var(--color-text-primary);
+  background:
+    linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.98)),
+    #ffffff;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 16px;
+  box-shadow: 0 26px 62px rgba(15, 23, 42, 0.28);
+}
+
+.anonymous-diagnostic-modal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  color: var(--color-primary);
+  background: rgba(219, 234, 254, 0.9);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 14px;
+}
+
+.anonymous-diagnostic-modal-icon .lucide {
+  width: 1.16rem;
+  height: 1.16rem;
+  stroke-width: 2.3;
+}
+
+.anonymous-diagnostic-modal-copy {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.anonymous-diagnostic-modal-copy h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.18;
+}
+
+.anonymous-diagnostic-modal-copy p,
+.anonymous-diagnostic-modal-copy small {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.48;
+}
+
+.anonymous-diagnostic-modal-copy small {
+  font-size: 0.86rem;
+}
+
+.anonymous-diagnostic-modal-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.62rem;
+}
+
+.anonymous-diagnostic-modal-actions .filter-button,
+.anonymous-diagnostic-modal-actions .submit-button {
+  width: 100%;
+  height: 2.85rem;
+  min-height: 2.85rem;
+  margin: 0;
+  padding: 0 0.9rem;
+}
+
 .action-list {
   display: grid;
   gap: 0.65rem;

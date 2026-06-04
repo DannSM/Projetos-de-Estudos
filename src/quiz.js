@@ -615,27 +615,24 @@ async function isCurrentUserAuthenticated() {
   return Boolean(sessionResult?.ok && sessionResult.session);
 }
 
-async function showAnonymousDiagnosticNoticeIfNeeded() {
-  if (await isCurrentUserAuthenticated()) {
-    return;
-  }
-
-  const notice = document.querySelector("[data-anonymous-diagnostic-notice]");
-  if (!notice) {
-    return;
-  }
-
-  notice.hidden = false;
-  delete notice.dataset.dismissed;
-
-  if (window.lucide && typeof window.lucide.createIcons === "function") {
-    window.lucide.createIcons();
+function hasAcceptedAnonymousDiagnostic() {
+  try {
+    return window.sessionStorage.getItem("data_skill_map_anonymous_diagnostic_accepted") === "true";
+  } catch (error) {
+    return false;
   }
 }
 
 async function startDiagnostic() {
-  void showAnonymousDiagnosticNoticeIfNeeded();
+  if (!hasAcceptedAnonymousDiagnostic() && !(await isCurrentUserAuthenticated())) {
+    openAnonymousDiagnosticModal();
+    return;
+  }
 
+  beginDiagnostic();
+}
+
+function beginDiagnostic() {
   state.diagnosticStarted = true;
   state.diagnosticCompleted = false;
   state.currentLevelIndex = 0;
@@ -674,6 +671,82 @@ async function startDiagnostic() {
 
   renderAreaProgress();
   renderQuestion();
+}
+
+function setAnonymousDiagnosticAccepted() {
+  try {
+    window.sessionStorage.setItem("data_skill_map_anonymous_diagnostic_accepted", "true");
+  } catch (error) {
+    // Session storage can be unavailable in strict browser modes.
+  }
+}
+
+function getOrCreateAnonymousDiagnosticModal() {
+  let overlay = document.getElementById("anonymousDiagnosticModal");
+  if (overlay) return overlay;
+
+  overlay = document.createElement("div");
+  overlay.id = "anonymousDiagnosticModal";
+  overlay.className = "anonymous-diagnostic-modal-overlay hidden";
+  overlay.innerHTML = `
+    <div class="anonymous-diagnostic-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="anonymousDiagnosticTitle">
+      <div class="anonymous-diagnostic-modal-icon" aria-hidden="true">
+        <i data-lucide="save"></i>
+      </div>
+      <div class="anonymous-diagnostic-modal-copy">
+        <span class="auth-modal-kicker">Data Skill Map</span>
+        <h2 id="anonymousDiagnosticTitle">Salve seu progresso antes de começar</h2>
+        <p>Você pode fazer o diagnóstico sem login. Mas, para salvar seu resultado, acompanhar sua evolução e receber recomendações depois, entre ou crie uma conta gratuita.</p>
+        <small>Continuar sem login mantém a experiência livre, mas o histórico pode não ficar vinculado à sua conta.</small>
+      </div>
+      <div class="anonymous-diagnostic-modal-actions">
+        <button type="button" class="filter-button" data-anonymous-diagnostic-continue>Continuar sem login</button>
+        <button type="button" class="submit-button" data-anonymous-diagnostic-auth>Entrar / Criar conta</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function closeAnonymousDiagnosticModal() {
+  const overlay = document.getElementById("anonymousDiagnosticModal");
+  if (overlay) {
+    overlay.classList.add("hidden");
+  }
+  document.body.classList.remove("anonymous-diagnostic-modal-open");
+}
+
+function openAnonymousDiagnosticModal() {
+  const overlay = getOrCreateAnonymousDiagnosticModal();
+  const continueButton = overlay.querySelector("[data-anonymous-diagnostic-continue]");
+  const authButton = overlay.querySelector("[data-anonymous-diagnostic-auth]");
+
+  continueButton.onclick = () => {
+    setAnonymousDiagnosticAccepted();
+    closeAnonymousDiagnosticModal();
+    beginDiagnostic();
+  };
+
+  authButton.onclick = () => {
+    closeAnonymousDiagnosticModal();
+    if (window.authModal && typeof window.authModal.openAuthModal === "function") {
+      window.authModal.openAuthModal({
+        onSuccess: ({ session, user } = {}) => {
+          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+            detail: { session: session || null, user: user || null }
+          }));
+        }
+      });
+    }
+  };
+
+  overlay.classList.remove("hidden");
+  document.body.classList.add("anonymous-diagnostic-modal-open");
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
+  window.setTimeout(() => continueButton?.focus(), 80);
 }
 
 function renderQuestion() {

@@ -233,26 +233,6 @@
     padding-top: 0.2rem;
   }
 
-  .diagnostic-auth-notice {
-    grid-template-columns: 1fr;
-    gap: 0.78rem;
-  }
-
-  .diagnostic-auth-notice__icon {
-    width: 2.35rem;
-    height: 2.35rem;
-  }
-
-  .diagnostic-auth-notice__actions {
-    grid-template-columns: 1fr;
-    justify-content: stretch;
-  }
-
-  .diagnostic-auth-notice__actions .filter-button,
-  .diagnostic-auth-notice__actions .submit-button {
-    width: 100%;
-  }
-
   .diagnostic-card {
     min-height: 0;
   }
@@ -1092,6 +1072,25 @@
   .auth-modal-actions .submit-button,
   .auth-modal-secondary {
     min-height: 2.9rem;
+  }
+
+  .anonymous-diagnostic-modal-overlay {
+    padding: 0.72rem;
+  }
+
+  .anonymous-diagnostic-modal-sheet {
+    width: min(30rem, 100%);
+    gap: 0.76rem;
+    padding: 0.94rem;
+    border-radius: 14px;
+  }
+
+  .anonymous-diagnostic-modal-copy h2 {
+    font-size: 1.16rem;
+  }
+
+  .anonymous-diagnostic-modal-actions {
+    grid-template-columns: 1fr;
   }
 
   .feedback-skip-button {
