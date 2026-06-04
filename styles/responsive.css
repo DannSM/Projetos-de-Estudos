@@ -236,6 +236,11 @@
     gap: 0.78rem;
   }
 
+  .diagnostic-auth-notice__icon {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
   .diagnostic-auth-notice__actions {
     justify-content: stretch;
   }

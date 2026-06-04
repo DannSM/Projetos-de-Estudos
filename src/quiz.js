@@ -510,6 +510,14 @@ function resetDiagnostic() {
   renderDiagnosticIntro();
 }
 
+window.addEventListener("data-skill-map-auth-changed", () => {
+  if (!quizMount || !resultMount) {
+    return;
+  }
+
+  resetDiagnostic();
+});
+
 function getLevelIconMarkup(levelName) {
   const normalizedLevel = cleanText(levelName)
     .normalize("NFD")

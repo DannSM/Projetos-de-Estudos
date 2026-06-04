@@ -271,6 +271,32 @@ video {
   border-color: rgba(220, 38, 38, 0.22);
 }
 
+.auth-identity-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.18rem;
+  padding: 0.36rem 0.62rem;
+  color: #0f766e;
+  background: rgba(240, 253, 250, 0.86);
+  border: 1px solid rgba(20, 184, 166, 0.24);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.auth-identity-chip[hidden] {
+  display: none;
+}
+
+.auth-identity-chip.is-admin {
+  color: #7c2d12;
+  background: rgba(255, 247, 237, 0.94);
+  border-color: rgba(249, 115, 22, 0.28);
+}
+
 .header-cta,
 .button,
 .answer-button,
@@ -414,6 +440,12 @@ video {
   background: rgba(219, 234, 254, 0.42);
   border-color: rgba(37, 99, 235, 0.18);
   box-shadow: none;
+}
+
+.mobile-auth-identity-chip {
+  width: 100%;
+  min-height: 2.2rem;
+  margin-top: 0.18rem;
 }
 
 body.menu-open {

@@ -805,7 +805,12 @@
     });
   }
 
-  globalScope.addEventListener("data-skill-map-auth-changed", () => {
+  globalScope.addEventListener("data-skill-map-auth-changed", (event) => {
+    if (!event.detail?.session) {
+      renderLockedState();
+      return;
+    }
+
     void refreshProgressPage();
   });
 

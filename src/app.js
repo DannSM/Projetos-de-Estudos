@@ -85,6 +85,45 @@ function updateGlobalNavActiveState() {
   });
 }
 
+function ensureAuthIdentityChips() {
+  document.querySelectorAll("[data-auth-entry]").forEach((button) => {
+    const parent = button.parentElement;
+    if (!parent || parent.querySelector("[data-auth-identity-chip]")) {
+      return;
+    }
+
+    const chip = document.createElement("span");
+    chip.className = button.classList.contains("mobile-auth-entry")
+      ? "auth-identity-chip mobile-auth-identity-chip"
+      : "auth-identity-chip";
+    chip.setAttribute("data-auth-identity-chip", "");
+    chip.hidden = true;
+    parent.insertBefore(chip, button);
+  });
+}
+
+function setAuthIdentityState(session, isAdmin) {
+  document.querySelectorAll("[data-auth-identity-chip]").forEach((chip) => {
+    if (!session) {
+      chip.hidden = true;
+      chip.textContent = "";
+      chip.removeAttribute("title");
+      return;
+    }
+
+    chip.hidden = false;
+    chip.textContent = isAdmin ? "Admin" : "Conta gratuita";
+    chip.classList.toggle("is-admin", Boolean(isAdmin));
+
+    const displayName = session.user?.user_metadata?.display_name || session.user?.user_metadata?.name || session.user?.email || "";
+    if (displayName) {
+      chip.setAttribute("title", displayName);
+    } else {
+      chip.removeAttribute("title");
+    }
+  });
+}
+
 function setAdminNavVisible(isVisible) {
   document.querySelectorAll("[data-admin-nav]").forEach((link) => {
     link.hidden = !isVisible;
@@ -92,7 +131,11 @@ function setAdminNavVisible(isVisible) {
   updateGlobalNavActiveState();
 }
 
-function setAuthenticatedNavVisible(isAuthenticated) {
+function setAuthenticatedNavVisible(isAuthenticated, options = {}) {
+  const showDiagnosticNotice = isAuthenticated
+    ? false
+    : Boolean(options.showDiagnosticNotice);
+
   document.querySelectorAll("[data-authenticated-nav]").forEach((element) => {
     element.hidden = !isAuthenticated;
   });
@@ -108,7 +151,7 @@ function setAuthenticatedNavVisible(isAuthenticated) {
   });
 
   document.querySelectorAll("[data-anonymous-diagnostic-notice]").forEach((element) => {
-    element.hidden = isAuthenticated;
+    element.hidden = !showDiagnosticNotice || element.dataset.dismissed === "true";
   });
 
   updateGlobalNavActiveState();
@@ -119,19 +162,21 @@ async function refreshAdminNavigation() {
 
   try {
     if (!window.authService || typeof window.authService.getCurrentSession !== "function" || typeof window.authService.checkAdminAuthorization !== "function") {
-      return;
+      return false;
     }
 
     const sessionResult = await window.authService.getCurrentSession();
     if (!sessionResult || !sessionResult.ok || !sessionResult.session) {
-      return;
+      return false;
     }
 
     const authCheck = await window.authService.checkAdminAuthorization();
     const isAuthorized = Boolean(authCheck?.ok && Array.isArray(authCheck.data) && authCheck.data.some((row) => row?.is_authorized === true));
     setAdminNavVisible(isAuthorized);
+    return isAuthorized;
   } catch (error) {
     setAdminNavVisible(false);
+    return false;
   }
 }
 
@@ -276,13 +321,17 @@ function setupGlobalNavigation() {
 
 async function setupAuthEntryPoints() {
   const authButtons = document.querySelectorAll("[data-auth-entry]");
+  ensureAuthIdentityChips();
+
   if (!authButtons.length || !window.authService) {
-    setAuthenticatedNavVisible(false);
+    setAuthenticatedNavVisible(false, { showDiagnosticNotice: true });
     setAdminNavVisible(false);
+    setAuthIdentityState(null, false);
     return;
   }
 
   let currentSession = null;
+  let hasDismissedAnonymousDiagnosticNotice = false;
 
   const closeMobileMenu = () => {
     const toggle = document.querySelector(".mobile-nav-toggle");
@@ -301,7 +350,9 @@ async function setupAuthEntryPoints() {
     currentSession = session || null;
     const isAuthenticated = Boolean(currentSession);
 
-    setAuthenticatedNavVisible(isAuthenticated);
+    setAuthenticatedNavVisible(isAuthenticated, {
+      showDiagnosticNotice: !hasDismissedAnonymousDiagnosticNotice
+    });
 
     authButtons.forEach((button) => {
       const isMobileButton = button.classList.contains("mobile-auth-entry");
@@ -321,11 +372,17 @@ async function setupAuthEntryPoints() {
 
   const refreshAuthState = async () => {
     const sessionResult = await window.authService.getCurrentSession();
-    setAuthButtonState(sessionResult && sessionResult.ok ? sessionResult.session : null);
-    await refreshAdminNavigation();
+    const session = sessionResult && sessionResult.ok ? sessionResult.session : null;
+    setAuthButtonState(session);
+    const isAdmin = await refreshAdminNavigation();
+    setAuthIdentityState(session, isAdmin);
   };
 
   window.addEventListener("data-skill-map-auth-changed", () => {
+    hasDismissedAnonymousDiagnosticNotice = false;
+    document.querySelectorAll("[data-anonymous-diagnostic-notice]").forEach((element) => {
+      delete element.dataset.dismissed;
+    });
     void refreshAuthState();
   });
 
@@ -337,6 +394,7 @@ async function setupAuthEntryPoints() {
         await window.authService.signOut();
         setAuthButtonState(null);
         setAdminNavVisible(false);
+        setAuthIdentityState(null, false);
         window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
           detail: { session: null, user: null }
         }));
@@ -370,6 +428,7 @@ function setupAnonymousDiagnosticNotice() {
 
   continueButton?.addEventListener("click", () => {
     notice.hidden = true;
+    notice.dataset.dismissed = "true";
   });
 
   signInButton?.addEventListener("click", () => {
