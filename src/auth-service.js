@@ -61,7 +61,7 @@
 
   function isEmailConfirmationPending(user) {
     if (!user?.email) return false;
-    return !user.email_confirmed_at && !user.confirmed_at && Boolean(user.confirmation_sent_at);
+    return !user.email_confirmed_at && !user.confirmed_at;
   }
 
   async function ensureProfileForUser(user, options = {}) {
@@ -192,12 +192,16 @@
       const { data, error } = await client.auth.signUp({ email, password, options });
       if (error) return { ok: false, data: null, session: null, user: null, error };
       if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        const isPending = isEmailConfirmationPending(data.user);
         return {
           ok: false,
           data: data || null,
           session: null,
           user: data.user,
-          error: { message: "User already registered", code: "user_already_registered" }
+          error: {
+            message: isPending ? "User already registered but not confirmed" : "User already registered",
+            code: isPending ? "user_already_registered_unconfirmed" : "user_already_registered"
+          }
         };
       }
       if (data?.user && (data?.session || !isEmailConfirmationPending(data.user))) {
@@ -213,6 +217,27 @@
       };
     } catch (error) {
       return { ok: false, data: null, session: null, user: null, error: normalizeError(error) };
+    }
+  }
+
+  async function resetPassword(email) {
+    const client = getClient();
+    if (!client) {
+      return missingClientResult("Supabase nao configurado para recuperacao de senha.");
+    }
+
+    const currentUrl = new URL(globalScope.location.href);
+    currentUrl.hash = "";
+    const redirectOptions = /^https?:$/.test(currentUrl.protocol)
+      ? { redirectTo: currentUrl.toString() }
+      : undefined;
+
+    try {
+      const { data, error } = await client.auth.resetPasswordForEmail(email, redirectOptions);
+      if (error) return { ok: false, data: data || null, error };
+      return { ok: true, data: data || null, error: null };
+    } catch (error) {
+      return { ok: false, data: null, error: normalizeError(error) };
     }
   }
 
@@ -294,6 +319,7 @@
     signIn,
     signInWithGoogle,
     signUp,
+    resetPassword,
     signOut,
     getCurrentSession,
     getProfile,

@@ -105,8 +105,9 @@ main > .section-shell:first-child {
 .diagnostic-auth-notice__actions .filter-button,
 .diagnostic-auth-notice__actions .submit-button {
   width: 100%;
-  min-height: 2.52rem;
-  padding-inline: 0.9rem;
+  height: 2.72rem;
+  min-height: 2.72rem;
+  padding: 0 0.9rem;
   white-space: nowrap;
 }
 

@@ -42,7 +42,7 @@
     globalScope.setTimeout(() => {
       toast.classList.remove("visible");
       toast.classList.add("hidden");
-    }, 2200);
+    }, 4200);
   }
 
   function renderScaleItems() {

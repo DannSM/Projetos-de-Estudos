@@ -1856,19 +1856,19 @@
 .feedback-toast {
   position: fixed;
   left: 50%;
-  bottom: 1.2rem;
-  z-index: 60;
+  top: calc(var(--header-height) + 0.9rem);
+  z-index: 90;
   display: grid;
-  gap: 0.12rem;
-  min-width: 16.5rem;
-  max-width: min(30rem, calc(100% - 2rem));
-  padding: 0.7rem 0.82rem;
-  color: #0f172a;
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
-  transform: translate(-50%, 0.8rem);
+  gap: 0.18rem;
+  min-width: min(20rem, calc(100% - 2rem));
+  max-width: min(34rem, calc(100% - 2rem));
+  padding: 0.86rem 1rem;
+  color: #14532d;
+  background: #f0fdf4;
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  border-radius: 12px;
+  box-shadow: 0 16px 34px rgba(21, 128, 61, 0.18);
+  transform: translate(-50%, -0.8rem);
   opacity: 0;
   transition: transform 220ms ease, opacity 220ms ease;
 }
@@ -1882,7 +1882,7 @@
 }
 
 .feedback-toast span {
-  color: #475569;
+  color: #166534;
   font-size: 0.84rem;
 }
 
@@ -2008,6 +2008,59 @@
   outline: none;
 }
 
+.auth-password-field {
+  position: relative;
+  display: grid;
+}
+
+.auth-password-field input {
+  padding-right: 3rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.42rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.12rem;
+  height: 2.12rem;
+  color: #64748b;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.auth-password-toggle:hover,
+.auth-password-toggle:focus-visible {
+  color: var(--color-primary-hover);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.auth-password-toggle .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.auth-forgot-password {
+  justify-self: start;
+  padding: 0.08rem 0;
+  color: var(--color-primary-hover);
+  background: transparent;
+  border: 0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auth-forgot-password:hover,
+.auth-forgot-password:focus-visible {
+  text-decoration: underline;
+}
+
 .auth-google-button {
   min-height: 2.85rem;
   display: inline-flex;
@@ -2117,6 +2170,8 @@
 
 .auth-modal-close:focus-visible,
 .auth-google-button:focus-visible,
+.auth-password-toggle:focus-visible,
+.auth-forgot-password:focus-visible,
 .auth-modal-secondary:focus-visible {
   outline: 2px solid rgba(6, 182, 212, 0.35);
   outline-offset: 2px;

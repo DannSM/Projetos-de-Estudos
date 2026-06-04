@@ -1101,7 +1101,7 @@
   }
 
   .feedback-toast {
-    bottom: calc(0.68rem + env(safe-area-inset-bottom));
+    top: calc(var(--header-height) + 0.62rem);
     width: calc(100% - 1.5rem);
   }
 

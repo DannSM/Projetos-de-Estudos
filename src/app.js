@@ -74,7 +74,7 @@ function renderNavLink(item) {
 function renderAuthButton(session, variant) {
   const isAuthenticated = Boolean(session);
   const isMobile = variant === "mobile";
-  const label = isAuthenticated ? "Sair" : (isMobile ? "Entrar / Criar conta" : "Entrar");
+  const label = isAuthenticated ? "Sair" : "Entrar / Criar conta";
   const icon = isAuthenticated ? "log-out" : "user-circle";
   const className = `auth-entry-button${isMobile ? " mobile-auth-entry" : ""}${isAuthenticated ? " is-authenticated" : ""}`;
   const ariaLabel = isAuthenticated ? "Sair da conta" : "Entrar ou criar conta";
@@ -178,7 +178,7 @@ function setAdminNavVisible(isVisible) {
 }
 
 function setAuthenticatedNavVisible(isAuthenticated, options = {}) {
-  const showDiagnosticNotice = isAuthenticated
+    const showDiagnosticNotice = isAuthenticated
     ? false
     : Boolean(options.showDiagnosticNotice);
 
@@ -398,7 +398,7 @@ async function setupAuthEntryPoints() {
     const isAuthenticated = Boolean(currentSession);
 
     setAuthenticatedNavVisible(isAuthenticated, {
-      showDiagnosticNotice: !hasDismissedAnonymousDiagnosticNotice
+      showDiagnosticNotice: false
     });
     renderGlobalNavigation(currentSession, currentIsAdmin);
     setAdminNavVisible(currentIsAdmin);
@@ -469,6 +469,12 @@ function setupAnonymousDiagnosticNotice() {
   continueButton?.addEventListener("click", () => {
     notice.hidden = true;
     notice.dataset.dismissed = "true";
+    try {
+      window.sessionStorage.setItem("data_skill_map_continue_anonymous_diagnostic", "true");
+    } catch (error) {
+      // Session storage can be blocked in strict browser modes.
+    }
+    window.dispatchEvent(new CustomEvent("data-skill-map-continue-anonymous-diagnostic"));
   });
 
   signInButton?.addEventListener("click", () => {

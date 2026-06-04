@@ -293,9 +293,9 @@
     dom.platformKpis.innerHTML = `
       <article class="analytics-kpi-card"><span>Usuários ativos (último dia)</span><strong>${formatNumber(metrics.activeUsersLatest)}</strong></article>
       <article class="analytics-kpi-card"><span>Diagnósticos realizados</span><strong>${formatNumber(metrics.diagnosticsTotal)}</strong></article>
-      <article class="analytics-kpi-card"><span>Desafios respondidos</span><strong>${formatNumber(metrics.challengesTotal)}</strong></article>
+      <article class="analytics-kpi-card"><span>Praticas respondidas</span><strong>${formatNumber(metrics.challengesTotal)}</strong></article>
       <article class="analytics-kpi-card"><span>Acurácia diagnóstico</span><strong>${formatPercent(metrics.diagnosticAccuracy)}</strong></article>
-      <article class="analytics-kpi-card"><span>Acurácia desafios</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></article>
+      <article class="analytics-kpi-card"><span>Acuracia praticas</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></article>
       <article class="analytics-kpi-card"><span>Satisfação média</span><strong>${formatRating(metrics.satisfactionAverage)}</strong></article>
       <article class="analytics-kpi-card"><span>Total de avaliações</span><strong>${formatNumber(metrics.feedbackTotal)}</strong></article>
       <article class="analytics-kpi-card"><span>Comentários preenchidos</span><strong>${formatNumber(metrics.commentsTotal)}</strong></article>
@@ -341,7 +341,7 @@
     dom.activityTrendChart.innerHTML = `
       <div class="analytics-chart-legend">
         <span><i class="dot diagnostics"></i>Diagnósticos</span>
-        <span><i class="dot challenges"></i>Desafios</span>
+        <span><i class="dot challenges"></i>Praticas</span>
         <span><i class="dot feedback"></i>Avaliacoes</span>
       </div>
       <div class="analytics-chart-scroll"><div class="analytics-chart-track${sparseClass}">${bars}</div></div>
@@ -353,7 +353,7 @@
     dom.accuracySummary.innerHTML = `
       <div class="analytics-stat-list">
         <div><span>Acurácia média de diagnóstico</span><strong>${formatPercent(metrics.diagnosticAccuracy)}</strong></div>
-        <div><span>Acurácia média de desafios</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></div>
+        <div><span>Acuracia media de praticas</span><strong>${formatPercent(metrics.challengeAccuracy)}</strong></div>
         <div><span>Nota média de satisfação</span><strong>${formatRating(metrics.satisfactionAverage)}</strong></div>
       </div>
     `;
@@ -432,9 +432,9 @@
             <tr>
               <th>anonymous_user_id</th>
               <th>Diagnósticos</th>
-              <th>Desafios</th>
+              <th>Praticas</th>
               <th>Acurácia diag.</th>
-              <th>Acurácia desaf.</th>
+              <th>Acur. praticas</th>
               <th>Satisfação</th>
               <th>Última atividade</th>
             </tr>

@@ -606,7 +606,55 @@ function renderDiagnosticIntro() {
   document.querySelector("#startDiagnostic").addEventListener("click", startDiagnostic);
 }
 
-function startDiagnostic() {
+function hasChosenAnonymousDiagnostic() {
+  try {
+    return window.sessionStorage.getItem("data_skill_map_continue_anonymous_diagnostic") === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+async function isCurrentUserAuthenticated() {
+  if (!window.authService || typeof window.authService.getCurrentSession !== "function") {
+    return false;
+  }
+
+  const sessionResult = await window.authService.getCurrentSession();
+  return Boolean(sessionResult?.ok && sessionResult.session);
+}
+
+function showAnonymousDiagnosticChoice() {
+  const notice = document.querySelector("[data-anonymous-diagnostic-notice]");
+  if (!notice) {
+    return false;
+  }
+
+  notice.hidden = false;
+  delete notice.dataset.dismissed;
+  notice.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  const continueButton = notice.querySelector("[data-continue-anonymous]");
+  window.setTimeout(() => continueButton?.focus(), 240);
+  return true;
+}
+
+async function shouldPauseForAnonymousChoice() {
+  if (hasChosenAnonymousDiagnostic()) {
+    return false;
+  }
+
+  if (await isCurrentUserAuthenticated()) {
+    return false;
+  }
+
+  return showAnonymousDiagnosticChoice();
+}
+
+async function startDiagnostic() {
+  if (await shouldPauseForAnonymousChoice()) {
+    return;
+  }
+
   state.diagnosticStarted = true;
   state.diagnosticCompleted = false;
   state.currentLevelIndex = 0;
@@ -646,6 +694,12 @@ function startDiagnostic() {
   renderAreaProgress();
   renderQuestion();
 }
+
+window.addEventListener("data-skill-map-continue-anonymous-diagnostic", () => {
+  if (!state.diagnosticStarted && quizMount?.querySelector("#startDiagnostic")) {
+    void startDiagnostic();
+  }
+});
 
 function renderQuestion() {
   const level = getCurrentLevel();

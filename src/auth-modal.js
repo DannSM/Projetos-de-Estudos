@@ -33,6 +33,10 @@
     const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
     const code = typeof error?.code === "string" ? error.code.toLowerCase() : "";
 
+    if (code.includes("user_already_registered_unconfirmed") || (message.includes("registered") && message.includes("not confirmed"))) {
+      return "Este e-mail ja foi cadastrado, mas ainda precisa ser confirmado. Verifique sua caixa de entrada.";
+    }
+
     if (message.includes("not confirmed") || message.includes("not_confirmed") || code.includes("not_confirmed")) {
       return "E-mail ainda nao confirmado. Verifique sua caixa de entrada para ativar a conta.";
     }
@@ -145,7 +149,15 @@
           <input id="authModalEmail" name="email" type="email" autocomplete="username" placeholder="seu@email.com" required>
 
           <label for="authModalPassword">Senha</label>
-          <input id="authModalPassword" name="password" type="password" autocomplete="${isSignUp ? "new-password" : "current-password"}" placeholder="Digite sua senha" required minlength="6">
+          <div class="auth-password-field">
+            <input id="authModalPassword" name="password" type="password" autocomplete="${isSignUp ? "new-password" : "current-password"}" placeholder="Digite sua senha" required minlength="6">
+            <button type="button" class="auth-password-toggle" id="authModalPasswordToggle" aria-label="Mostrar senha" aria-pressed="false">
+              <i data-lucide="eye" aria-hidden="true"></i>
+            </button>
+          </div>
+          ${!isSignUp ? `
+            <button type="button" class="auth-forgot-password" id="authModalForgotPassword">Esqueci minha senha</button>
+          ` : ""}
 
           <p id="authModalStatus" class="auth-modal-status hidden" aria-live="polite"></p>
 
@@ -161,6 +173,9 @@
     `;
 
     bindModalEvents(overlay);
+    if (globalScope.lucide && typeof globalScope.lucide.createIcons === "function") {
+      globalScope.lucide.createIcons();
+    }
     return overlay;
   }
 
@@ -270,6 +285,51 @@
     closeAuthModal();
   }
 
+  async function handleForgotPassword() {
+    if (state.isLoading) return;
+
+    const emailInput = document.getElementById("authModalEmail");
+    const email = String(emailInput?.value || "").trim();
+
+    if (!email) {
+      setStatus("Informe seu e-mail para receber o link de recuperacao.");
+      emailInput?.focus();
+      return;
+    }
+
+    if (!globalScope.authService || typeof globalScope.authService.resetPassword !== "function") {
+      setStatus("Servico de recuperacao de senha indisponivel nesta pagina.");
+      return;
+    }
+
+    setStatus("");
+    setLoading(true, "Enviando...");
+    const result = await globalScope.authService.resetPassword(email);
+    setLoading(false);
+
+    if (!result || !result.ok) {
+      setStatus("Nao foi possivel enviar o link agora. Verifique o e-mail e tente novamente.");
+      return;
+    }
+
+    setStatus("Enviamos um link de recuperacao para o seu e-mail, se ele estiver cadastrado.", "success");
+  }
+
+  function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("authModalPassword");
+    const toggleButton = document.getElementById("authModalPasswordToggle");
+    if (!passwordInput || !toggleButton) return;
+
+    const shouldShow = passwordInput.type === "password";
+    passwordInput.type = shouldShow ? "text" : "password";
+    toggleButton.setAttribute("aria-pressed", shouldShow ? "true" : "false");
+    toggleButton.setAttribute("aria-label", shouldShow ? "Ocultar senha" : "Mostrar senha");
+    toggleButton.innerHTML = `<i data-lucide="${shouldShow ? "eye-off" : "eye"}" aria-hidden="true"></i>`;
+    if (globalScope.lucide && typeof globalScope.lucide.createIcons === "function") {
+      globalScope.lucide.createIcons();
+    }
+  }
+
   async function handleGoogleSignIn() {
     if (state.isLoading) return;
 
@@ -304,12 +364,16 @@
   function bindModalEvents(overlay) {
     const closeButton = overlay.querySelector("#authModalClose");
     const toggleButton = overlay.querySelector("#authModalToggle");
+    const forgotPasswordButton = overlay.querySelector("#authModalForgotPassword");
+    const passwordToggleButton = overlay.querySelector("#authModalPasswordToggle");
     const googleButton = overlay.querySelector("#authModalGoogle");
     const form = overlay.querySelector("#authModalForm");
 
     overlay.addEventListener("click", onOverlayClick);
     closeButton?.addEventListener("click", closeAuthModal);
     googleButton?.addEventListener("click", handleGoogleSignIn);
+    forgotPasswordButton?.addEventListener("click", handleForgotPassword);
+    passwordToggleButton?.addEventListener("click", togglePasswordVisibility);
     toggleButton?.addEventListener("click", () => {
       showMode(state.mode === "login" ? "signup" : "login");
     });
