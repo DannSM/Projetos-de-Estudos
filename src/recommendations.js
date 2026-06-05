@@ -90,7 +90,7 @@ function buildRecommendations(scoreByArea, profile, insights) {
         level: "Agora",
         title: "Primeiro foco",
         text: `Estude ${priorityGuide.next}. ${priorityGuide.why}`,
-        next: `Filtre os desafios por ${mapAreaToChallenge(priority.area)}.`
+        next: `Comece pela trilha de ${mapAreaToChallenge(priority.area)}.`
       },
       {
         level: "Revisão",
@@ -107,7 +107,7 @@ function buildRecommendations(scoreByArea, profile, insights) {
     ],
     plan: [
       `<strong>1. Base:</strong> faça 20 minutos de revisão em ${priorityGuide.next}.`,
-      `<strong>2. Prática:</strong> resolva desafios de ${mapAreaToChallenge(priority.area)} e ${mapAreaToChallenge(secondPriority.area)}.`,
+      `<strong>2. Prática:</strong> avance nos passos de ${mapAreaToChallenge(priority.area)} e ${mapAreaToChallenge(secondPriority.area)}.`,
       "<strong>3. Aplicação:</strong> escolha uma base simples e responda 3 perguntas de negócio com números.",
       "<strong>4. Comunicação:</strong> escreva uma conclusão curta: o que mudou, onde mudou e qual ação você recomenda."
     ]

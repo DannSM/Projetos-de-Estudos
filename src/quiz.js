@@ -56,6 +56,14 @@ function cleanText(value) {
   return value.trim();
 }
 
+function normalizeQuestionText(value) {
+  return cleanText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
 function cleanOptionList(options) {
   if (!Array.isArray(options)) return [];
   return options.map((option) => cleanText(option));
@@ -168,6 +176,28 @@ async function persistDiagnosticAnswerRecord(payload) {
     console.warn("[Diagnóstico] Falha ao salvar resposta; tentando gravacao anonima.", error);
     return window.supabaseDataService.saveDiagnosticAnswer(payload);
   }
+}
+
+function isMissingDiagnosticQuestionColumn(error) {
+  const message = String(error?.message || error?.details || "");
+  const code = String(error?.code || "");
+  return code === "PGRST204" || /question_(key|id)/i.test(message);
+}
+
+function omitDiagnosticQuestionColumns(payload) {
+  const { question_key: _questionKey, question_id: _questionId, ...fallbackPayload } = payload;
+  return fallbackPayload;
+}
+
+async function persistDiagnosticAnswerRecordCompat(payload) {
+  const result = await persistDiagnosticAnswerRecord(payload);
+  if (result && result.ok) return result;
+
+  if ((Object.prototype.hasOwnProperty.call(payload, "question_key") || Object.prototype.hasOwnProperty.call(payload, "question_id")) && isMissingDiagnosticQuestionColumn(result?.error)) {
+    return persistDiagnosticAnswerRecord(omitDiagnosticQuestionColumns(payload));
+  }
+
+  return result;
 }
 
 async function persistDiagnosticSessionRecord(payload) {
@@ -334,7 +364,62 @@ function pickRandomQuestions(questions, quantity) {
   return shuffleArray(questions).slice(0, Math.min(quantity, questions.length));
 }
 
-function buildDiagnosticQuestionSets() {
+function buildRemoteQuestionSignature(row) {
+  const selector = window.questionSelector;
+  if (selector && typeof selector.getQuestionSignature === "function") {
+    return selector.getQuestionSignature({
+      mode: "diagnostico",
+      level: row.level,
+      area: row.area,
+      question: row.question
+    }, "diagnostico");
+  }
+
+  const normalizedQuestion = normalizeQuestionText(row.question);
+  return normalizedQuestion ? `txt:diagnostico|${cleanText(row.level)}|${cleanText(row.area)}|${normalizedQuestion}` : "";
+}
+
+async function fetchRecentDiagnosticQuestionHistory() {
+  const user = await getAuthenticatedUserForPersistence();
+  const client = window.authService && typeof window.authService.getClient === "function"
+    ? window.authService.getClient()
+    : null;
+
+  if (!user?.id || !client) {
+    return { questionKeys: [], questionSignatures: [], source: "local_only" };
+  }
+
+  const windowDays = Number(state.diagnosticRecentWindowDays) || DIAGNOSTIC_RECENT_WINDOW_DAYS;
+  const cutoffDate = new Date(Date.now() - (Math.max(windowDays, 0) * 24 * 60 * 60 * 1000)).toISOString();
+
+  try {
+    const { data, error } = await client
+      .from("diagnostic_answers")
+      .select("question,level,area,answered_at")
+      .eq("user_id", user.id)
+      .gte("answered_at", cutoffDate)
+      .order("answered_at", { ascending: false })
+      .limit(80);
+
+    if (error) {
+      console.warn("[Diagnóstico] Historico remoto de perguntas indisponivel; usando anti-repeticao local.", error);
+      return { questionKeys: [], questionSignatures: [], source: "local_fallback", error };
+    }
+
+    const rows = Array.isArray(data) ? data : [];
+    return {
+      questionKeys: [],
+      questionSignatures: rows.map(buildRemoteQuestionSignature).filter(Boolean),
+      source: "supabase_recent_answers",
+      total: rows.length
+    };
+  } catch (error) {
+    console.warn("[Diagnóstico] Falha ao ler historico remoto de perguntas; usando anti-repeticao local.", error);
+    return { questionKeys: [], questionSignatures: [], source: "local_fallback", error };
+  }
+}
+
+async function buildDiagnosticQuestionSets() {
   const selector = window.questionSelector;
   if (!selector || typeof selector.buildBalancedDiagnosticSets !== "function") {
     state.diagnosticSelectionMeta = {
@@ -345,6 +430,7 @@ function buildDiagnosticQuestionSets() {
   }
 
   const questionPool = getDiagnosticQuestionPool();
+  const recentHistory = await fetchRecentDiagnosticQuestionHistory();
   const selection = selector.buildBalancedDiagnosticSets({
     questions: questionPool,
     levelBlueprint: diagnosticLevelBlueprint,
@@ -352,13 +438,22 @@ function buildDiagnosticQuestionSets() {
     mode: "diagnostico",
     storageKeyBase: DIAGNOSTIC_RECENT_QUESTIONS_STORAGE_KEY,
     anonymousUserId: getAnonymousUserId(),
-    windowDays: Number(state.diagnosticRecentWindowDays) || DIAGNOSTIC_RECENT_WINDOW_DAYS
+    windowDays: Number(state.diagnosticRecentWindowDays) || DIAGNOSTIC_RECENT_WINDOW_DAYS,
+    recentQuestionKeys: recentHistory.questionKeys,
+    recentQuestionSignatures: recentHistory.questionSignatures
   });
 
   state.diagnosticSelectionMeta = {
     source: "smart_selector",
+    recentHistorySource: recentHistory.source,
     ...selection.meta
   };
+
+  const usedFallback = selection.meta?.diagnostics?.some((item) => item.usedRecentFallback);
+  if (usedFallback && /localhost|127\.0\.0\.1/.test(window.location.hostname)) {
+    console.info("[Diagnóstico] Banco pequeno para anti-repeticao total; algumas perguntas recentes podem voltar como fallback.");
+  }
+
   return selection.questionSets;
 }
 
@@ -629,10 +724,10 @@ async function startDiagnostic() {
     return;
   }
 
-  beginDiagnostic();
+  await beginDiagnostic();
 }
 
-function beginDiagnostic() {
+async function beginDiagnostic() {
   state.diagnosticStarted = true;
   state.diagnosticCompleted = false;
   state.currentLevelIndex = 0;
@@ -641,7 +736,7 @@ function beginDiagnostic() {
     ? window.supabaseDataService.createAttemptId("diag")
     : `diag_${Date.now()}`;
   state.selectedDiagnosticAnswer = null;
-  state.diagnosticQuestionSets = buildDiagnosticQuestionSets();
+  state.diagnosticQuestionSets = await buildDiagnosticQuestionSets();
   state.confirmedDiagnosticAnswerKeys = new Set();
 
   const emptyLevels = diagnosticLevels.filter((_, index) => state.diagnosticQuestionSets[index].length === 0);
@@ -725,7 +820,7 @@ function openAnonymousDiagnosticModal() {
   continueButton.onclick = () => {
     setAnonymousDiagnosticAccepted();
     closeAnonymousDiagnosticModal();
-    beginDiagnostic();
+    void beginDiagnostic();
   };
 
   authButton.onclick = () => {
@@ -864,6 +959,8 @@ async function confirmDiagnosticAnswer() {
     area: cleanArea,
     level: cleanText(question.level),
     concept: cleanConcept,
+    questionId: cleanText(question.id),
+    questionKey: cleanText(question.questionKey || question.question_key),
     skillCode: cleanText(question.skillCode || question.skill_code),
     recommendationKey: cleanText(question.recommendationKey || question.recommendation_key),
     question: cleanQuestion,
@@ -876,7 +973,7 @@ async function confirmDiagnosticAnswer() {
 
   state.diagnosticAnswers.push(answerRecord);
 
-  const persistenceResult = await persistDiagnosticAnswerRecord({
+  const persistenceResult = await persistDiagnosticAnswerRecordCompat({
     attempt_id: state.currentDiagnosticAttemptId,
     anonymous_user_id: getAnonymousUserId(),
     answered_at: answeredAt,
@@ -884,6 +981,8 @@ async function confirmDiagnosticAnswer() {
     area: answerRecord.area,
     level: answerRecord.level,
     concept: answerRecord.concept,
+    question_id: answerRecord.questionId || null,
+    question_key: answerRecord.questionKey || null,
     question: answerRecord.question,
     selected_answer: answerRecord.selected,
     correct_answer: answerRecord.correctAnswer,
@@ -1223,7 +1322,7 @@ async function showResult({ blocked } = { blocked: false }) {
       level: "Agora",
       title: "Primeiro foco",
       text: `Trabalhe ${priorityConceptText} com exemplos pequenos e correção imediata.`,
-      next: `Filtre os desafios por ${getChallengeLabelForArea(priorityArea)}.`
+      next: `Comece pela trilha de ${getChallengeLabelForArea(priorityArea)}.`
     },
     {
       level: "Revisão",
@@ -1437,7 +1536,7 @@ async function showResult({ blocked } = { blocked: false }) {
               <span class="concept-tag">${item.level}</span>
               <h3>${item.title}</h3>
               <p>${item.text}</p>
-              <p><strong>Próximo desafio:</strong> ${item.next}</p>
+              <p><strong>Próximo passo:</strong> ${item.next}</p>
             </article>
           `).join("")}
         </div>
@@ -1483,7 +1582,7 @@ async function showResult({ blocked } = { blocked: false }) {
               </article>
             `).join("")}
           </div>
-        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance para desafios práticos.</p>`}
+        ` : `<p class="explanation">Você não errou perguntas neste diagnóstico. Mantenha revisão espaçada e avance pela trilha recomendada.</p>`}
       </details>
 
       <details class="result-block question-history-block">

@@ -26,7 +26,7 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
   heroPreviewCategory.textContent = challengeCategory;
   heroPreviewCategory.className = `category-tag ${challengeCategory.includes("SQL") ? "badge-sql" : ""}`;
   heroPreviewLevel.textContent = challengeLevel;
-  heroPreviewPoints.textContent = `${challenge.points} pontos`;
+  heroPreviewPoints.textContent = "Diagnóstico";
   heroPreviewQuestion.textContent = cleanText(challenge.question);
   heroPreviewHint.textContent = cleanText(challenge.context) || cleanText(challenge.explanation);
   restartHeroPreviewProgress();
@@ -44,7 +44,7 @@ function renderHeroPreview(index = state.heroPreviewIndex) {
   `).join("");
 
   heroPreviewControls.innerHTML = heroPreviewChallenges.map((_, dotIndex) => `
-    <button class="preview-dot ${dotIndex === state.heroPreviewIndex ? "active" : ""}" type="button" data-preview-index="${dotIndex}" aria-label="Mostrar desafio ${dotIndex + 1}"></button>
+    <button class="preview-dot ${dotIndex === state.heroPreviewIndex ? "active" : ""}" type="button" data-preview-index="${dotIndex}" aria-label="Mostrar questão ${dotIndex + 1}"></button>
   `).join("");
 
   heroPreviewControls.querySelectorAll("[data-preview-index]").forEach((button) => {

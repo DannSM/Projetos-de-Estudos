@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trilha ativa | Data Skill Map</title>
+  <meta name="description" content="Avance em ordem pela trilha recomendada no Data Skill Map.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="Data Skill Map">
+      <img src="assets/header-logo.png" alt="" class="brand-logo">
+      <span>Data Skill Map</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Navegação principal">
+      <a href="index.html#como-funciona">Como funciona</a>
+      <a href="index.html#trilhas">Trilhas de estudo</a>
+      <a href="diagnostico.html">Diagnóstico</a>
+      <a href="meu-progresso.html">Meu Progresso</a>
+      <a data-admin-nav href="analytics.html" hidden>Analytics</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="button button-secondary auth-trigger" type="button" data-auth-open>
+        <i data-lucide="user-circle" aria-hidden="true"></i>
+        <span>Entrar</span>
+      </button>
+      <a class="button button-primary" href="diagnostico.html">
+        <i data-lucide="clipboard-list" aria-hidden="true"></i>
+        <span>Diagnóstico</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="learning-detail-page">
+    <section id="activeLearningPathMount" class="section-shell learning-detail-shell">
+      <div class="learning-paths-loading" role="status" aria-live="polite">
+        <span class="progress-loading-icon" aria-hidden="true"></span>
+        <strong>Carregando trilha...</strong>
+      </div>
+    </section>
+  </main>
+
+  <footer class="contact-footer">
+    <div class="contact-footer__inner">
+      <div>
+        <strong>Data Skill Map</strong>
+        <p>Diagnóstico, trilhas e progresso para estudar dados com direção.</p>
+      </div>
+      <nav class="contact-footer__links" aria-label="Links do rodapé">
+        <a href="index.html#trilhas">Trilhas de estudo</a>
+        <a href="diagnostico.html">Diagnóstico</a>
+        <a href="meu-progresso.html">Meu Progresso</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="src/supabase-config.js"></script>
+  <script src="src/auth-service.js"></script>
+  <script src="src/auth-modal.js"></script>
+  <script src="src/app.js"></script>
+  <script src="src/active-learning-path.js"></script>
+</body>
+</html>

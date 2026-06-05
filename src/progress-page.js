@@ -294,6 +294,16 @@
     };
   }
 
+  function getLearningAggregatePercent(steps, progressRows) {
+    const activeSteps = normalizeList(steps);
+    if (!activeSteps.length) {
+      return formatPercent(progressRows?.[0]?.progress_percent) || "0%";
+    }
+
+    const completed = activeSteps.filter((step) => normalizeList(progressRows).some((row) => row.step_id === step.id && row.status === "completed")).length;
+    return `${Math.round((completed / activeSteps.length) * 100)}%`;
+  }
+
   async function fetchOrThrow(query, label) {
     const { data, error, count } = await query;
     if (error) {
@@ -342,12 +352,11 @@
 
     const learningProgressQuery = client
       .from("user_learning_progress")
-      .select("path_id,step_id,status,progress_percent,last_activity_at,updated_at")
+      .select("path_id,step_id,status,progress_percent,last_activity_at,updated_at,completed_at")
       .eq("user_id", userId)
-      .in("status", ["not_started", "in_progress", "paused"])
+      .in("status", ["not_started", "in_progress", "paused", "completed"])
       .order("last_activity_at", { ascending: false, nullsFirst: false })
-      .order("updated_at", { ascending: false })
-      .limit(1);
+      .order("updated_at", { ascending: false });
 
     const [
       profileResult,
@@ -363,7 +372,10 @@
       fetchOrThrow(learningProgressQuery, "user_learning_progress")
     ]);
 
-    const learningProgress = normalizeList(learningProgressResult.data)[0] || null;
+    const learningProgressRows = normalizeList(learningProgressResult.data);
+    const learningProgress = learningProgressRows.find((row) => ["in_progress", "paused", "not_started"].includes(row.status))
+      || learningProgressRows[0]
+      || null;
     const latestSession = normalizeList(sessionsResult.data)[0] || null;
     let diagnosticAnswers = [];
     let areaSummary = buildAreaSummary({
@@ -375,6 +387,7 @@
     let diagnosticRecommendation = null;
     let path = null;
     let step = null;
+    let pathSteps = [];
 
     if (latestSession?.attempt_id) {
       const answersResult = await fetchOrThrow(
@@ -450,18 +463,24 @@
         "learning_path_steps"
       );
       step = stepResult.data || null;
-    } else if (path?.id) {
-      const stepResult = await fetchOrThrow(
+    }
+
+    if (path?.id) {
+      const stepsResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
-          .select("id,path_id,title,description,skill_area,content_url,display_order,status")
+          .select("id,path_id,title,description,skill_area,content_type,content_url,display_order,status")
           .eq("path_id", path.id)
           .eq("status", "active")
-          .order("display_order", { ascending: true })
-          .limit(1),
+          .order("display_order", { ascending: true }),
         "learning_path_steps"
       );
-      step = normalizeList(stepResult.data)[0] || null;
+      pathSteps = normalizeList(stepsResult.data);
+
+      if (!step) {
+        const completedStepIds = new Set(learningProgressRows.filter((row) => row.status === "completed").map((row) => row.step_id));
+        step = pathSteps.find((item) => !completedStepIds.has(item.id)) || pathSteps[pathSteps.length - 1] || null;
+      }
     }
 
     return {
@@ -476,7 +495,9 @@
       learningRecommendation: normalizeList(recommendationsResult.data)[0] || null,
       diagnosticRecommendation,
       learningProgress,
+      learningProgressRows,
       path,
+      pathSteps,
       step
     };
   }
@@ -627,7 +648,7 @@
                 ${Number.isFinite(Number(area.correct)) && Number.isFinite(Number(area.total)) ? `<span>${escapeHtml(`${area.correct}/${area.total} acertos`)}</span>` : ""}
               </div>
             </div>
-            ${isZeroProgress ? `<span class="progress-area-row__hint">Primeiro desafio disponível</span>` : ""}
+            ${isZeroProgress ? `<span class="progress-area-row__hint">Primeiro passo disponivel</span>` : ""}
             <div class="progress-area-bar" aria-hidden="true">
               <span style="width: ${percent}%"></span>
             </div>
@@ -643,7 +664,7 @@
       return `<p class="progress-empty-text">Finalize um diagnóstico logado para gerar uma trilha recomendada.</p>`;
     }
 
-    const progress = formatPercent(data.learningProgress?.progress_percent) || "0%";
+    const progress = getLearningAggregatePercent(data.pathSteps, data.learningProgressRows);
     const title = data.path?.title || data.learningRecommendation?.title || "Trilha recomendada";
     const stepTitle = data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
 

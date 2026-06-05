@@ -38,6 +38,14 @@
     return value.trim();
   }
 
+  function normalizeQuestionText(value) {
+    return normalizeText(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
   function filterQuestions(questions, filters = {}) {
     const source = Array.isArray(questions) ? questions : [];
     return source.filter((question) => {
@@ -71,6 +79,14 @@
     const area = normalizeText(question && question.area);
     const statement = normalizeText(question && question.question);
     return `cmp:${mode}|${level}|${area}|${statement}`;
+  }
+
+  function getQuestionSignature(question, modeFallback = "diagnostico") {
+    const mode = normalizeText(question && question.mode) || modeFallback;
+    const level = normalizeText(question && question.level);
+    const area = normalizeText(question && question.area);
+    const statement = normalizeQuestionText(question && question.question);
+    return statement ? `txt:${mode}|${level}|${area}|${statement}` : "";
   }
 
   function readRecentHistory(storageKeyBase) {
@@ -138,7 +154,9 @@
     selectedQuestionKeys,
     storageKeyBase = DEFAULT_STORAGE_KEY_BASE,
     anonymousUserId = "anonymous",
-    windowDays = DEFAULT_WINDOW_DAYS
+    windowDays = DEFAULT_WINDOW_DAYS,
+    recentQuestionKeys = [],
+    recentQuestionSignatures = []
   } = {}) {
     if (!Array.isArray(selectedQuestionKeys) || selectedQuestionKeys.length === 0) {
       return;
@@ -236,6 +254,8 @@
     const questionPool = Array.isArray(questions) ? questions : [];
     const blueprint = Array.isArray(levelBlueprint) ? levelBlueprint : [];
     const { recentKeySet } = loadRecentHistory({ storageKeyBase, anonymousUserId, windowDays });
+    const remoteRecentKeySet = new Set(Array.isArray(recentQuestionKeys) ? recentQuestionKeys.map(normalizeText).filter(Boolean) : []);
+    const recentSignatureSet = new Set(Array.isArray(recentQuestionSignatures) ? recentQuestionSignatures.map(normalizeText).filter(Boolean) : []);
     const selectedKeySet = new Set();
     const allSelectedKeys = [];
     const diagnostics = [];
@@ -248,7 +268,8 @@
 
       levelQuestions.forEach((question) => {
         const key = getStableQuestionKey(question, mode);
-        if (recentKeySet.has(key)) {
+        const signature = getQuestionSignature(question, mode);
+        if (recentKeySet.has(key) || remoteRecentKeySet.has(key) || (signature && recentSignatureSet.has(signature))) {
           recent.push(question);
         } else {
           fresh.push(question);
@@ -300,7 +321,8 @@
         perLevelCount,
         windowDays,
         storageKeyBase,
-        diagnostics
+        diagnostics,
+        remoteRecentCount: remoteRecentKeySet.size + recentSignatureSet.size
       }
     };
   }
@@ -310,6 +332,7 @@
     filterQuestions,
     buildBalancedDiagnosticSets,
     getStableQuestionKey,
+    getQuestionSignature,
     loadRecentHistory,
     persistRecentHistory
   };

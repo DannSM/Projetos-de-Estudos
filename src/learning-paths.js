@@ -58,6 +58,11 @@
     return labels[key] || value || "Aula";
   }
 
+  function getPathDetailHref(path) {
+    const pathKey = path?.slug || path?.id || "";
+    return `trilha.html?path=${encodeURIComponent(pathKey)}`;
+  }
+
   function getClient() {
     if (globalScope.authService && typeof globalScope.authService.getClient === "function") {
       return globalScope.authService.getClient();
@@ -345,6 +350,7 @@
     const progress = getPathProgress(path, progressByPath);
     const minutes = formatMinutes(path.estimated_minutes);
     const isFeatured = featuredPath?.id === path.id;
+    const detailHref = getPathDetailHref(path);
 
     return `
       <article class="track-card learning-path-card${isFeatured ? " is-featured" : ""}">
@@ -377,6 +383,10 @@
               </li>
             `).join("")}
           </ol>
+          <a class="button button-secondary learning-path-card-action" href="${escapeHtml(detailHref)}">
+            <i data-lucide="play-circle" aria-hidden="true"></i>
+            <span>Ver trilha</span>
+          </a>
         ` : `<p class="learning-path-empty-steps">Passos ainda não cadastrados para esta trilha.</p>`}
       </article>
     `;
