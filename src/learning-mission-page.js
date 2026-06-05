@@ -4,23 +4,23 @@
     return;
   }
 
-  // Prototipo local do piloto: dados controlados em memoria, sem Supabase e sem progresso real.
+  // Protótipo local do piloto: dados controlados em memória, sem Supabase e sem progresso real.
   const missions = [
     {
       slug: "sql-essencial-filtros-where",
-      title: "Missao recomendada: filtre exatamente o recorte pedido",
+      title: "Missão recomendada: filtre exatamente o recorte pedido",
       gap: "filtros com WHERE",
       skillCode: "sql.filtering.where_logic",
-      level: "Basico",
+      level: "Básico",
       estimatedMinutes: 10,
-      objective: "Escolher o WHERE que traduz exatamente a pergunta de negocio.",
-      why: "Esta missao apareceu porque o diagnostico encontrou uma lacuna em filtros com SQL. Corrigir isso ajuda voce a responder perguntas de negocio sem trazer dados fora do recorte.",
+      objective: "Escolher o WHERE que traduz exatamente a pergunta de negócio.",
+      why: "Esta missão apareceu porque o diagnóstico encontrou uma lacuna em filtros com SQL. Corrigir isso ajuda você a responder perguntas de negócio sem trazer dados fora do recorte.",
       contentTitle: "O que o WHERE precisa fazer",
-      content: "O WHERE deve traduzir exatamente o recorte da pergunta. Se a pergunta pede pedidos pagos em janeiro, o filtro precisa limitar status e periodo ao mesmo tempo.",
+      content: "O WHERE deve traduzir exatamente o recorte da pergunta. Se a pergunta pede pedidos pagos em janeiro, o filtro precisa limitar status e período ao mesmo tempo.",
       example: "select * from pedidos where status = 'pago' and data_pedido >= '2026-01-01' and data_pedido < '2026-02-01';",
       activityType: "multiple_choice",
       activityTitle: "Pratique agora",
-      prompt: "A area comercial pediu pedidos pagos em janeiro de 2026. Qual WHERE responde exatamente ao recorte?",
+      prompt: "A área comercial pediu pedidos pagos em janeiro de 2026. Qual WHERE responde exatamente ao recorte?",
       context: ["Tabela: pedidos", "Colunas: pedido_id, status, data_pedido, valor"],
       options: [
         "where status = 'pago'",
@@ -32,7 +32,7 @@
           return {
             status: "correct",
             title: "Correto",
-            message: "Correto. Voce aplicou o raciocinio certo para esta lacuna. O filtro limita status e periodo, entao responde ao recorte sem trazer registros indevidos."
+            message: "Correto. Você aplicou o raciocínio certo para esta lacuna. O filtro limita status e período, então responde ao recorte sem trazer registros indevidos."
           };
         }
 
@@ -40,32 +40,32 @@
           return {
             status: "partial",
             title: "Parcial",
-            message: "Quase la. Voce acertou parte do raciocinio, mas ainda falta ajustar um criterio importante antes de concluir a missao."
+            message: "Quase lá. Você acertou parte do raciocínio, mas ainda falta ajustar um critério importante antes de concluir a missão."
           };
         }
 
         return {
           status: "incorrect",
           title: "Incorreto",
-          message: "Ainda nao. Esta resposta deixa passar um problema comum. Veja o feedback, ajuste o raciocinio e tente novamente."
+          message: "Ainda não. Esta resposta deixa passar um problema comum. Veja o feedback, ajuste o raciocínio e tente novamente."
         };
       }
     },
     {
       slug: "sql-essencial-count-nulos-distintos",
-      title: "Missao recomendada: conte sem se enganar com nulos",
+      title: "Missão recomendada: conte sem se enganar com nulos",
       gap: "COUNT, nulos e distintos",
       skillCode: "sql.aggregation.counting",
-      level: "Basico",
+      level: "Básico",
       estimatedMinutes: 12,
-      objective: "Escolher a contagem adequada para a pergunta e interpretar diferencas.",
-      why: "Esta missao apareceu porque o diagnostico indicou risco de confundir linhas, valores preenchidos e valores distintos.",
-      contentTitle: "COUNT(*) nao e sempre igual a COUNT(coluna)",
-      content: "COUNT(*) conta linhas. COUNT(coluna) conta apenas linhas em que aquela coluna nao esta nula. COUNT(distinct coluna) conta valores distintos nao nulos.",
+      objective: "Escolher a contagem adequada para a pergunta e interpretar diferenças.",
+      why: "Esta missão apareceu porque o diagnóstico indicou risco de confundir linhas, valores preenchidos e valores distintos.",
+      contentTitle: "COUNT(*) não é sempre igual a COUNT(coluna)",
+      content: "COUNT(*) conta linhas. COUNT(coluna) conta apenas linhas em que aquela coluna não está nula. COUNT(distinct coluna) conta valores distintos não nulos.",
       example: "select count(*) as linhas, count(email) as emails_preenchidos, count(distinct cliente_id) as clientes from clientes;",
       activityType: "multiple_choice",
       activityTitle: "Pratique agora",
-      prompt: "Voce quer saber quantas linhas existem na tabela pedidos, mesmo quando cliente_id estiver nulo. Qual expressao usar?",
+      prompt: "Você quer saber quantas linhas existem na tabela pedidos, mesmo quando cliente_id estiver nulo. Qual expressão usar?",
       context: ["Tabela: pedidos", "Colunas: pedido_id, cliente_id, valor"],
       options: ["count(cliente_id)", "count(*)", "count(distinct cliente_id)"],
       evaluate: ({ selectedOption }) => {
@@ -73,7 +73,7 @@
           return {
             status: "correct",
             title: "Correto",
-            message: "Correto. COUNT(*) conta todas as linhas, inclusive quando alguma coluna esta nula."
+            message: "Correto. COUNT(*) conta todas as linhas, inclusive quando alguma coluna está nula."
           };
         }
 
@@ -81,28 +81,28 @@
           return {
             status: "partial",
             title: "Parcial",
-            message: "Quase la. COUNT(cliente_id) conta algo util, mas ignora linhas em que cliente_id esta nulo."
+            message: "Quase lá. COUNT(cliente_id) conta algo útil, mas ignora linhas em que cliente_id está nulo."
           };
         }
 
         return {
           status: "incorrect",
           title: "Incorreto",
-          message: "Ainda nao. COUNT(distinct cliente_id) responde outra pergunta: quantos clientes diferentes aparecem com valor nao nulo."
+          message: "Ainda não. COUNT(distinct cliente_id) responde outra pergunta: quantos clientes diferentes aparecem com valor não nulo."
         };
       }
     },
     {
       slug: "sql-essencial-filtro-antes-agregacao",
-      title: "Missao recomendada: filtre antes de resumir",
-      gap: "filtro antes da agregacao",
+      title: "Missão recomendada: filtre antes de resumir",
+      gap: "filtro antes da agregação",
       skillCode: "sql.filtering.where_logic",
-      level: "Basico",
+      level: "Básico",
       estimatedMinutes: 15,
-      objective: "Aplicar filtro antes de contar ou resumir uma metrica.",
-      why: "Esta missao apareceu porque o diagnostico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
+      objective: "Aplicar filtro antes de contar ou resumir uma métrica.",
+      why: "Esta missão apareceu porque o diagnóstico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
       contentTitle: "Primeiro recorte, depois resumo",
-      content: "Quando a metrica e sobre um grupo especifico, aplique o WHERE antes de contar ou somar. Assim o resumo responde ao recorte certo.",
+      content: "Quando a métrica é sobre um grupo específico, aplique o WHERE antes de contar ou somar. Assim o resumo responde ao recorte certo.",
       example: "select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
       activityType: "query_fix",
       activityTitle: "Pratique agora",
@@ -127,14 +127,14 @@
           return {
             status: "partial",
             title: "Parcial",
-            message: "Quase la. A consulta tem parte da estrutura, mas ainda falta filtro, contagem ou agrupamento para concluir a missao."
+            message: "Quase lá. A consulta tem parte da estrutura, mas ainda falta filtro, contagem ou agrupamento para concluir a missão."
           };
         }
 
         return {
           status: "incorrect",
           title: "Incorreto",
-          message: "Ainda nao. Primeiro filtre pedidos pagos com WHERE, depois agrupe por categoria e conte os registros."
+          message: "Ainda não. Primeiro filtre pedidos pagos com WHERE, depois agrupe por categoria e conte os registros."
         };
       }
     }
@@ -196,9 +196,9 @@
 
   function getCompletionText(status) {
     const labels = {
-      completed: "concluida",
+      completed: "concluída",
       current: "atual",
-      available: "disponivel",
+      available: "disponível",
       locked: "bloqueada"
     };
 
@@ -213,10 +213,10 @@
     return `
       <section class="mission-hero">
         <div class="mission-hero__content">
-          <span class="section-kicker">Missao recomendada</span>
+          <span class="section-kicker">Missão recomendada</span>
           <h1>${escapeHtml(mission.title)}</h1>
           <p>${escapeHtml(mission.objective)}</p>
-          <div class="mission-hero__meta" aria-label="Resumo da missao">
+          <div class="mission-hero__meta" aria-label="Resumo da missão">
             <span><i data-lucide="scan-search" aria-hidden="true"></i>Lacuna: ${escapeHtml(mission.gap)}</span>
             <span><i data-lucide="clock-3" aria-hidden="true"></i>${mission.estimatedMinutes} min</span>
             <span><i data-lucide="signal" aria-hidden="true"></i>${escapeHtml(mission.level)}</span>
@@ -271,7 +271,7 @@
       return `
         <div class="mission-feedback mission-feedback--empty">
           <strong>Ver feedback</strong>
-          <p>Envie uma tentativa para receber feedback imediato. A missao so aparece como concluida depois da resposta.</p>
+          <p>Envie uma tentativa para receber feedback imediato. A missão só aparece como concluída depois da resposta.</p>
         </div>
       `;
     }
@@ -282,7 +282,7 @@
     let nextActionHtml = `
       <button class="button button-primary" type="button" data-next-mission disabled>
         <i data-lucide="arrow-right" aria-hidden="true"></i>
-        <span>Continuar para proxima missao</span>
+        <span>Continuar para próxima missão</span>
       </button>
     `;
 
@@ -290,7 +290,7 @@
       nextActionHtml = `
           <button class="button button-primary" type="button" data-next-mission>
             <i data-lucide="arrow-right" aria-hidden="true"></i>
-            <span>Continuar para proxima missao</span>
+            <span>Continuar para próxima missão</span>
           </button>
         `;
     } else if (state.feedback.status === "correct") {
@@ -329,24 +329,24 @@
     const isPilotComplete = completedCount === missions.length;
 
     return `
-      <section class="mission-context-panel" aria-label="Contexto e avanco da missao">
-        <div class="mission-context-panel__why">
+      <section class="mission-context-panel" aria-label="Contexto e avanço da missão">
+        <div class="mission-context-panel__intro">
           <div class="mission-sidebar-summary">
-            <span class="mission-side-card__label">Por que esta missao?</span>
+            <span class="mission-side-card__label">Por que esta missão?</span>
             <p>${escapeHtml(currentMission.why)}</p>
-            <small>Prototipo local: o progresso real sera salvo apos integracao com Supabase.</small>
           </div>
+          <small class="mission-prototype-note">Protótipo local: o progresso real será salvo após integração com Supabase.</small>
         </div>
         <div class="mission-context-panel__progress">
           <div class="mission-progress-panel__header">
-            <span class="mission-side-card__label">Seu avanco</span>
-            <strong>${completedCount} de ${missions.length} missoes concluidas</strong>
-            <p>${isPilotComplete ? "Piloto concluido com evidencia em todas as missoes." : "Pratique, envie uma tentativa e avance pela proxima lacuna liberada."}</p>
+            <span class="mission-side-card__label">Seu avanço</span>
+            <strong>${completedCount} de ${missions.length} missões concluídas</strong>
+            <p>${isPilotComplete ? "Piloto concluído com evidência em todas as missões." : "Pratique, envie uma tentativa e avance pela próxima lacuna liberada."}</p>
           </div>
-          <div class="mission-progress-line" aria-label="${completedCount} de ${missions.length} missoes concluidas">
+          <div class="mission-progress-line" aria-label="${completedCount} de ${missions.length} missões concluídas">
             <span style="width: ${progressPercent}%"></span>
           </div>
-          <div class="mission-progress-metrics" aria-label="Resumo da missao atual">
+          <div class="mission-progress-metrics" aria-label="Resumo da missão atual">
             <div>
               <span>Etapa atual</span>
               <strong>${state.activeIndex + 1}/${missions.length}</strong>
@@ -362,33 +362,33 @@
           </div>
           <div class="mission-completion-rule">
             <i data-lucide="shield-check" aria-hidden="true"></i>
-            <span>Criterio de conclusao: tentativa enviada, feedback exibido e resposta correta.</span>
+            <span>Critério de conclusão: tentativa enviada, feedback exibido e resposta correta.</span>
           </div>
           ${isPilotComplete ? `
             <div class="mission-pilot-complete">
               <strong>SQL Essencial praticado</strong>
-              <span>Filtros, contagens e filtro antes da agregacao foram respondidos no prototipo local.</span>
+              <span>Filtros, contagens e filtro antes da agregação foram respondidos no protótipo local.</span>
             </div>
           ` : ""}
-        </div>
-        <div class="mission-stepper mission-stepper--horizontal" aria-label="Etapas do piloto">
-          ${missions.map((mission, index) => {
-            const status = getMissionStatus(index);
-            return `
-              <button
-                class="mission-stepper-item is-${status}"
-                type="button"
-                data-select-mission="${index}"
-                ${status === "locked" ? "disabled" : ""}
-              >
-                <span class="mission-stepper-dot">${index + 1}</span>
-                <span class="mission-stepper-copy">
-                  <strong>${escapeHtml(mission.gap)}</strong>
-                  <small>${escapeHtml(getCompletionText(status))} - ${mission.estimatedMinutes} min</small>
-                </span>
-              </button>
-            `;
-          }).join("")}
+          <div class="mission-stepper mission-stepper--horizontal" aria-label="Etapas do piloto">
+            ${missions.map((mission, index) => {
+              const status = getMissionStatus(index);
+              return `
+                <button
+                  class="mission-stepper-item is-${status}"
+                  type="button"
+                  data-select-mission="${index}"
+                  ${status === "locked" ? "disabled" : ""}
+                >
+                  <span class="mission-stepper-dot">${index + 1}</span>
+                  <span class="mission-stepper-copy">
+                    <strong>${escapeHtml(mission.gap)}</strong>
+                    <small>${escapeHtml(getCompletionText(status))} - ${mission.estimatedMinutes} min</small>
+                  </span>
+                </button>
+              `;
+            }).join("")}
+          </div>
         </div>
       </section>
     `;
@@ -400,10 +400,10 @@
     }
 
     return `
-      <section id="piloto-concluido" class="mission-complete-panel" aria-label="Piloto SQL Essencial concluido">
-        <span class="section-kicker">Piloto SQL Essencial concluido</span>
-        <h2>Boa. Voce fechou as 3 missoes do piloto com tentativa e feedback.</h2>
-        <p>Filtros com WHERE, contagens com nulos/distintos e filtro antes da agregacao foram praticados nesta bancada local.</p>
+      <section id="piloto-concluido" class="mission-complete-panel" aria-label="Piloto SQL Essencial concluído">
+        <span class="section-kicker">Piloto SQL Essencial concluído</span>
+        <h2>Você concluiu as 3 missões do piloto SQL Essencial.</h2>
+        <p>Filtros com WHERE, contagens com nulos/distintos e filtro antes da agregação foram praticados nesta bancada.</p>
         <div class="mission-complete-actions">
           <a class="button button-primary" href="meu-progresso.html">
             <i data-lucide="line-chart" aria-hidden="true"></i>
@@ -415,7 +415,7 @@
           </a>
           <a class="button button-secondary" href="diagnostico.html">
             <i data-lucide="clipboard-list" aria-hidden="true"></i>
-            <span>Refazer diagnostico</span>
+            <span>Refazer diagnóstico</span>
           </a>
         </div>
       </section>
@@ -431,14 +431,14 @@
         ${renderMissionHero(mission)}
         ${renderMissionContextPanel()}
         <div class="mission-main">
-          <section class="mission-content-card" aria-label="Conteudo curto da missao">
-            <span class="section-kicker">Conteudo curto</span>
+          <section class="mission-content-card" aria-label="Conteúdo curto da missão">
+            <span class="section-kicker">Conteúdo curto</span>
             <h2>${escapeHtml(mission.contentTitle)}</h2>
             <p>${escapeHtml(mission.content)}</p>
             <code class="code-block">${escapeHtml(mission.example)}</code>
           </section>
 
-          <section id="atividade" class="mission-activity-card" aria-label="Atividade pratica">
+          <section id="atividade" class="mission-activity-card" aria-label="Atividade prática">
             <div class="mission-card-heading">
               <div>
                 <span class="section-kicker">${escapeHtml(mission.activityTitle)}</span>
@@ -501,7 +501,7 @@
       state.feedback = {
         status: "incorrect",
         title: "Resposta pendente",
-        message: "Escolha uma alternativa antes de enviar. A missao nao conclui sem tentativa."
+        message: "Escolha uma alternativa antes de enviar. A missão não conclui sem tentativa."
       };
       renderPage();
       return;
@@ -511,7 +511,7 @@
       state.feedback = {
         status: "incorrect",
         title: "Resposta pendente",
-        message: "Digite uma tentativa de query antes de enviar. A missao nao conclui sem resposta."
+        message: "Digite uma tentativa de query antes de enviar. A missão não conclui sem resposta."
       };
       renderPage();
       return;
@@ -571,8 +571,8 @@
     if (saveButton) {
       state.feedback = {
         status: "partial",
-        title: "Prototipo local",
-        message: "Entrar para salvar progresso sera conectado depois da integracao com Supabase. Nesta tela, o progresso e simulado apenas em memoria."
+        title: "Protótipo local",
+        message: "Entrar para salvar progresso será conectado depois da integração com Supabase. Nesta tela, o progresso é simulado apenas em memória."
       };
       renderPage();
       return;
