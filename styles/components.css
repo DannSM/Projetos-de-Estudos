@@ -3837,6 +3837,447 @@ body.analytics-auth-locked .analytics-hero-copy {
   transform: translateY(0);
 }
 
+/* Missao pos-diagnostico: prototipo local visual/funcional, sem integracao Supabase. */
+.mission-ui {
+  background:
+    linear-gradient(rgba(15, 118, 110, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, #f8fbfa 0%, #eef8f6 34rem, #f8fafc 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.mission-page {
+  min-height: calc(100vh - var(--header-height));
+}
+
+.mission-shell {
+  display: grid;
+  gap: clamp(0.9rem, 2vw, 1.2rem);
+  padding-top: clamp(1rem, 2.8vw, 1.8rem);
+}
+
+.mission-loading {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  min-height: 18rem;
+  align-content: center;
+  color: var(--color-text-secondary);
+}
+
+.mission-loading strong {
+  color: var(--color-text-primary);
+}
+
+.mission-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.42fr);
+  gap: clamp(0.85rem, 2.3vw, 1.25rem);
+  align-items: stretch;
+}
+
+.mission-hero__content,
+.mission-gap-card,
+.mission-content-card,
+.mission-activity-card,
+.mission-side-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px) saturate(135%);
+}
+
+.mission-hero__content {
+  display: grid;
+  align-content: center;
+  gap: 0.78rem;
+  padding: clamp(1rem, 2.8vw, 1.55rem);
+}
+
+.mission-hero__content h1 {
+  max-width: 48rem;
+  margin-bottom: 0;
+  color: #083344;
+  font-size: clamp(1.85rem, 4.6vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.mission-hero__content p {
+  max-width: 42rem;
+  margin: 0;
+  color: #45616a;
+  font-size: clamp(0.98rem, 1.4vw, 1.1rem);
+}
+
+.mission-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.48rem;
+}
+
+.mission-hero__meta span,
+.mission-context-list span,
+.mission-attempt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  min-height: 2rem;
+  padding: 0.34rem 0.56rem;
+  color: #164e63;
+  background: rgba(236, 253, 245, 0.92);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mission-hero__meta .lucide {
+  width: 0.88rem;
+  height: 0.88rem;
+  color: #0f766e;
+}
+
+.mission-hero__actions,
+.mission-feedback__actions,
+.mission-submit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.56rem;
+}
+
+.mission-gap-card {
+  display: grid;
+  align-content: start;
+  gap: 0.56rem;
+  padding: clamp(0.9rem, 2vw, 1.15rem);
+  border-color: rgba(15, 118, 110, 0.18);
+}
+
+.mission-gap-card span,
+.mission-side-card__label {
+  color: #0f766e;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.mission-gap-card p,
+.mission-gap-card small {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.mission-gap-card small {
+  padding: 0.58rem 0.64rem;
+  color: #475569;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+
+.mission-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.34fr);
+  gap: clamp(0.85rem, 2.2vw, 1.15rem);
+  align-items: start;
+}
+
+.mission-main,
+.mission-sidebar {
+  display: grid;
+  gap: clamp(0.78rem, 1.8vw, 1rem);
+}
+
+.mission-sidebar {
+  position: sticky;
+  top: calc(var(--header-height) + 0.85rem);
+}
+
+.mission-content-card,
+.mission-activity-card,
+.mission-side-card {
+  padding: clamp(0.9rem, 2vw, 1.15rem);
+}
+
+.mission-content-card {
+  display: grid;
+  gap: 0.56rem;
+}
+
+.mission-content-card h2,
+.mission-activity-card h2 {
+  margin-bottom: 0;
+}
+
+.mission-content-card p {
+  max-width: 56rem;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.mission-content-card .code-block {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.mission-activity-card {
+  display: grid;
+  gap: 0.78rem;
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+.mission-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.mission-context-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.44rem;
+}
+
+.mission-answer-list {
+  display: grid;
+  gap: 0.56rem;
+}
+
+.mission-answer-button {
+  min-height: 3.05rem;
+}
+
+.mission-query-input {
+  width: 100%;
+  min-height: 10rem;
+  resize: vertical;
+  padding: 0.85rem 0.95rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.mission-query-input:focus-visible {
+  border-color: rgba(37, 99, 235, 0.42);
+  outline: none;
+}
+
+.mission-feedback {
+  display: grid;
+  gap: 0.56rem;
+  padding: 0.82rem;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.mission-feedback strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: var(--color-text-primary);
+}
+
+.mission-feedback strong .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.mission-feedback p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.mission-feedback--correct {
+  background: var(--color-success-light);
+  border-color: rgba(22, 163, 74, 0.32);
+}
+
+.mission-feedback--partial {
+  background: var(--color-warning-light);
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+.mission-feedback--incorrect {
+  background: var(--color-error-light);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.mission-feedback--correct strong {
+  color: var(--color-success);
+}
+
+.mission-feedback--partial strong {
+  color: var(--color-warning);
+}
+
+.mission-feedback--incorrect strong {
+  color: var(--color-error);
+}
+
+.mission-feedback__actions .button[disabled] {
+  color: var(--color-text-muted);
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.mission-side-card {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.mission-side-card strong {
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.mission-progress-line {
+  height: 0.54rem;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  border-radius: 999px;
+}
+
+.mission-progress-line span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #0f766e, #06b6d4);
+  border-radius: inherit;
+}
+
+.mission-progress-facts {
+  display: grid;
+  gap: 0.32rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.mission-next-list {
+  display: grid;
+  gap: 0.44rem;
+}
+
+.mission-next-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.58rem 0.66rem;
+  text-align: left;
+  background: rgba(248, 250, 252, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.mission-next-item span {
+  color: var(--color-text-primary);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.mission-next-item strong {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.mission-next-item.is-current,
+.mission-next-item.is-available {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(219, 234, 254, 0.56);
+}
+
+.mission-next-item.is-completed {
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(220, 252, 231, 0.62);
+}
+
+.mission-next-item.is-locked {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+@media (max-width: 1024px) {
+  .mission-hero,
+  .mission-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .mission-shell {
+    gap: 0.72rem;
+    padding-top: 0.72rem;
+  }
+
+  .mission-hero__content,
+  .mission-gap-card,
+  .mission-content-card,
+  .mission-activity-card,
+  .mission-side-card {
+    padding: 0.76rem;
+    border-radius: 14px;
+  }
+
+  .mission-hero__content h1 {
+    font-size: clamp(1.65rem, 8vw, 2.2rem);
+  }
+
+  .mission-card-heading,
+  .mission-hero__actions,
+  .mission-feedback__actions,
+  .mission-submit-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .mission-hero__meta,
+  .mission-context-list {
+    gap: 0.36rem;
+  }
+
+  .mission-hero__meta span,
+  .mission-context-list span,
+  .mission-attempt-pill {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .mission-query-input {
+    min-height: 9rem;
+    font-size: 0.82rem;
+  }
+
+  .mission-next-item {
+    grid-template-columns: 1fr;
+    gap: 0.18rem;
+  }
+}
+
 .analytics-ui .analytics-table {
   border-collapse: separate;
   border-spacing: 0;
