@@ -4,6 +4,17 @@
     return;
   }
 
+  const sqlValidation = window.SqlMissionValidation;
+  if (!sqlValidation) {
+    mount.innerHTML = `
+      <div class="mission-loading">
+        <strong>Não foi possível carregar a validação local de SQL.</strong>
+        <span>Recarregue a página para tentar novamente.</span>
+      </div>
+    `;
+    return;
+  }
+
   // Protótipo local do piloto: dados controlados em memória, sem Supabase e sem progresso real.
   const missions = [
     {
@@ -28,7 +39,9 @@
         "where data_pedido >= '2026-01-01'"
       ],
       evaluate: ({ selectedOption }) => {
-        if (selectedOption === 1) {
+        const result = sqlValidation.validateWhereJanuarySql(missions[0].options[selectedOption]);
+
+        if (result.status === "correct") {
           return {
             status: "correct",
             title: "Correto",
@@ -36,7 +49,7 @@
           };
         }
 
-        if (selectedOption === 0 || selectedOption === 2) {
+        if (result.status === "partial") {
           return {
             status: "partial",
             title: "Parcial",
@@ -69,7 +82,9 @@
       context: ["Tabela: pedidos", "Colunas: pedido_id, cliente_id, valor"],
       options: ["count(cliente_id)", "count(*)", "count(distinct cliente_id)"],
       evaluate: ({ selectedOption }) => {
-        if (selectedOption === 1) {
+        const result = sqlValidation.validateCountRowsExpression(missions[1].options[selectedOption]);
+
+        if (result.status === "correct") {
           return {
             status: "correct",
             title: "Correto",
@@ -77,7 +92,7 @@
           };
         }
 
-        if (selectedOption === 0) {
+        if (result.status === "partial") {
           return {
             status: "partial",
             title: "Parcial",
@@ -110,31 +125,45 @@
       context: ["Tabela: pedidos", "Colunas: pedido_id, status, categoria, valor"],
       placeholder: "select categoria, count(*)\nfrom pedidos\nwhere ...\ngroup by categoria;",
       evaluate: ({ queryAnswer }) => {
-        const answer = normalizeSql(queryAnswer);
-        const hasCount = answer.includes("count");
-        const hasWherePaid = answer.includes("where") && answer.includes("status") && answer.includes("pago");
-        const hasGroupCategory = answer.includes("group by") && answer.includes("categoria");
+        const result = sqlValidation.validatePaidOrdersByCategorySql(queryAnswer);
+        const checks = result.checks;
 
-        if (hasCount && hasWherePaid && hasGroupCategory) {
+        if (result.status === "correct") {
           return {
             status: "correct",
             title: "Correto",
-            message: "Correto. O WHERE limita pedidos pagos antes do agrupamento por categoria."
+            message: "Correto. A consulta seleciona categoria e count(*), filtra pedidos pagos antes do agrupamento e agrupa por categoria."
           };
         }
 
-        if ([hasCount, hasWherePaid, hasGroupCategory].filter(Boolean).length >= 2) {
+        if (result.status === "partial") {
+          const missing = [];
+          if (!checks.hasSelectComma) {
+            missing.push("a vírgula entre categoria e count(*)");
+          }
+          if (!checks.hasStatusPaid) {
+            missing.push("o filtro where status = 'pago'");
+          }
+          if (!checks.hasGroupByCategoria) {
+            missing.push("o group by categoria");
+          }
+          if (!checks.hasFromPedidos) {
+            missing.push("o from pedidos");
+          }
+
           return {
             status: "partial",
             title: "Parcial",
-            message: "Quase lá. A consulta tem parte da estrutura, mas ainda falta filtro, contagem ou agrupamento para concluir a missão."
+            message: `Quase lá. A consulta tem parte do raciocínio, mas ainda falta ajustar ${missing.slice(0, 2).join(" e ") || "a estrutura mínima"} antes de concluir a missão.`
           };
         }
 
         return {
           status: "incorrect",
           title: "Incorreto",
-          message: "Ainda não. Primeiro filtre pedidos pagos com WHERE, depois agrupe por categoria e conte os registros."
+          message: checks.hasInvalidClauseOrder
+            ? "Ainda não. O WHERE precisa vir antes do GROUP BY para filtrar pedidos pagos antes do agrupamento."
+            : "Ainda não. A consulta está incompleta ou quebrada. Use SELECT categoria, count(*), FROM pedidos, WHERE status = 'pago' e GROUP BY categoria."
         };
       }
     }
@@ -154,14 +183,6 @@
     const slug = params.get("missao");
     const index = missions.findIndex((mission) => mission.slug === slug);
     return index >= 0 ? index : 0;
-  }
-
-  function normalizeSql(value) {
-    return String(value || "")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .replace(/["`]/g, "'")
-      .trim();
   }
 
   function escapeHtml(value) {

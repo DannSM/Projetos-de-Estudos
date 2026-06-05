@@ -1,0 +1,75 @@
+const assert = require("assert");
+const {
+  validateWhereJanuarySql,
+  validateCountRowsExpression,
+  validatePaidOrdersByCategorySql
+} = require("../src/sql-mission-validation");
+
+function expectStatus(label, actual, expected) {
+  assert.strictEqual(actual.status, expected, `${label}: expected ${expected}, got ${actual.status}`);
+}
+
+function expectNotCorrect(label, actual) {
+  assert.notStrictEqual(actual.status, "correct", `${label}: expected not correct`);
+}
+
+expectStatus(
+  "Missão 1 aceita filtro completo",
+  validateWhereJanuarySql("where status = 'pago' and data_pedido >= '2026-01-01' and data_pedido < '2026-02-01'"),
+  "correct"
+);
+expectNotCorrect("Missão 1 rejeita só status", validateWhereJanuarySql("where status = 'pago'"));
+expectNotCorrect("Missão 1 rejeita só data", validateWhereJanuarySql("where data_pedido >= '2026-01-01'"));
+expectNotCorrect(
+  "Missão 1 rejeita data incompleta",
+  validateWhereJanuarySql("where status = 'pago' and data_pedido >= '2026-01-01'")
+);
+
+expectStatus("Missão 2 aceita count(*)", validateCountRowsExpression("count(*)"), "correct");
+expectNotCorrect("Missão 2 rejeita count(cliente_id)", validateCountRowsExpression("count(cliente_id)"));
+expectNotCorrect(
+  "Missão 2 rejeita count(distinct cliente_id)",
+  validateCountRowsExpression("count(distinct cliente_id)")
+);
+
+expectStatus(
+  "Missão 3 aceita query correta",
+  validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos where status = 'pago' group by categoria"),
+  "correct"
+);
+expectStatus(
+  "Missão 3 aceita query correta com quebras",
+  validatePaidOrdersByCategorySql(`select
+  categoria,
+  count(*)
+from pedidos
+where status = 'pago'
+group by categoria`),
+  "correct"
+);
+expectNotCorrect(
+  "Missão 3 rejeita query sem vírgula",
+  validatePaidOrdersByCategorySql("select categoria count(*) from pedidos where status = 'pago' group by categoria")
+);
+expectNotCorrect(
+  "Missão 3 rejeita query sem where",
+  validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos group by categoria")
+);
+expectNotCorrect(
+  "Missão 3 rejeita query sem group by",
+  validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos where status = 'pago'")
+);
+expectNotCorrect(
+  "Missão 3 rejeita where depois do group by",
+  validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos group by categoria where status = 'pago'")
+);
+expectNotCorrect(
+  "Missão 3 rejeita group by categ",
+  validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos where status = 'pago' group by categ")
+);
+expectNotCorrect(
+  "Missão 3 rejeita texto incompleto",
+  validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos where group by categoria")
+);
+
+console.log("SQL mission validation tests passed");
