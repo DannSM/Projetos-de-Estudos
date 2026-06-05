@@ -1,6 +1,8 @@
 (function initPersonalizedLearningService(globalScope) {
   const TABLES = {
     diagnosticRecommendations: "diagnostic_recommendations",
+    diagnosticAnswers: "diagnostic_answers",
+    diagnosticSessions: "diagnostic_sessions",
     paths: "learning_paths",
     steps: "learning_path_steps",
     learningRecommendations: "learning_recommendations",
@@ -10,6 +12,8 @@
 
   const FALLBACK_PATH_SLUG = "fundamentos-de-dados";
   const HIGH_SCORE_THRESHOLD = 75;
+  const MIN_CONFIDENT_ANSWER_COUNT = 20;
+  const RECENT_SESSION_WINDOW = 3;
   const AREA_ALIASES = [
     { area: "Indicadores", terms: ["indicadores", "kpi", "kpis"] },
     { area: "SQL", terms: ["sql"] },
@@ -50,6 +54,56 @@
 
   function unique(values) {
     return [...new Set(normalizeList(values).map(cleanText).filter(Boolean))];
+  }
+
+  function normalizeBoolean(value) {
+    return value === true || value === "true";
+  }
+
+  function getPercent(correct, total) {
+    return total ? Math.round((correct / total) * 100) : 0;
+  }
+
+  function getConfidenceScore(total) {
+    const answerCount = Number(total);
+    if (!Number.isFinite(answerCount) || answerCount <= 0) return 0;
+    return Math.min(100, Math.round((answerCount / MIN_CONFIDENT_ANSWER_COUNT) * 100));
+  }
+
+  function getLevelFromPercent(percent) {
+    const score = Number(percent);
+    if (!Number.isFinite(score)) return null;
+    if (score >= HIGH_SCORE_THRESHOLD) return "Avancado";
+    if (score >= 45) return "Intermediario";
+    return "Basico";
+  }
+
+  function buildAnswerSummaryByArea(answers) {
+    return normalizeList(answers).reduce((summary, answer) => {
+      const area = normalizeArea(answer?.area);
+      if (!area) return summary;
+
+      if (!summary[area]) {
+        summary[area] = {
+          area,
+          correct: 0,
+          total: 0,
+          lastActivityAt: null
+        };
+      }
+
+      summary[area].total += 1;
+      if (normalizeBoolean(answer.is_correct)) {
+        summary[area].correct += 1;
+      }
+
+      const answeredAt = cleanText(answer.answered_at);
+      if (answeredAt && (!summary[area].lastActivityAt || answeredAt > summary[area].lastActivityAt)) {
+        summary[area].lastActivityAt = answeredAt;
+      }
+
+      return summary;
+    }, {});
   }
 
   function getClient() {
@@ -547,32 +601,95 @@
   }
 
   async function upsertSkillProgress(client, userId, result) {
-    const areas = normalizeList(result?.areaScoreSnapshot || result?.area_score_snapshot)
-      .filter((area) => cleanText(area?.area));
     const sourceAttemptId = result?.attemptId || result?.attempt_id || null;
     const now = new Date().toISOString();
 
-    if (!userId || !areas.length) {
-      return { ok: false, skipped: true, reason: "missing_area_snapshot" };
+    if (!userId) {
+      return { ok: false, skipped: true, reason: "missing_user" };
     }
 
-    const payloads = areas.map((area) => ({
-      user_id: userId,
-      skill_area: area.area,
-      current_level: result?.overallLevel || result?.overall_level || null,
-      score_percent: Number.isFinite(Number(area.percent)) ? Number(area.percent) : null,
-      confidence_score: Number.isFinite(Number(area.percent)) ? Number(area.percent) : null,
-      questions_answered: Number.isFinite(Number(area.total)) ? Number(area.total) : 0,
-      questions_correct: Number.isFinite(Number(area.correct)) ? Number(area.correct) : 0,
-      last_session_attempt_id: sourceAttemptId,
-      last_activity_at: now,
-      status: Number(area.percent) >= HIGH_SCORE_THRESHOLD ? "active" : "needs_review",
-      metadata: {
-        source: "diagnostic_personalized_learning_bridge",
-        source_attempt_id: sourceAttemptId
-      },
-      updated_at: now
-    }));
+    const sessions = normalizeList(await fetchOrThrow(
+      client
+        .from(TABLES.diagnosticSessions)
+        .select("attempt_id,finished_at,created_at,overall_level")
+        .eq("user_id", userId)
+        .order("finished_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(RECENT_SESSION_WINDOW),
+      TABLES.diagnosticSessions
+    ));
+    const recentAttemptIds = unique([
+      sourceAttemptId,
+      ...sessions.map((session) => session.attempt_id)
+    ]);
+
+    const historicalAnswers = normalizeList(await fetchOrThrow(
+      client
+        .from(TABLES.diagnosticAnswers)
+        .select("attempt_id,area,is_correct,answered_at")
+        .eq("user_id", userId)
+        .order("answered_at", { ascending: false }),
+      TABLES.diagnosticAnswers
+    ));
+
+    if (!historicalAnswers.length) {
+      return { ok: false, skipped: true, reason: "missing_historical_answers" };
+    }
+
+    const historicalByArea = buildAnswerSummaryByArea(historicalAnswers);
+    const recentByArea = buildAnswerSummaryByArea(
+      recentAttemptIds.length
+        ? historicalAnswers.filter((answer) => recentAttemptIds.includes(answer.attempt_id))
+        : []
+    );
+    const latestSession = sessions[0] || null;
+
+    const payloads = Object.values(historicalByArea)
+      .filter((area) => area.total > 0)
+      .map((area) => {
+        const historicalScore = getPercent(area.correct, area.total);
+        const recentArea = recentByArea[area.area] || { correct: 0, total: 0 };
+        const recentScore = recentArea.total ? getPercent(recentArea.correct, recentArea.total) : null;
+        const confidenceScore = getConfidenceScore(area.total);
+        const status = historicalScore >= HIGH_SCORE_THRESHOLD && confidenceScore >= 50
+          ? "active"
+          : "needs_review";
+
+        return {
+          user_id: userId,
+          skill_area: area.area,
+          current_level: getLevelFromPercent(historicalScore) || latestSession?.overall_level || result?.overallLevel || result?.overall_level || null,
+          score_percent: historicalScore,
+          confidence_score: confidenceScore,
+          questions_answered: area.total,
+          questions_correct: area.correct,
+          last_session_attempt_id: sourceAttemptId,
+          last_activity_at: area.lastActivityAt || latestSession?.finished_at || latestSession?.created_at || now,
+          status,
+          metadata: {
+            source: "diagnostic_answers",
+            calculation: "historical_consolidated_by_area",
+            recent_window_sessions: RECENT_SESSION_WINDOW,
+            recent_attempt_ids: recentAttemptIds,
+            recent_score_percent: recentScore,
+            historical_score_percent: historicalScore,
+            delta_recent_vs_historical: recentScore === null ? null : recentScore - historicalScore,
+            recent_questions_answered: recentArea.total,
+            historical_questions_answered: area.total,
+            historical_questions_correct: area.correct,
+            last_attempt_id: sourceAttemptId,
+            latest_session_attempt_id: latestSession?.attempt_id || null,
+            latest_overall_level: latestSession?.overall_level || result?.overallLevel || result?.overall_level || null,
+            updated_from: "generateFromDiagnosticResult",
+            calculated_at: now
+          },
+          updated_at: now
+        };
+      });
+
+    if (!payloads.length) {
+      return { ok: false, skipped: true, reason: "missing_area_answers" };
+    }
 
     const rows = await fetchOrThrow(
       client

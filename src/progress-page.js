@@ -213,7 +213,7 @@
     const answerAreas = buildAreasFromAnswers(diagnosticAnswers);
     const snapshotAreas = buildAreasFromSnapshot(latestSession);
     const skillAreas = buildAreasFromSkillProgress(skillProgress);
-    const areas = answerAreas.length ? answerAreas : (snapshotAreas.length ? snapshotAreas : skillAreas);
+    const areas = skillAreas.length ? skillAreas : (answerAreas.length ? answerAreas : snapshotAreas);
 
     return {
       preferredArea,
