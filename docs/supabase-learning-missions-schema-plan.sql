@@ -6,6 +6,8 @@
 -- - Nao executar sem revisao tecnica, revisao pedagogica e aprovacao explicita.
 -- - Nao e migration aplicada e nao deve ser tratado como alteracao de banco.
 -- - Faz parte do piloto de missoes pos-diagnostico para SQL Essencial.
+-- - Ainda precisa de decisao final sobre view publica versus RPC/Edge Function
+--   para validacao segura das atividades.
 --
 -- Objetivo do modelo:
 -- - `learning_missions` vira a unidade real de estudo pos-diagnostico.
@@ -17,6 +19,10 @@
 --
 -- Riscos que precisam ser revisados antes de aplicar:
 -- - Validacao client-side pode expor `expected_answer` e `validation_rules`.
+-- - `learning_mission_activities` deve ser tratada como tabela interna se
+--   contiver resposta correta, regra de validacao ou feedback sensivel.
+-- - O frontend deve consumir uma view publica sem respostas, ou uma camada
+--   controlada por RPC/Edge Function, conforme decisao de seguranca.
 -- - RLS e grants precisam de revisao antes de exposicao via Data API.
 -- - Seeds abaixo precisam de revisao pedagogica antes de producao.
 -- - Nao misturar missao com a tela antiga de trilha/passos concluiveis.
@@ -160,8 +166,15 @@ execute function public.set_updated_at();
 -- Atividades avaliaveis da missao. Cada atividade exige resposta, query,
 -- decisao, checklist ou submissao. Ela e a base da tentativa e da evidencia.
 -- CUIDADO: `expected_answer` e `validation_rules` podem expor resposta correta
--- se forem consumidos diretamente pelo frontend. Revisar validacao server-side
--- futura via RPC/Edge Function para atividades sensiveis.
+-- se forem consumidos diretamente pelo frontend.
+--
+-- Diretriz de seguranca para o MVP:
+-- - manter esta tabela como estrutura interna completa;
+-- - nao conceder SELECT direto para anon/authenticated enquanto houver resposta
+--   correta, regra de validacao ou feedback sensivel;
+-- - expor ao frontend apenas `vw_learning_mission_activities_public`;
+-- - validar atividades sensiveis futuramente por RPC/Edge Function ou camada
+--   controlada.
 
 create table if not exists public.learning_mission_activities (
   id uuid primary key default gen_random_uuid(),
@@ -219,6 +232,41 @@ create trigger trg_learning_mission_activities_set_updated_at
 before update on public.learning_mission_activities
 for each row
 execute function public.set_updated_at();
+
+-- View publica/documental para consumo do frontend.
+-- Esta view NAO expoe:
+-- - `expected_answer`;
+-- - `validation_rules`;
+-- - feedback interno potencialmente sensivel.
+--
+-- Antes de aplicar em producao:
+-- - decidir entre view publica controlada, view `security_invoker` com grants
+--   por coluna/RLS revisados, RPC ou Edge Function;
+-- - a proposta abaixo usa view com colunas seguras e grant apenas na view,
+--   sem grant direto na tabela completa para anon/authenticated;
+-- - manter a tabela `learning_mission_activities` sem SELECT direto para
+--   `anon`/`authenticated`, exceto admin.
+create or replace view public.vw_learning_mission_activities_public
+as
+select
+  lma.id,
+  lma.mission_id,
+  lma.activity_key,
+  lma.activity_type,
+  lma.title,
+  lma.prompt,
+  lma.dataset_context,
+  lma.options,
+  lma.max_attempts,
+  lma.estimated_minutes,
+  lma.status,
+  lma.display_order,
+  lma.metadata
+from public.learning_mission_activities lma
+join public.learning_missions lm
+  on lm.id = lma.mission_id
+where lma.status = 'active'
+  and lm.status = 'active';
 
 -- ============================================================================
 -- 4) learning_activity_attempts
@@ -365,6 +413,16 @@ create index if not exists idx_learning_progress_events_user_recent
 -- - `auth.uid()` retorna null para usuarios nao autenticados.
 -- - Policies devem usar `to anon` / `to authenticated` conforme o modelo.
 -- - Indexar colunas usadas em policies, como `user_id`, ajuda performance.
+-- - Views precisam de atencao: `security_invoker = true` pode exigir
+--   permissao/RLS na tabela base; views sem `security_invoker` podem bypassar
+--   RLS. Para catalogo publico, revisar cuidadosamente grants, colunas e filtros.
+--
+-- Helper admin identificado nos documentos atuais do projeto:
+-- - `public.is_admin_user()` usa `public.admin_users` como fonte de seguranca.
+-- - `public.admin_is_authorized()` e RPC usada pelo frontend para checagem.
+-- TODO antes de aplicar: confirmar no ambiente alvo se esses helpers existem e
+-- substituir pelo helper admin real do projeto, por exemplo
+-- `admin_is_authorized`/`admin_users` conforme a implementacao vigente.
 --
 -- Sugestao de RLS/policies para revisao futura:
 --
@@ -374,7 +432,8 @@ create index if not exists idx_learning_progress_events_user_recent
 -- alter table public.learning_activity_attempts enable row level security;
 -- alter table public.learning_progress_events enable row level security;
 --
--- -- Catalogo publico ativo: missoes, conteudos e atividades.
+-- -- Catalogo publico ativo: missoes e conteudos.
+-- -- Atividades devem ser consumidas pela view publica sem respostas.
 -- create policy "learning_missions_select_active_public"
 -- on public.learning_missions
 -- for select
@@ -395,22 +454,20 @@ create index if not exists idx_learning_progress_events_user_recent
 --   )
 -- );
 --
--- create policy "learning_mission_activities_select_active_public"
+-- -- NAO criar policy publica de SELECT direto em
+-- -- `public.learning_mission_activities` enquanto ela contiver
+-- -- `expected_answer`, `validation_rules` ou feedback sensivel.
+-- -- O frontend deve ler:
+-- -- `public.vw_learning_mission_activities_public`.
+-- --
+-- -- Admin pode ler a tabela completa para curadoria.
+-- create policy "learning_mission_activities_admin_select_all"
 -- on public.learning_mission_activities
 -- for select
--- to anon, authenticated
--- using (
---   status = 'active'
---   and exists (
---     select 1
---     from public.learning_missions lm
---     where lm.id = learning_mission_activities.mission_id
---       and lm.status = 'active'
---   )
--- );
+-- to authenticated
+-- using (public.is_admin_user());
 --
 -- -- Escrita de catalogo: apenas admin.
--- -- Revisar nome real da funcao admin do projeto antes de aplicar.
 -- create policy "learning_missions_admin_write"
 -- on public.learning_missions
 -- for all
@@ -452,6 +509,10 @@ create index if not exists idx_learning_progress_events_user_recent
 -- );
 --
 -- -- Opcional: tentativa anonima limitada, se o MVP permitir pratica sem login.
+-- -- Decisao de produto/seguranca pendente:
+-- -- - se permitido, anonimo tem experiencia limitada e sem historico garantido;
+-- -- - se nao permitido, missao pode ser visualizada anonimamente, mas tentativa
+-- --   e progresso persistente exigem login.
 -- -- create policy "learning_activity_attempts_insert_anon"
 -- -- on public.learning_activity_attempts
 -- -- for insert
@@ -481,6 +542,7 @@ create index if not exists idx_learning_progress_events_user_recent
 -- );
 --
 -- -- Opcional: eventos anonimos limitados, se o MVP permitir pratica sem login.
+-- -- Mesma regra: eventos anonimos nao devem prometer historico permanente.
 -- -- create policy "learning_progress_events_insert_anon"
 -- -- on public.learning_progress_events
 -- -- for insert
@@ -496,9 +558,13 @@ create index if not exists idx_learning_progress_events_user_recent
 -- -- revoke all on table public.learning_mission_activities from public, anon, authenticated;
 -- -- revoke all on table public.learning_activity_attempts from public, anon, authenticated;
 -- -- revoke all on table public.learning_progress_events from public, anon, authenticated;
+-- -- revoke all on public.vw_learning_mission_activities_public from public, anon, authenticated;
 -- -- grant select on table public.learning_missions to anon, authenticated;
 -- -- grant select on table public.learning_mission_contents to anon, authenticated;
+-- -- NAO conceder select direto na tabela completa de atividades para anon/authenticated.
 -- -- grant select on table public.learning_mission_activities to anon, authenticated;
+-- -- Conceder select apenas na view publica sem respostas.
+-- -- grant select on public.vw_learning_mission_activities_public to anon, authenticated;
 -- -- grant select, insert on table public.learning_activity_attempts to authenticated;
 -- -- grant select, insert on table public.learning_progress_events to authenticated;
 -- -- grant insert on table public.learning_activity_attempts to anon;
@@ -964,11 +1030,20 @@ do update
 -- ============================================================================
 -- Observacoes finais antes de qualquer execucao real
 -- ============================================================================
--- 1. Revisar se `public.is_admin_user()` e o helper correto no ambiente atual.
+-- 1. Confirmar helper admin no ambiente alvo:
+--    `public.is_admin_user()` existe nos docs atuais e usa `admin_users`, mas
+--    deve ser validado antes de qualquer aplicacao real.
 -- 2. Revisar grants conforme Data API e roles `anon`/`authenticated`.
--- 3. Revisar se tentativas anonimas serao permitidas no MVP.
--- 4. Revisar se `expected_answer` pode ir ao client neste piloto.
--- 5. Se houver validacao server-side, mover regras sensiveis para RPC/Edge.
--- 6. Antes de atualizar `user_learning_progress`, exigir tentativa registrada.
--- 7. Antes de atualizar `learning_recommendations.status`, exigir evidencia.
--- 8. Seeds devem permanecer `draft` ate revisao pedagogica final.
+-- 3. Nao conceder SELECT direto em `learning_mission_activities` para
+--    anon/authenticated enquanto houver `expected_answer` e `validation_rules`.
+-- 4. Frontend deve consumir `vw_learning_mission_activities_public`, que nao
+--    expoe respostas nem regras de validacao.
+-- 5. Decidir se validacao do MVP sera client-side simples, RPC, Edge Function
+--    ou camada controlada. Para atividades sensiveis, preferir RPC/Edge.
+-- 6. Se tentativas anonimas forem permitidas, comunicar que e experiencia
+--    limitada e sem historico garantido.
+-- 7. Se tentativas anonimas nao forem permitidas, permitir visualizacao
+--    anonima da missao, mas exigir login para tentativa/progresso persistente.
+-- 8. Antes de atualizar `user_learning_progress`, exigir tentativa registrada.
+-- 9. Antes de atualizar `learning_recommendations.status`, exigir evidencia.
+-- 10. Seeds devem permanecer `draft` ate revisao pedagogica final.
