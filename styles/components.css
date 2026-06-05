@@ -3852,17 +3852,19 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-shell {
   display: grid;
-  gap: clamp(0.9rem, 2vw, 1.2rem);
-  padding-top: clamp(1rem, 2.8vw, 1.8rem);
+  gap: clamp(0.78rem, 1.8vw, 1rem);
+  width: min(1040px, calc(100% - clamp(1.5rem, 4vw, 2.5rem)));
+  padding-top: clamp(0.8rem, 2.2vw, 1.35rem);
 }
 
 .mission-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.38fr);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    "hero sidebar"
-    "main sidebar";
-  gap: clamp(0.88rem, 2vw, 1.15rem) clamp(0.95rem, 2.4vw, 1.35rem);
+    "hero"
+    "context"
+    "main";
+  gap: clamp(0.76rem, 1.7vw, 0.95rem);
   align-items: start;
 }
 
@@ -3899,25 +3901,25 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-hero__content {
   display: grid;
   align-content: center;
-  gap: 0.78rem;
-  min-height: 17rem;
-  padding: clamp(1.05rem, 2.8vw, 1.65rem);
+  gap: 0.62rem;
+  min-height: 0;
+  padding: clamp(0.92rem, 2.2vw, 1.25rem);
 }
 
 .mission-hero__content h1 {
   max-width: 48rem;
   margin-bottom: 0;
   color: #083344;
-  font-size: clamp(1.85rem, 4.6vw, 3.4rem);
+  font-size: clamp(1.48rem, 3.2vw, 2.24rem);
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.04;
 }
 
 .mission-hero__content p {
   max-width: 42rem;
   margin: 0;
   color: #45616a;
-  font-size: clamp(0.98rem, 1.4vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
 }
 
 .mission-hero__meta {
@@ -3989,13 +3991,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   font-weight: 700;
 }
 
-.mission-workbench {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.38fr);
-  gap: clamp(0.95rem, 2.4vw, 1.35rem);
-  align-items: start;
-}
-
 .mission-main {
   grid-area: main;
   display: grid;
@@ -4043,8 +4038,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-activity-card {
   display: grid;
-  gap: 0.78rem;
+  gap: clamp(0.78rem, 1.8vw, 1rem);
   border-color: rgba(37, 99, 235, 0.22);
+  box-shadow: 0 20px 48px rgba(37, 99, 235, 0.12);
 }
 
 .mission-card-heading {
@@ -4071,7 +4067,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-query-input {
   width: 100%;
-  min-height: 10rem;
+  min-height: 12rem;
   resize: vertical;
   padding: 0.85rem 0.95rem;
   color: var(--color-text-primary);
@@ -4166,11 +4162,36 @@ body.analytics-auth-locked .analytics-hero-copy {
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
 }
 
+.mission-context-panel {
+  grid-area: context;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    "why progress"
+    "stepper stepper";
+  gap: 0.78rem;
+  padding: clamp(0.86rem, 2vw, 1.08rem);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(240, 253, 250, 0.8)),
+    #ffffff;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+}
+
+.mission-context-panel__why {
+  grid-area: why;
+}
+
+.mission-context-panel__progress {
+  grid-area: progress;
+  display: grid;
+  gap: 0.58rem;
+}
+
 .mission-sidebar-summary {
   display: grid;
-  gap: 0.42rem;
-  padding-bottom: 0.72rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  gap: 0.38rem;
 }
 
 .mission-sidebar-summary p,
@@ -4196,7 +4217,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-progress-panel__header {
   display: grid;
-  gap: 0.28rem;
+  gap: 0.22rem;
 }
 
 .mission-progress-panel__header strong {
@@ -4218,7 +4239,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .mission-progress-line {
-  height: 0.82rem;
+  height: 0.72rem;
   overflow: hidden;
   background: rgba(226, 232, 240, 0.78);
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -4241,7 +4262,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-progress-metrics div {
   display: grid;
   gap: 0.12rem;
-  min-height: 4rem;
+  min-height: 3.2rem;
   align-content: center;
   padding: 0.58rem;
   background: rgba(255, 255, 255, 0.72);
@@ -4301,13 +4322,18 @@ body.analytics-auth-locked .analytics-hero-copy {
   gap: 0.5rem;
 }
 
+.mission-stepper--horizontal {
+  grid-area: stepper;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .mission-stepper-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.62rem;
   align-items: center;
   width: 100%;
-  min-height: 3.55rem;
+  min-height: 3.25rem;
   padding: 0.58rem 0.62rem;
   text-align: left;
   background: rgba(248, 250, 252, 0.88);
@@ -4495,8 +4521,16 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-layout {
     grid-template-areas:
       "hero"
-      "sidebar"
+      "context"
       "main";
+  }
+
+  .mission-context-panel {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "why"
+      "progress"
+      "stepper";
   }
 
   .mission-sidebar {
@@ -4508,6 +4542,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-shell {
     gap: 0.72rem;
     padding-top: 0.72rem;
+    width: min(var(--section-max-width), calc(100% - 24px));
   }
 
   .mission-hero__content,
@@ -4563,9 +4598,13 @@ body.analytics-auth-locked .analytics-hero-copy {
     gap: 0.58rem;
   }
 
+  .mission-context-panel {
+    gap: 0.56rem;
+    padding: 0.72rem;
+  }
+
   .mission-sidebar-summary {
     gap: 0.32rem;
-    padding-bottom: 0.58rem;
   }
 
   .mission-sidebar-summary p {
@@ -4574,6 +4613,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .mission-stepper {
     gap: 0.34rem;
+  }
+
+  .mission-stepper--horizontal {
+    grid-template-columns: 1fr;
   }
 
   .mission-stepper-item {

@@ -321,7 +321,7 @@
     `;
   }
 
-  function renderSidebar() {
+  function renderMissionContextPanel() {
     const completedCount = getCompletedCount();
     const currentMission = missions[state.activeIndex];
     const currentAttempt = state.attempts[currentMission.slug];
@@ -329,13 +329,15 @@
     const isPilotComplete = completedCount === missions.length;
 
     return `
-      <aside class="mission-sidebar" aria-label="Acompanhamento da missao">
-        <section class="mission-progress-panel">
+      <section class="mission-context-panel" aria-label="Contexto e avanco da missao">
+        <div class="mission-context-panel__why">
           <div class="mission-sidebar-summary">
             <span class="mission-side-card__label">Por que esta missao?</span>
             <p>${escapeHtml(currentMission.why)}</p>
             <small>Prototipo local: o progresso real sera salvo apos integracao com Supabase.</small>
           </div>
+        </div>
+        <div class="mission-context-panel__progress">
           <div class="mission-progress-panel__header">
             <span class="mission-side-card__label">Seu avanco</span>
             <strong>${completedCount} de ${missions.length} missoes concluidas</strong>
@@ -362,33 +364,33 @@
             <i data-lucide="shield-check" aria-hidden="true"></i>
             <span>Criterio de conclusao: tentativa enviada, feedback exibido e resposta correta.</span>
           </div>
-          <div class="mission-stepper" aria-label="Etapas do piloto">
-            ${missions.map((mission, index) => {
-              const status = getMissionStatus(index);
-              return `
-                <button
-                  class="mission-stepper-item is-${status}"
-                  type="button"
-                  data-select-mission="${index}"
-                  ${status === "locked" ? "disabled" : ""}
-                >
-                  <span class="mission-stepper-dot">${index + 1}</span>
-                  <span class="mission-stepper-copy">
-                    <strong>${escapeHtml(mission.gap)}</strong>
-                    <small>${escapeHtml(getCompletionText(status))} - ${mission.estimatedMinutes} min</small>
-                  </span>
-                </button>
-              `;
-            }).join("")}
-          </div>
           ${isPilotComplete ? `
             <div class="mission-pilot-complete">
               <strong>SQL Essencial praticado</strong>
               <span>Filtros, contagens e filtro antes da agregacao foram respondidos no prototipo local.</span>
             </div>
           ` : ""}
-        </section>
-      </aside>
+        </div>
+        <div class="mission-stepper mission-stepper--horizontal" aria-label="Etapas do piloto">
+          ${missions.map((mission, index) => {
+            const status = getMissionStatus(index);
+            return `
+              <button
+                class="mission-stepper-item is-${status}"
+                type="button"
+                data-select-mission="${index}"
+                ${status === "locked" ? "disabled" : ""}
+              >
+                <span class="mission-stepper-dot">${index + 1}</span>
+                <span class="mission-stepper-copy">
+                  <strong>${escapeHtml(mission.gap)}</strong>
+                  <small>${escapeHtml(getCompletionText(status))} - ${mission.estimatedMinutes} min</small>
+                </span>
+              </button>
+            `;
+          }).join("")}
+        </div>
+      </section>
     `;
   }
 
@@ -427,7 +429,7 @@
     mount.innerHTML = `
       <div class="mission-layout">
         ${renderMissionHero(mission)}
-        ${renderSidebar()}
+        ${renderMissionContextPanel()}
         <div class="mission-main">
           <section class="mission-content-card" aria-label="Conteudo curto da missao">
             <span class="section-kicker">Conteudo curto</span>
