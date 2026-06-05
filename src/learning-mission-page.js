@@ -232,11 +232,6 @@
             </a>
           </div>
         </div>
-        <aside class="mission-gap-card" aria-label="Por que esta missao foi recomendada">
-          <span>Por que esta missao?</span>
-          <p>${escapeHtml(mission.why)}</p>
-          <small>Prototipo local: o progresso real sera salvo apos integracao com Supabase.</small>
-        </aside>
       </section>
     `;
   }
@@ -282,15 +277,37 @@
     }
 
     const icon = state.feedback.status === "correct" ? "check-circle-2" : state.feedback.status === "partial" ? "circle-alert" : "x-circle";
+    const hasNextMission = state.activeIndex < missions.length - 1;
+    const canContinue = state.feedback.status === "correct" && hasNextMission;
+    let nextActionHtml = `
+      <button class="button button-primary" type="button" data-next-mission disabled>
+        <i data-lucide="arrow-right" aria-hidden="true"></i>
+        <span>Continuar para proxima missao</span>
+      </button>
+    `;
+
+    if (canContinue) {
+      nextActionHtml = `
+          <button class="button button-primary" type="button" data-next-mission>
+            <i data-lucide="arrow-right" aria-hidden="true"></i>
+            <span>Continuar para proxima missao</span>
+          </button>
+        `;
+    } else if (state.feedback.status === "correct") {
+      nextActionHtml = `
+          <a class="button button-primary" href="#piloto-concluido">
+            <i data-lucide="check-circle-2" aria-hidden="true"></i>
+            <span>Ver fechamento do piloto</span>
+          </a>
+        `;
+    }
+
     return `
       <div class="mission-feedback mission-feedback--${escapeHtml(state.feedback.status)}" tabindex="-1" data-feedback-card>
         <strong><i data-lucide="${icon}" aria-hidden="true"></i>${escapeHtml(state.feedback.title)}</strong>
         <p>${escapeHtml(state.feedback.message)}</p>
         <div class="mission-feedback__actions">
-          <button class="button button-primary" type="button" data-next-mission${state.feedback.status === "correct" ? "" : " disabled"}>
-            <i data-lucide="arrow-right" aria-hidden="true"></i>
-            <span>Continuar para proxima missao</span>
-          </button>
+          ${nextActionHtml}
           <a class="button button-secondary" href="meu-progresso.html">
             <i data-lucide="line-chart" aria-hidden="true"></i>
             <span>Ver Meu Progresso</span>
@@ -314,6 +331,11 @@
     return `
       <aside class="mission-sidebar" aria-label="Acompanhamento da missao">
         <section class="mission-progress-panel">
+          <div class="mission-sidebar-summary">
+            <span class="mission-side-card__label">Por que esta missao?</span>
+            <p>${escapeHtml(currentMission.why)}</p>
+            <small>Prototipo local: o progresso real sera salvo apos integracao com Supabase.</small>
+          </div>
           <div class="mission-progress-panel__header">
             <span class="mission-side-card__label">Seu avanco</span>
             <strong>${completedCount} de ${missions.length} missoes concluidas</strong>
@@ -370,13 +392,42 @@
     `;
   }
 
+  function renderCompletionPanel() {
+    if (getCompletedCount() !== missions.length) {
+      return "";
+    }
+
+    return `
+      <section id="piloto-concluido" class="mission-complete-panel" aria-label="Piloto SQL Essencial concluido">
+        <span class="section-kicker">Piloto SQL Essencial concluido</span>
+        <h2>Boa. Voce fechou as 3 missoes do piloto com tentativa e feedback.</h2>
+        <p>Filtros com WHERE, contagens com nulos/distintos e filtro antes da agregacao foram praticados nesta bancada local.</p>
+        <div class="mission-complete-actions">
+          <a class="button button-primary" href="meu-progresso.html">
+            <i data-lucide="line-chart" aria-hidden="true"></i>
+            <span>Ver Meu Progresso</span>
+          </a>
+          <a class="button button-secondary" href="index.html#trilhas">
+            <i data-lucide="route" aria-hidden="true"></i>
+            <span>Voltar para Trilhas</span>
+          </a>
+          <a class="button button-secondary" href="diagnostico.html">
+            <i data-lucide="clipboard-list" aria-hidden="true"></i>
+            <span>Refazer diagnostico</span>
+          </a>
+        </div>
+      </section>
+    `;
+  }
+
   function renderPage() {
     const mission = missions[state.activeIndex];
     const attempt = state.attempts[mission.slug];
 
     mount.innerHTML = `
-      ${renderMissionHero(mission)}
-      <div class="mission-workbench">
+      <div class="mission-layout">
+        ${renderMissionHero(mission)}
+        ${renderSidebar()}
         <div class="mission-main">
           <section class="mission-content-card" aria-label="Conteudo curto da missao">
             <span class="section-kicker">Conteudo curto</span>
@@ -405,8 +456,8 @@
             </div>
             ${renderFeedback()}
           </section>
+          ${renderCompletionPanel()}
         </div>
-        ${renderSidebar()}
       </div>
     `;
 

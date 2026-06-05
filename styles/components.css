@@ -3856,6 +3856,16 @@ body.analytics-auth-locked .analytics-hero-copy {
   padding-top: clamp(1rem, 2.8vw, 1.8rem);
 }
 
+.mission-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.38fr);
+  grid-template-areas:
+    "hero sidebar"
+    "main sidebar";
+  gap: clamp(0.88rem, 2vw, 1.15rem) clamp(0.95rem, 2.4vw, 1.35rem);
+  align-items: start;
+}
+
 .mission-loading {
   display: grid;
   gap: 0.2rem;
@@ -3870,10 +3880,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .mission-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.42fr);
-  gap: clamp(0.85rem, 2.3vw, 1.25rem);
-  align-items: stretch;
+  grid-area: hero;
 }
 
 .mission-hero__content,
@@ -3893,7 +3900,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   align-content: center;
   gap: 0.78rem;
-  padding: clamp(1rem, 2.8vw, 1.55rem);
+  min-height: 17rem;
+  padding: clamp(1.05rem, 2.8vw, 1.65rem);
 }
 
 .mission-hero__content h1 {
@@ -3988,15 +3996,21 @@ body.analytics-auth-locked .analytics-hero-copy {
   align-items: start;
 }
 
-.mission-main,
+.mission-main {
+  grid-area: main;
+  display: grid;
+  gap: clamp(0.76rem, 1.7vw, 0.95rem);
+}
+
 .mission-sidebar {
+  grid-area: sidebar;
   display: grid;
   gap: clamp(0.78rem, 1.8vw, 1rem);
 }
 
 .mission-sidebar {
   position: sticky;
-  top: calc(var(--header-height) + 0.85rem);
+  top: calc(var(--header-height) + 0.72rem);
 }
 
 .mission-content-card,
@@ -4142,7 +4156,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-progress-panel {
   display: grid;
-  gap: 0.78rem;
+  gap: 0.72rem;
   padding: clamp(0.95rem, 2vw, 1.2rem);
   overflow: hidden;
   border-color: rgba(15, 118, 110, 0.24);
@@ -4150,6 +4164,34 @@ body.analytics-auth-locked .analytics-hero-copy {
     linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(240, 253, 250, 0.84)),
     #ffffff;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+}
+
+.mission-sidebar-summary {
+  display: grid;
+  gap: 0.42rem;
+  padding-bottom: 0.72rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.mission-sidebar-summary p,
+.mission-sidebar-summary small {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.42;
+}
+
+.mission-sidebar-summary p {
+  font-size: 0.88rem;
+}
+
+.mission-sidebar-summary small {
+  padding: 0.52rem 0.58rem;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .mission-progress-panel__header {
@@ -4225,12 +4267,12 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: flex;
   gap: 0.52rem;
   align-items: flex-start;
-  padding: 0.64rem 0.7rem;
+  padding: 0.54rem 0.62rem;
   color: #164e63;
   background: rgba(236, 253, 245, 0.78);
   border: 1px solid rgba(20, 184, 166, 0.2);
   border-radius: var(--radius-sm);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   line-height: 1.35;
 }
@@ -4364,6 +4406,36 @@ body.analytics-auth-locked .analytics-hero-copy {
   line-height: 1.35;
 }
 
+.mission-complete-panel {
+  display: grid;
+  gap: 0.6rem;
+  padding: clamp(0.95rem, 2.4vw, 1.35rem);
+  color: #14532d;
+  background:
+    linear-gradient(135deg, rgba(220, 252, 231, 0.92), rgba(255, 255, 255, 0.92)),
+    #ffffff;
+  border: 1px solid rgba(22, 163, 74, 0.24);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+}
+
+.mission-complete-panel h2 {
+  margin: 0;
+  color: #14532d;
+}
+
+.mission-complete-panel p {
+  max-width: 46rem;
+  margin: 0;
+  color: #3f5f4a;
+}
+
+.mission-complete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
 .mission-next-list {
   display: grid;
   gap: 0.44rem;
@@ -4414,9 +4486,17 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 @media (max-width: 1024px) {
+  .mission-layout,
   .mission-hero,
   .mission-workbench {
     grid-template-columns: 1fr;
+  }
+
+  .mission-layout {
+    grid-template-areas:
+      "hero"
+      "sidebar"
+      "main";
   }
 
   .mission-sidebar {
@@ -4438,10 +4518,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-progress-panel {
     padding: 0.76rem;
     border-radius: 14px;
-  }
-
-  .mission-sidebar {
-    order: -1;
   }
 
   .mission-hero__content h1 {
@@ -4481,6 +4557,33 @@ body.analytics-auth-locked .analytics-hero-copy {
     min-height: 0;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+  }
+
+  .mission-progress-panel {
+    gap: 0.58rem;
+  }
+
+  .mission-sidebar-summary {
+    gap: 0.32rem;
+    padding-bottom: 0.58rem;
+  }
+
+  .mission-sidebar-summary p {
+    font-size: 0.82rem;
+  }
+
+  .mission-stepper {
+    gap: 0.34rem;
+  }
+
+  .mission-stepper-item {
+    min-height: 3rem;
+    padding: 0.48rem 0.52rem;
+  }
+
+  .mission-complete-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .mission-next-item {
