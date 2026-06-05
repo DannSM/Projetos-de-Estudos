@@ -296,8 +296,8 @@
             <span>Ver Meu Progresso</span>
           </a>
           <button class="button button-secondary" type="button" data-save-progress>
-            <i data-lucide="save" aria-hidden="true"></i>
-            <span>Salvar meu progresso</span>
+            <i data-lucide="log-in" aria-hidden="true"></i>
+            <span>Entrar para salvar progresso</span>
           </button>
         </div>
       </div>
@@ -308,38 +308,63 @@
     const completedCount = getCompletedCount();
     const currentMission = missions[state.activeIndex];
     const currentAttempt = state.attempts[currentMission.slug];
+    const progressPercent = Math.round((completedCount / missions.length) * 100);
+    const isPilotComplete = completedCount === missions.length;
 
     return `
-      <aside class="mission-sidebar" aria-label="Progresso da missao">
-        <section class="mission-side-card">
-          <span class="mission-side-card__label">Progresso da missao</span>
-          <strong>${completedCount} de ${missions.length} missoes concluidas</strong>
-          <div class="mission-progress-line" aria-hidden="true"><span style="width: ${(completedCount / missions.length) * 100}%"></span></div>
-          <ul class="mission-progress-facts">
-            <li>Status: ${currentAttempt ? getCompletionText(currentAttempt.status === "correct" ? "completed" : "current") : "atual"}</li>
-            <li>Tentativas nesta missao: ${currentAttempt?.attemptCount || 0}</li>
-            <li>Criterio: tentativa enviada com feedback</li>
-          </ul>
-        </section>
-
-        <section class="mission-side-card">
-          <span class="mission-side-card__label">Proximas missoes</span>
-          <div class="mission-next-list">
+      <aside class="mission-sidebar" aria-label="Acompanhamento da missao">
+        <section class="mission-progress-panel">
+          <div class="mission-progress-panel__header">
+            <span class="mission-side-card__label">Seu avanco</span>
+            <strong>${completedCount} de ${missions.length} missoes concluidas</strong>
+            <p>${isPilotComplete ? "Piloto concluido com evidencia em todas as missoes." : "Pratique, envie uma tentativa e avance pela proxima lacuna liberada."}</p>
+          </div>
+          <div class="mission-progress-line" aria-label="${completedCount} de ${missions.length} missoes concluidas">
+            <span style="width: ${progressPercent}%"></span>
+          </div>
+          <div class="mission-progress-metrics" aria-label="Resumo da missao atual">
+            <div>
+              <span>Etapa atual</span>
+              <strong>${state.activeIndex + 1}/${missions.length}</strong>
+            </div>
+            <div>
+              <span>Tentativas</span>
+              <strong>${currentAttempt?.attemptCount || 0}</strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>${currentAttempt?.status === "correct" ? "ok" : "em curso"}</strong>
+            </div>
+          </div>
+          <div class="mission-completion-rule">
+            <i data-lucide="shield-check" aria-hidden="true"></i>
+            <span>Criterio de conclusao: tentativa enviada, feedback exibido e resposta correta.</span>
+          </div>
+          <div class="mission-stepper" aria-label="Etapas do piloto">
             ${missions.map((mission, index) => {
               const status = getMissionStatus(index);
               return `
                 <button
-                  class="mission-next-item is-${status}"
+                  class="mission-stepper-item is-${status}"
                   type="button"
                   data-select-mission="${index}"
                   ${status === "locked" ? "disabled" : ""}
                 >
-                  <span>${escapeHtml(mission.gap)}</span>
-                  <strong>${escapeHtml(getCompletionText(status))}</strong>
+                  <span class="mission-stepper-dot">${index + 1}</span>
+                  <span class="mission-stepper-copy">
+                    <strong>${escapeHtml(mission.gap)}</strong>
+                    <small>${escapeHtml(getCompletionText(status))} - ${mission.estimatedMinutes} min</small>
+                  </span>
                 </button>
               `;
             }).join("")}
           </div>
+          ${isPilotComplete ? `
+            <div class="mission-pilot-complete">
+              <strong>SQL Essencial praticado</strong>
+              <span>Filtros, contagens e filtro antes da agregacao foram respondidos no prototipo local.</span>
+            </div>
+          ` : ""}
         </section>
       </aside>
     `;
@@ -494,7 +519,7 @@
       state.feedback = {
         status: "partial",
         title: "Prototipo local",
-        message: "Salvar meu progresso sera conectado depois da integracao com Supabase. Nesta tela, o progresso e simulado apenas em memoria."
+        message: "Entrar para salvar progresso sera conectado depois da integracao com Supabase. Nesta tela, o progresso e simulado apenas em memoria."
       };
       renderPage();
       return;

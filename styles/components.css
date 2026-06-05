@@ -3880,7 +3880,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-gap-card,
 .mission-content-card,
 .mission-activity-card,
-.mission-side-card {
+.mission-side-card,
+.mission-progress-panel {
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: var(--radius-lg);
@@ -3982,8 +3983,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.34fr);
-  gap: clamp(0.85rem, 2.2vw, 1.15rem);
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.38fr);
+  gap: clamp(0.95rem, 2.4vw, 1.35rem);
   align-items: start;
 }
 
@@ -4000,7 +4001,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-content-card,
 .mission-activity-card,
-.mission-side-card {
+.mission-side-card,
+.mission-progress-panel {
   padding: clamp(0.9rem, 2vw, 1.15rem);
 }
 
@@ -4138,15 +4140,46 @@ body.analytics-auth-locked .analytics-hero-copy {
   gap: 0.62rem;
 }
 
+.mission-progress-panel {
+  display: grid;
+  gap: 0.78rem;
+  padding: clamp(0.95rem, 2vw, 1.2rem);
+  overflow: hidden;
+  border-color: rgba(15, 118, 110, 0.24);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(240, 253, 250, 0.84)),
+    #ffffff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+}
+
+.mission-progress-panel__header {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.mission-progress-panel__header strong {
+  color: #083344;
+  font-size: clamp(1.05rem, 1.5vw, 1.22rem);
+  line-height: 1.14;
+}
+
+.mission-progress-panel__header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.42;
+}
+
 .mission-side-card strong {
   color: var(--color-text-primary);
   line-height: 1.2;
 }
 
 .mission-progress-line {
-  height: 0.54rem;
+  height: 0.82rem;
   overflow: hidden;
-  background: var(--color-bg-secondary);
+  background: rgba(226, 232, 240, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 999px;
 }
 
@@ -4157,6 +4190,59 @@ body.analytics-auth-locked .analytics-hero-copy {
   border-radius: inherit;
 }
 
+.mission-progress-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.mission-progress-metrics div {
+  display: grid;
+  gap: 0.12rem;
+  min-height: 4rem;
+  align-content: center;
+  padding: 0.58rem;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--radius-sm);
+}
+
+.mission-progress-metrics span {
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.16;
+  text-transform: uppercase;
+}
+
+.mission-progress-metrics strong {
+  color: #0f766e;
+  font-size: 1.02rem;
+  line-height: 1;
+}
+
+.mission-completion-rule {
+  display: flex;
+  gap: 0.52rem;
+  align-items: flex-start;
+  padding: 0.64rem 0.7rem;
+  color: #164e63;
+  background: rgba(236, 253, 245, 0.78);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.mission-completion-rule .lucide {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: #0f766e;
+  margin-top: 0.08rem;
+}
+
 .mission-progress-facts {
   display: grid;
   gap: 0.32rem;
@@ -4165,6 +4251,116 @@ body.analytics-auth-locked .analytics-hero-copy {
   list-style: none;
   color: var(--color-text-secondary);
   font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.mission-stepper {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mission-stepper-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.62rem;
+  align-items: center;
+  width: 100%;
+  min-height: 3.55rem;
+  padding: 0.58rem 0.62rem;
+  text-align: left;
+  background: rgba(248, 250, 252, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.mission-stepper-item:disabled {
+  cursor: not-allowed;
+}
+
+.mission-stepper-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  color: #64748b;
+  background: #e2e8f0;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.mission-stepper-copy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.mission-stepper-copy strong {
+  color: var(--color-text-primary);
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
+.mission-stepper-copy small {
+  color: var(--color-text-secondary);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mission-stepper-item.is-current {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: rgba(219, 234, 254, 0.62);
+}
+
+.mission-stepper-item.is-current .mission-stepper-dot {
+  color: #ffffff;
+  background: linear-gradient(120deg, var(--color-primary), var(--color-accent));
+}
+
+.mission-stepper-item.is-completed {
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(220, 252, 231, 0.66);
+}
+
+.mission-stepper-item.is-completed .mission-stepper-dot {
+  color: #ffffff;
+  background: var(--color-success);
+}
+
+.mission-stepper-item.is-available {
+  border-color: rgba(15, 118, 110, 0.26);
+  background: rgba(240, 253, 250, 0.74);
+}
+
+.mission-stepper-item.is-available .mission-stepper-dot {
+  color: #0f766e;
+  background: rgba(204, 251, 241, 0.9);
+}
+
+.mission-stepper-item.is-locked {
+  opacity: 0.64;
+}
+
+.mission-pilot-complete {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.68rem 0.72rem;
+  color: #14532d;
+  background: var(--color-success-light);
+  border: 1px solid rgba(22, 163, 74, 0.24);
+  border-radius: var(--radius-sm);
+}
+
+.mission-pilot-complete strong {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.mission-pilot-complete span {
+  font-size: 0.82rem;
+  font-weight: 700;
   line-height: 1.35;
 }
 
@@ -4238,9 +4434,14 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-gap-card,
   .mission-content-card,
   .mission-activity-card,
-  .mission-side-card {
+  .mission-side-card,
+  .mission-progress-panel {
     padding: 0.76rem;
     border-radius: 14px;
+  }
+
+  .mission-sidebar {
+    order: -1;
   }
 
   .mission-hero__content h1 {
@@ -4270,6 +4471,16 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-query-input {
     min-height: 9rem;
     font-size: 0.82rem;
+  }
+
+  .mission-progress-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-progress-metrics div {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
   }
 
   .mission-next-item {
