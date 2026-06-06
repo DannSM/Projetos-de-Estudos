@@ -356,7 +356,7 @@
     } else if (workbench.execution) {
       const resultState = executionIsEvaluable ? "is-success" : "is-warning";
       const resultTitle = executionIsEvaluable
-        ? `Consulta executada: ${workbench.execution.rows.length} linha(s)`
+        ? `Consulta executada: ${workbench.execution.totalRows ?? workbench.execution.rows.length} linha(s)`
         : "Consulta executada, mas sem resultado útil";
       technicalResult = `
         <div class="sql-workbench-status ${resultState}" data-sql-technical-result tabindex="-1">
@@ -364,6 +364,9 @@
           ${executionIsEvaluable
             ? renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")
             : "<p>A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta missão, o resultado precisa trazer uma categoria e uma contagem.</p>"}
+          ${workbench.execution.truncated
+            ? `<p>Exibindo apenas as primeiras ${sqlPocEngine.MAX_RESULT_ROWS} linhas para manter a bancada responsiva.</p>`
+            : ""}
           <p data-sql-stale-note ${executionIsCurrent ? "hidden" : ""}>O editor mudou. Execute novamente antes de validar.</p>
         </div>
       `;
@@ -734,7 +737,7 @@
       return;
     }
 
-    const isCorrect = sqlPocEngine.validateMissionResult(workbench.execution);
+    const isCorrect = sqlPocEngine.validateMissionResult(workbench.execution, query);
     const result = isCorrect
       ? {
           status: "correct",

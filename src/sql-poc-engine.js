@@ -1,5 +1,6 @@
 (function initSqlPocEngine(globalScope) {
   const PGLITE_CDN_URL = "https://cdn.jsdelivr.net/npm/@electric-sql/pglite@0.4.5/dist/index.js";
+  const MAX_RESULT_ROWS = 100;
 
   const PEDIDOS_SCHEMA = [
     { name: "pedido_id", type: "integer" },
@@ -48,6 +49,35 @@
       .replace(/--.*$/gm, " ");
   }
 
+  function hasMultipleStatements(value) {
+    let quote = "";
+
+    for (let index = 0; index < value.length; index += 1) {
+      const character = value[index];
+      const nextCharacter = value[index + 1];
+
+      if (quote) {
+        if (character === quote && nextCharacter === quote) {
+          index += 1;
+        } else if (character === quote) {
+          quote = "";
+        }
+        continue;
+      }
+
+      if (character === "'" || character === "\"") {
+        quote = character;
+        continue;
+      }
+
+      if (character === ";" && value.slice(index + 1).trim()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   function assertReadOnlySelect(query) {
     const normalized = stripSqlComments(query).trim();
     const withoutTrailingSemicolon = normalized.replace(/;\s*$/, "").trim();
@@ -60,7 +90,7 @@
       throw new Error("A bancada permite apenas consultas SELECT.");
     }
 
-    if (withoutTrailingSemicolon.includes(";")) {
+    if (hasMultipleStatements(normalized)) {
       throw new Error("Execute apenas uma consulta por vez.");
     }
 
@@ -69,6 +99,52 @@
     }
 
     return withoutTrailingSemicolon;
+  }
+
+  function validateMissionQueryStructure(query) {
+    const value = stripSqlComments(query)
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/;\s*$/, "")
+      .trim();
+    const fromPedidosMatch = value.match(/\bfrom\s+(?:(?:"?public"?\.)?"?pedidos"?)(?=\s|$)/);
+    const fromPedidosIndex = fromPedidosMatch?.index ?? -1;
+    const whereOffset = fromPedidosIndex > -1
+      ? value.slice(fromPedidosIndex + fromPedidosMatch[0].length).search(/\bwhere\b/)
+      : -1;
+    const whereIndex = whereOffset > -1
+      ? fromPedidosIndex + fromPedidosMatch[0].length + whereOffset
+      : -1;
+    const groupByIndex = value.search(/\bgroup\s+by\b/);
+    const hasFromPedidos = fromPedidosIndex > -1;
+    const whereClause = whereIndex > -1
+      ? value.slice(whereIndex, groupByIndex > whereIndex ? groupByIndex : undefined)
+      : "";
+    const hasStatusPaid = /\b(?:\w+\.)?status\s*=\s*'pago'(?=\s|$|\))/.test(whereClause);
+    const hasCount = /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value);
+    const hasGroupByCategoria = /\bgroup\s+by\s+(?:\w+\.)?categoria\b/.test(value);
+    const hasWhereBeforeGroupBy = whereIndex > -1 && groupByIndex > whereIndex;
+    const hasFabricatedRows = /\bvalues\s*\(|\bunion(?:\s+all)?\b/.test(value);
+    const hasCorrectStructure = [
+      hasFromPedidos,
+      hasStatusPaid,
+      hasCount,
+      hasGroupByCategoria,
+      hasWhereBeforeGroupBy,
+      !hasFabricatedRows
+    ].every(Boolean);
+
+    return {
+      hasCorrectStructure,
+      checks: {
+        hasFromPedidos,
+        hasStatusPaid,
+        hasCount,
+        hasGroupByCategoria,
+        hasWhereBeforeGroupBy,
+        hasFabricatedRows
+      }
+    };
   }
 
   function getColumns(result) {
@@ -109,9 +185,11 @@
     return normalizedRows.sort((left, right) => left[0].localeCompare(right[0], "pt-BR"));
   }
 
-  function validateMissionResult(result) {
+  function validateMissionResult(result, query = result?.query) {
     const normalized = normalizeMissionResult(result);
-    if (!normalized) {
+    const structure = validateMissionQueryStructure(query);
+
+    if (!normalized || !structure.hasCorrectStructure) {
       return false;
     }
 
@@ -144,9 +222,13 @@
       async execute(query) {
         const safeQuery = assertReadOnlySelect(query);
         const result = await db.query(safeQuery);
+        const rows = Array.isArray(result.rows) ? result.rows : [];
         return {
           columns: getColumns(result),
-          rows: result.rows
+          rows: rows.slice(0, MAX_RESULT_ROWS),
+          totalRows: rows.length,
+          truncated: rows.length > MAX_RESULT_ROWS,
+          query: safeQuery
         };
       },
       close() {
@@ -163,12 +245,14 @@
   const api = {
     PEDIDOS_SCHEMA,
     PEDIDOS_SAMPLE,
+    MAX_RESULT_ROWS,
     assertReadOnlySelect,
     createBrowserWorkbench,
     createWorkbench,
     canValidateExecution,
     isEvaluableResult,
     normalizeMissionResult,
+    validateMissionQueryStructure,
     validateMissionResult
   };
 
