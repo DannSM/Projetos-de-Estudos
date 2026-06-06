@@ -18,10 +18,15 @@ async function run() {
       /Digite uma consulta/i
     );
 
-    const selectOnly = await workbench.execute("select");
-    assert.strictEqual(validateMissionResult(selectOnly), false);
-    assert.strictEqual(isEvaluableResult(selectOnly), false);
-    assert.strictEqual(canValidateExecution(selectOnly, "select", "select"), false);
+    await assert.rejects(
+      () => workbench.execute("sele"),
+      /consulta está incompleta/i
+    );
+
+    await assert.rejects(
+      () => workbench.execute("select"),
+      /consulta está incompleta/i
+    );
 
     await assert.rejects(
       () => workbench.execute("select categoria count(*) from pedidos"),

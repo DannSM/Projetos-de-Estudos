@@ -4253,7 +4253,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-workbench-action-hint.is-ready {
-  color: #166534;
+  color: #1d4ed8;
 }
 
 .sql-workbench-status {
@@ -4296,10 +4296,15 @@ body.analytics-auth-locked .analytics-hero-copy {
   border-color: rgba(245, 158, 11, 0.32);
 }
 
-.sql-workbench-status.is-success {
-  color: #166534;
-  background: rgba(240, 253, 244, 0.82);
-  border-color: rgba(22, 163, 74, 0.26);
+.sql-workbench-status.is-info {
+  color: #1e40af;
+  background: rgba(239, 246, 255, 0.88);
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+.sql-workbench-status.is-info .sql-workbench-table th {
+  color: #1e3a8a;
+  background: rgba(219, 234, 254, 0.78);
 }
 
 .sql-workbench-technical-error {

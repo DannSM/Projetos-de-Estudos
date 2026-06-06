@@ -86,6 +86,10 @@
       throw new Error("Digite uma consulta antes de executar.");
     }
 
+    if (/^s(?:e(?:l(?:e(?:c(?:t)?)?)?)?)?$/i.test(withoutTrailingSemicolon)) {
+      throw new Error("Sua consulta está incompleta. Comece com SELECT e indique os campos que deseja consultar.");
+    }
+
     if (!/^(select|with)\b/i.test(withoutTrailingSemicolon)) {
       throw new Error("A bancada permite apenas consultas SELECT.");
     }

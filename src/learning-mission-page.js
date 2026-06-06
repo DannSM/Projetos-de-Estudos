@@ -318,7 +318,7 @@
     } else if (workbench.execution && !executionIsEvaluable) {
       validationHint = "O resultado precisa ter colunas e linhas para ser validado.";
     } else if (canValidate) {
-      validationHint = "Resultado pronto. Agora compare-o com o objetivo da missão.";
+      validationHint = "Consulta executada. Valide para verificar se ela responde ao desafio.";
     }
 
     let technicalResult = `
@@ -354,7 +354,7 @@
         </div>
       `;
     } else if (workbench.execution) {
-      const resultState = executionIsEvaluable ? "is-success" : "is-warning";
+      const resultState = executionIsEvaluable ? "is-info" : "is-warning";
       const resultTitle = executionIsEvaluable
         ? `Consulta executada: ${workbench.execution.totalRows ?? workbench.execution.rows.length} linha(s)`
         : "Consulta executada, mas sem resultado útil";
@@ -362,7 +362,8 @@
         <div class="sql-workbench-status ${resultState}" data-sql-technical-result tabindex="-1">
           <strong>${resultTitle}</strong>
           ${executionIsEvaluable
-            ? renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")
+            ? `<p>Consulta executada. Agora valide se o resultado responde ao desafio.</p>
+              ${renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")}`
             : "<p>A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta missão, o resultado precisa trazer uma categoria e uma contagem.</p>"}
           ${workbench.execution.truncated
             ? `<p>Exibindo apenas as primeiras ${sqlPocEngine.MAX_RESULT_ROWS} linhas para manter a bancada responsiva.</p>`
@@ -421,6 +422,13 @@
     const normalizedQuery = sqlValidation.normalizeSql(query);
     const normalizedError = String(errorMessage || "").toLowerCase();
 
+    if (
+      /^s(?:e(?:l(?:e(?:c(?:t)?)?)?)?)?$/.test(normalizedQuery) ||
+      normalizedError.includes("sua consulta está incompleta")
+    ) {
+      return "Sua consulta está incompleta. Comece com SELECT e indique os campos que deseja consultar.";
+    }
+
     if (normalizedError.includes("must appear in the group by")) {
       return "Você está exibindo uma coluna comum junto com uma contagem. O SQL precisa saber como agrupar essa coluna antes de contar.";
     }
@@ -433,7 +441,7 @@
     }
 
     if (!/\bfrom\b/.test(normalizedQuery) || normalizedError.includes('column "categoria" does not exist')) {
-      return "A consulta precisa indicar de qual tabela os dados serão lidos.";
+      return "Você escolheu uma coluna, mas ainda não informou de qual tabela os dados vêm. Use FROM para indicar a fonte.";
     }
 
     if (normalizedError.includes("syntax error")) {
@@ -447,18 +455,18 @@
     const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
 
     if (!checks.hasWhere || !checks.hasStatusPaid) {
-      return "A consulta executou, mas a missão pede somente pedidos pagos. Limite os registros antes de fazer a contagem.";
+      return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Considere quais registros devem ser filtrados antes da contagem.";
     }
 
     if (!checks.hasCountStar) {
-      return "A consulta executou, mas o resultado precisa mostrar quantos pedidos existem em cada categoria.";
+      return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Verifique se ele apresenta uma contagem por categoria.";
     }
 
     if (!checks.hasGroupByCategoria) {
-      return "A consulta executou, mas a contagem precisa ser separada por categoria para responder ao pedido.";
+      return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Verifique como a contagem deve ser organizada.";
     }
 
-    return "A consulta executou, mas o formato ou os valores retornados ainda não correspondem ao resultado esperado. Revise filtro, contagem e agrupamento.";
+    return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Revise o recorte, a contagem e o agrupamento.";
   }
 
   function renderActivityActions(mission) {
@@ -742,7 +750,7 @@
       ? {
           status: "correct",
           title: "Correto",
-          message: "A consulta retornou a contagem esperada de pedidos pagos por categoria. O filtro foi aplicado antes do agrupamento, por isso o resultado responde ao pedido da missão."
+          message: "A consulta executou sem erros e retornou a contagem esperada de pedidos pagos em cada categoria."
         }
       : {
           status: "partial",
