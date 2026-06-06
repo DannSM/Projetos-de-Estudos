@@ -3900,16 +3900,16 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-hero__content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(14.5rem, 0.34fr);
-  gap: clamp(1rem, 2.4vw, 1.7rem);
+  grid-template-columns: minmax(0, 1fr) minmax(13.5rem, 0.3fr);
+  gap: clamp(0.78rem, 1.8vw, 1.2rem);
   align-items: center;
   min-height: 0;
-  padding: clamp(0.92rem, 2.2vw, 1.25rem);
+  padding: clamp(0.78rem, 1.7vw, 1rem);
 }
 
 .mission-hero__primary {
   display: grid;
-  gap: 0.62rem;
+  gap: 0.5rem;
   min-width: 0;
 }
 
@@ -3967,15 +3967,16 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .mission-hero__actions {
+  flex-wrap: nowrap;
   margin-top: 0.12rem;
 }
 
 .mission-hero__brief {
   display: grid;
-  gap: 0.72rem;
+  gap: 0.58rem;
   align-content: center;
   min-height: 100%;
-  padding-left: clamp(0.9rem, 2vw, 1.25rem);
+  padding-left: clamp(0.75rem, 1.6vw, 1rem);
   border-left: 1px solid rgba(15, 118, 110, 0.16);
 }
 
@@ -4130,6 +4131,202 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-query-input:focus-visible {
   border-color: rgba(37, 99, 235, 0.42);
   outline: none;
+}
+
+.sql-workbench {
+  display: grid;
+  gap: 0.78rem;
+}
+
+.sql-workbench-reference {
+  display: grid;
+  grid-template-columns: minmax(13rem, 0.72fr) minmax(0, 1.28fr);
+  gap: 0.68rem;
+  padding: 0.68rem;
+  background: rgba(248, 250, 252, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--radius-md);
+}
+
+.sql-workbench-reference section {
+  display: grid;
+  gap: 0.46rem;
+  min-width: 0;
+}
+
+.sql-workbench-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.58rem;
+  align-items: baseline;
+}
+
+.sql-workbench-heading span,
+.sql-workbench-editor > span {
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sql-workbench-heading strong {
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.sql-workbench-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.sql-workbench-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.78rem;
+}
+
+.sql-workbench-table th,
+.sql-workbench-table td {
+  padding: 0.44rem 0.52rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.sql-workbench-table th {
+  color: #164e63;
+  background: rgba(236, 253, 245, 0.82);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sql-workbench-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sql-workbench-table-wrap.is-sample {
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.sql-workbench-editor {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.sql-workbench-editor .mission-query-input {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: #334155;
+  caret-color: #22d3ee;
+}
+
+.sql-workbench-editor .mission-query-input::placeholder {
+  color: #94a3b8;
+}
+
+.sql-workbench-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.56rem;
+  align-items: center;
+}
+
+.sql-workbench-actions .button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.56;
+  box-shadow: none;
+}
+
+.sql-workbench-action-hint {
+  flex: 1 1 16rem;
+  margin: 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sql-workbench-action-hint.is-ready {
+  color: #166534;
+}
+
+.sql-workbench-status {
+  display: grid;
+  gap: 0.48rem;
+  padding: 0.72rem;
+  color: #475569;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius-md);
+}
+
+.sql-workbench-status strong {
+  color: #0f172a;
+}
+
+.sql-workbench-status p,
+.sql-workbench-empty {
+  margin: 0;
+  color: inherit;
+  font-size: 0.84rem;
+  line-height: 1.42;
+}
+
+.sql-workbench-status.is-loading {
+  color: #1e40af;
+  background: rgba(219, 234, 254, 0.58);
+  border-color: rgba(37, 99, 235, 0.24);
+}
+
+.sql-workbench-status.is-error {
+  color: #991b1b;
+  background: var(--color-error-light);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.sql-workbench-status.is-warning {
+  color: #92400e;
+  background: var(--color-warning-light);
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+.sql-workbench-status.is-success {
+  color: #166534;
+  background: rgba(240, 253, 244, 0.82);
+  border-color: rgba(22, 163, 74, 0.26);
+}
+
+.sql-workbench-technical-error {
+  padding: 0.52rem 0.58rem;
+  color: #7f1d1d;
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-code);
+  overflow-wrap: anywhere;
+}
+
+.sql-workbench-guidance {
+  display: grid;
+  gap: 0.18rem;
+  padding-top: 0.12rem;
+}
+
+.sql-workbench-guidance span {
+  color: #991b1b;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sql-workbench-status .is-result {
+  margin-top: 0.08rem;
 }
 
 .mission-feedback {
@@ -4614,6 +4811,14 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-hero__brief > .mission-side-card__label {
     grid-column: 1 / -1;
   }
+
+  .mission-hero__actions {
+    flex-wrap: wrap;
+  }
+
+  .sql-workbench-reference {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 620px) {
@@ -4664,6 +4869,23 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-query-input {
     min-height: 9rem;
     font-size: 0.82rem;
+  }
+
+  .sql-workbench-reference {
+    padding: 0.56rem;
+  }
+
+  .sql-workbench-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sql-workbench-actions .button {
+    width: 100%;
+  }
+
+  .sql-workbench-action-hint {
+    width: 100%;
   }
 
   .mission-progress-metrics {
