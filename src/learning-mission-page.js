@@ -409,7 +409,7 @@
           </button>
           <button class="button button-primary" type="button" data-validate-query ${!canValidate || isBusy ? "disabled" : ""}>
             <i data-lucide="badge-check" aria-hidden="true"></i>
-            <span>Validar missão</span>
+            <span>Validar resultado</span>
           </button>
           <p class="sql-workbench-action-hint ${canValidate ? "is-ready" : ""}">${escapeHtml(validationHint)}</p>
         </div>
@@ -484,12 +484,43 @@
     `;
   }
 
+  function getEmptyFeedbackContent() {
+    const mission = missions[state.activeIndex];
+    const workbench = state.sqlWorkbench;
+    const query = state.queryAnswer.trim();
+    const executionIsCurrent = workbench.execution && workbench.executionQuery === query;
+    const hasResultReady = mission.activityType === "sql_workbench"
+      && executionIsCurrent
+      && sqlPocEngine.isEvaluableResult(workbench.execution);
+
+    if (hasResultReady) {
+      return {
+        title: "Resultado pronto para validar",
+        message: "Resultado executado. Agora valide para comparar com o objetivo da missão."
+      };
+    }
+
+    if (mission.activityType === "sql_workbench") {
+      return {
+        title: "Como receber feedback",
+        message: "Execute sua consulta para ver o resultado. Depois valide se ela responde ao desafio."
+      };
+    }
+
+    return {
+      title: "Ver feedback",
+      message: "Envie uma tentativa para receber feedback imediato. A missão só aparece como concluída depois da resposta."
+    };
+  }
+
   function renderFeedback() {
     if (!state.feedback) {
+      const emptyFeedback = getEmptyFeedbackContent();
+
       return `
         <div class="mission-feedback mission-feedback--empty">
-          <strong>Ver feedback</strong>
-          <p>Envie uma tentativa para receber feedback imediato. A missão só aparece como concluída depois da resposta.</p>
+          <strong data-empty-feedback-title>${escapeHtml(emptyFeedback.title)}</strong>
+          <p data-empty-feedback-message>${escapeHtml(emptyFeedback.message)}</p>
         </div>
       `;
     }
@@ -779,6 +810,8 @@
     const validateButton = mount.querySelector("[data-validate-query]");
     const actionHint = mount.querySelector(".sql-workbench-action-hint");
     const staleNote = mount.querySelector("[data-sql-stale-note]");
+    const emptyFeedbackTitle = mount.querySelector("[data-empty-feedback-title]");
+    const emptyFeedbackMessage = mount.querySelector("[data-empty-feedback-message]");
     const executionIsCurrent = workbench.execution && workbench.executionQuery === query;
 
     if (executeButton) {
@@ -796,14 +829,20 @@
     if (actionHint) {
       actionHint.classList.remove("is-ready");
       actionHint.textContent = executionIsCurrent
-        ? "Resultado pronto. Agora compare-o com o objetivo da missão."
+        ? "Consulta executada. Valide para verificar se ela responde ao desafio."
         : workbench.execution
           ? "A consulta foi alterada. Execute novamente antes de validar."
-          : "Execute uma consulta válida antes de validar a missão.";
+          : "Execute uma consulta válida antes de validar o resultado.";
     }
 
     if (staleNote) {
       staleNote.hidden = Boolean(executionIsCurrent);
+    }
+
+    if (emptyFeedbackTitle && emptyFeedbackMessage) {
+      const emptyFeedback = getEmptyFeedbackContent();
+      emptyFeedbackTitle.textContent = emptyFeedback.title;
+      emptyFeedbackMessage.textContent = emptyFeedback.message;
     }
   }
 
