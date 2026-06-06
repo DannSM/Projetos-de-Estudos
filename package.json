@@ -1,0 +1,11 @@
+{
+  "name": "data-skill-map",
+  "private": true,
+  "scripts": {
+    "test:sql-missions": "node scripts/test-sql-mission-validation.js",
+    "test:sql-poc": "node scripts/test-sql-poc-engine.js"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.4.5"
+  }
+}

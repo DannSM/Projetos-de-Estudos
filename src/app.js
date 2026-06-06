@@ -26,6 +26,30 @@ function bindHeaderHeightSync() {
 
 function renderIcons() {
   if (window.lucide && typeof window.lucide.createIcons === "function") {
+    const fallbackIconName = "external-link";
+    const toPascalCase = (value) => String(value || "")
+      .split("-")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("");
+    const isIconAvailable = (name) => {
+      if (!name) return false;
+      const pascalName = toPascalCase(name);
+      return Boolean(
+        window.lucide[name]
+        || window.lucide[pascalName]
+        || window.lucide.icons?.[name]
+        || window.lucide.icons?.[pascalName]
+      );
+    };
+
+    document.querySelectorAll("[data-lucide]").forEach((icon) => {
+      const iconName = icon.getAttribute("data-lucide");
+      if (!isIconAvailable(iconName) && isIconAvailable(fallbackIconName)) {
+        icon.setAttribute("data-lucide", fallbackIconName);
+      }
+    });
+
     window.lucide.createIcons();
   }
 }
