@@ -117,13 +117,13 @@
       objective: "Aplicar filtro antes de contar ou resumir uma métrica.",
       why: "Esta missão apareceu porque o diagnóstico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
       contentTitle: "Primeiro recorte, depois resumo",
-      content: "Quando a métrica é sobre um grupo específico, aplique o WHERE antes de contar ou somar. Assim o resumo responde ao recorte certo.",
-      example: "select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
+      content: "Quando a métrica é sobre um grupo específico, aplique o WHERE antes de contar ou somar. A ordem lógica é: escolher os campos, indicar a fonte, filtrar o recorte e só então agrupar.",
+      example: "select campo_de_grupo, count(*) from tabela where condição group by campo_de_grupo;",
       activityType: "query_fix",
       activityTitle: "Pratique agora",
       prompt: "Crie uma consulta para contar pedidos pagos por categoria. O filtro de status precisa acontecer antes do agrupamento.",
       context: ["Tabela: pedidos", "Colunas: pedido_id, status, categoria, valor"],
-      placeholder: "select categoria, count(*)\nfrom pedidos\nwhere ...\ngroup by categoria;",
+      placeholder: "select campo_de_grupo, agregação\nfrom tabela\nwhere condição\ngroup by campo_de_grupo;",
       evaluate: ({ queryAnswer }) => {
         const result = sqlValidation.validatePaidOrdersByCategorySql(queryAnswer);
         const checks = result.checks;
@@ -163,7 +163,7 @@
           title: "Incorreto",
           message: checks.hasInvalidClauseOrder
             ? "Ainda não. O WHERE precisa vir antes do GROUP BY para filtrar pedidos pagos antes do agrupamento."
-            : "Ainda não. A consulta está incompleta ou quebrada. Use SELECT categoria, count(*), FROM pedidos, WHERE status = 'pago' e GROUP BY categoria."
+            : "Ainda não. A consulta está incompleta ou quebrada. Revise a lista do SELECT, a fonte dos dados, o filtro e o campo usado no agrupamento."
         };
       }
     }
@@ -234,24 +234,37 @@
     return `
       <section class="mission-hero">
         <div class="mission-hero__content">
-          <span class="section-kicker">Missão recomendada</span>
-          <h1>${escapeHtml(mission.title)}</h1>
-          <p>${escapeHtml(mission.objective)}</p>
-          <div class="mission-hero__meta" aria-label="Resumo da missão">
-            <span><i data-lucide="scan-search" aria-hidden="true"></i>Lacuna: ${escapeHtml(mission.gap)}</span>
-            <span><i data-lucide="clock-3" aria-hidden="true"></i>${mission.estimatedMinutes} min</span>
-            <span><i data-lucide="signal" aria-hidden="true"></i>${escapeHtml(mission.level)}</span>
+          <div class="mission-hero__primary">
+            <span class="section-kicker">Missão recomendada</span>
+            <h1>${escapeHtml(mission.title)}</h1>
+            <p>${escapeHtml(mission.objective)}</p>
+            <div class="mission-hero__meta" aria-label="Resumo da missão">
+              <span><i data-lucide="scan-search" aria-hidden="true"></i>Lacuna: ${escapeHtml(mission.gap)}</span>
+              <span><i data-lucide="clock-3" aria-hidden="true"></i>${mission.estimatedMinutes} min</span>
+              <span><i data-lucide="signal" aria-hidden="true"></i>${escapeHtml(mission.level)}</span>
+            </div>
+            <div class="mission-hero__actions">
+              <button class="button button-primary" type="button" data-start-mission>
+                <i data-lucide="play" aria-hidden="true"></i>
+                <span>Comece aqui</span>
+              </button>
+              <a class="button button-secondary" href="#atividade">
+                <i data-lucide="arrow-down" aria-hidden="true"></i>
+                <span>Pratique agora</span>
+              </a>
+            </div>
           </div>
-          <div class="mission-hero__actions">
-            <button class="button button-primary" type="button" data-start-mission>
-              <i data-lucide="play" aria-hidden="true"></i>
-              <span>Comece aqui</span>
-            </button>
-            <a class="button button-secondary" href="#atividade">
-              <i data-lucide="arrow-down" aria-hidden="true"></i>
-              <span>Pratique agora</span>
-            </a>
-          </div>
+          <aside class="mission-hero__brief" aria-label="Como avançar nesta missão">
+            <span class="mission-side-card__label">Nesta sessão</span>
+            <div>
+              <i data-lucide="target" aria-hidden="true"></i>
+              <p><strong>Você vai praticar</strong>${escapeHtml(mission.gap)}</p>
+            </div>
+            <div>
+              <i data-lucide="shield-check" aria-hidden="true"></i>
+              <p><strong>Critério para avançar</strong>Enviar uma resposta correta após receber feedback.</p>
+            </div>
+          </aside>
         </div>
       </section>
     `;

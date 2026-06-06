@@ -3900,14 +3900,21 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-hero__content {
   display: grid;
-  align-content: center;
-  gap: 0.62rem;
+  grid-template-columns: minmax(0, 1fr) minmax(14.5rem, 0.34fr);
+  gap: clamp(1rem, 2.4vw, 1.7rem);
+  align-items: center;
   min-height: 0;
   padding: clamp(0.92rem, 2.2vw, 1.25rem);
 }
 
+.mission-hero__primary {
+  display: grid;
+  gap: 0.62rem;
+  min-width: 0;
+}
+
 .mission-hero__content h1 {
-  max-width: 48rem;
+  max-width: 43rem;
   margin-bottom: 0;
   color: #083344;
   font-size: clamp(1.48rem, 3.2vw, 2.24rem);
@@ -3957,6 +3964,47 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: flex;
   flex-wrap: wrap;
   gap: 0.56rem;
+}
+
+.mission-hero__actions {
+  margin-top: 0.12rem;
+}
+
+.mission-hero__brief {
+  display: grid;
+  gap: 0.72rem;
+  align-content: center;
+  min-height: 100%;
+  padding-left: clamp(0.9rem, 2vw, 1.25rem);
+  border-left: 1px solid rgba(15, 118, 110, 0.16);
+}
+
+.mission-hero__brief > div {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr);
+  gap: 0.52rem;
+  align-items: start;
+}
+
+.mission-hero__brief .lucide {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.12rem;
+  color: #0f766e;
+}
+
+.mission-hero__brief p {
+  display: grid;
+  gap: 0.14rem;
+  margin: 0;
+  color: #526a73;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.mission-hero__brief strong {
+  color: #083344;
+  font-size: 0.78rem;
 }
 
 .mission-gap-card {
@@ -4548,6 +4596,26 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 }
 
+@media (max-width: 760px) {
+  .mission-hero__content {
+    grid-template-columns: 1fr;
+    gap: 0.88rem;
+  }
+
+  .mission-hero__brief {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: 0;
+    padding-top: 0.78rem;
+    padding-left: 0;
+    border-top: 1px solid rgba(15, 118, 110, 0.16);
+    border-left: 0;
+  }
+
+  .mission-hero__brief > .mission-side-card__label {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 620px) {
   .mission-shell {
     gap: 0.72rem;
@@ -4567,6 +4635,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .mission-hero__content h1 {
     font-size: clamp(1.65rem, 8vw, 2.2rem);
+  }
+
+  .mission-hero__brief {
+    grid-template-columns: 1fr;
   }
 
   .mission-card-heading,
