@@ -14,6 +14,16 @@
     "Lógica de dados": "Lógica de dados",
     Indicadores: "Indicadores e KPIs"
   };
+  const SQL_MISSION_URLS_BY_STEP_KEY = {
+    "sql-essencial-01-where": "missao.html?missao=sql-essencial-filtros-where",
+    "sql-essencial-02-contagens": "missao.html?missao=sql-essencial-count-nulos-distintos",
+    "sql-essencial-03-filtro-mais-agregacao": "missao.html?missao=sql-essencial-filtro-antes-agregacao"
+  };
+  const SQL_MISSION_URLS_BY_TITLE = [
+    { pattern: /filtros?\s+com\s+where/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-01-where"] },
+    { pattern: /contagens?\s+e\s+nulos/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-02-contagens"] },
+    { pattern: /filtro\s+antes\s+do\s+resumo/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-03-filtro-mais-agregacao"] }
+  ];
 
   function escapeHtml(value) {
     return String(value || "")
@@ -134,6 +144,28 @@
     return "Prioridade";
   }
 
+  function isMissionUrl(value) {
+    return /(^|\/)missao(?:\.html)?(?:$|[?#])/.test(String(value || ""));
+  }
+
+  function getRecommendedPracticeHref(step) {
+    if (!step) return "";
+
+    const contentUrl = String(step.content_url || "").trim();
+    if (contentUrl) {
+      return contentUrl;
+    }
+
+    const stepKey = String(step.step_key || "").trim();
+    if (SQL_MISSION_URLS_BY_STEP_KEY[stepKey]) {
+      return SQL_MISSION_URLS_BY_STEP_KEY[stepKey];
+    }
+
+    const title = String(step.title || "").trim();
+    const matchedTitle = SQL_MISSION_URLS_BY_TITLE.find((item) => item.pattern.test(title));
+    return matchedTitle?.href || "";
+  }
+
   function getPriorityAreaFromSession(latestSession) {
     const recommendationText = [
       latestSession?.study_recommendation,
@@ -232,11 +264,19 @@
 
   function buildNextStep({ learningRecommendation, diagnosticRecommendation, learningProgress, path, step, latestSession, priorityArea }) {
     if (step) {
+      const practiceHref = getRecommendedPracticeHref(step);
+      const isRecommendedPractice = Boolean(practiceHref) && (isMissionUrl(practiceHref) || !step.content_url);
       return {
         title: step.title,
-        text: step.description || (path ? `Continue a trilha ${path.title}.` : "Continue sua trilha de estudos."),
-        href: step.content_url || "index.html#trilhas",
-        cta: "Ver trilhas"
+        eyebrow: isRecommendedPractice ? "Próxima prática recomendada" : "Próxima etapa",
+        text: isRecommendedPractice
+          ? "Pratique a lacuna identificada no diagnóstico com feedback imediato."
+          : step.description || (path ? `Continue a trilha ${path.title}.` : "Continue sua trilha de estudos."),
+        href: practiceHref || "index.html#trilhas",
+        cta: isRecommendedPractice ? "Iniciar prática recomendada" : "Ver trilhas",
+        isRecommendedPractice,
+        pathTitle: path?.title || "",
+        note: isRecommendedPractice ? "Piloto local, sem marcar conclusão real." : ""
       };
     }
 
@@ -444,7 +484,7 @@
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
-          .select("id,path_id,title,description,skill_area,content_url,display_order,status")
+          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status")
           .eq("id", learningProgress.step_id)
           .maybeSingle(),
         "learning_path_steps"
@@ -454,7 +494,7 @@
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
-          .select("id,path_id,title,description,skill_area,content_url,display_order,status")
+          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status")
           .eq("path_id", path.id)
           .eq("status", "active")
           .order("display_order", { ascending: true })
@@ -646,6 +686,7 @@
     const progress = formatPercent(data.learningProgress?.progress_percent) || "0%";
     const title = data.path?.title || data.learningRecommendation?.title || "Trilha recomendada";
     const stepTitle = data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
+    const hasPractice = Boolean(getRecommendedPracticeHref(data.step));
 
     return `
       <ul class="progress-detail-list">
@@ -661,6 +702,12 @@
           <strong>Progresso inicial</strong>
           <span>${escapeHtml(progress)}</span>
         </li>
+        ${hasPractice ? `
+          <li class="progress-detail-list__highlight">
+            <strong>Prática recomendada</strong>
+            <span>Piloto SQL com feedback imediato disponível no card superior.</span>
+          </li>
+        ` : ""}
       </ul>
     `;
   }
@@ -731,14 +778,18 @@
               </div>
             </div>
           </div>
-          <div class="progress-status-card" aria-label="Recomendação de próxima etapa">
+          <div class="progress-status-card${nextStep.isRecommendedPractice ? " progress-status-card--practice" : ""}" aria-label="Recomendação de próxima etapa">
             <span class="progress-status-eyebrow">
               <i data-lucide="sparkles" aria-hidden="true"></i>
-              Próxima etapa
+              ${escapeHtml(nextStep.eyebrow || "Próxima etapa")}
             </span>
             <strong>${escapeHtml(nextStep.title)}</strong>
             <p>${escapeHtml(nextStep.text)}</p>
-            <small>${escapeHtml(progressStatus)}</small>
+            <div class="progress-status-tags" aria-label="Contexto da prática">
+              <small>${escapeHtml(progressStatus)}</small>
+              ${nextStep.pathTitle ? `<small>${escapeHtml(nextStep.pathTitle)}</small>` : ""}
+            </div>
+            ${nextStep.note ? `<span class="progress-status-note">${escapeHtml(nextStep.note)}</span>` : ""}
             <a class="progress-status-link" href="${escapeHtml(nextStep.href)}">${escapeHtml(nextStep.cta)}</a>
           </div>
         </section>
@@ -756,7 +807,7 @@
             <span class="progress-panel-label">Progresso por área</span>
             ${renderAreas(priorityAreas)}
           </article>
-          <article class="progress-detail-card">
+          <article class="progress-detail-card progress-detail-card--path">
             <span class="progress-panel-label">Trilha recomendada</span>
             ${renderRecommendedPath(data)}
           </article>
