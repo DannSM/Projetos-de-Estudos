@@ -546,28 +546,32 @@
 
   function renderPracticeNotes(mission) {
     return `
-      <section class="mission-learning-card mission-local-card" aria-label="Anotações pessoais">
-        <span class="mission-side-card__label">Anotações pessoais</span>
-        <p>Anotação salva apenas neste navegador nesta versão piloto.</p>
-        <textarea
-          class="mission-local-textarea"
-          data-practice-note
-          rows="4"
-          maxlength="800"
-          placeholder="Registre uma dúvida, insight ou query que queira revisar depois."
-        >${escapeHtml(state.practiceNote)}</textarea>
-        <div class="mission-local-actions">
-          <button class="button button-secondary" type="button" data-save-note>
-            <i data-lucide="save" aria-hidden="true"></i>
-            <span>Salvar anotação</span>
-          </button>
-          <button class="button button-secondary" type="button" data-clear-note ${!state.practiceNote ? "disabled" : ""}>
-            <i data-lucide="trash-2" aria-hidden="true"></i>
-            <span>Limpar</span>
-          </button>
+      <details class="mission-learning-card mission-local-card" aria-label="Anotações pessoais">
+        <summary>
+          <span>Anotações pessoais</span>
+          <small>Salvo apenas neste navegador.</small>
+        </summary>
+        <div class="mission-local-card__body">
+          <textarea
+            class="mission-local-textarea"
+            data-practice-note
+            rows="4"
+            maxlength="800"
+            placeholder="Registre uma dúvida, insight ou query que queira revisar depois."
+          >${escapeHtml(state.practiceNote)}</textarea>
+          <div class="mission-local-actions">
+            <button class="button button-secondary" type="button" data-save-note>
+              <i data-lucide="save" aria-hidden="true"></i>
+              <span>Salvar anotação</span>
+            </button>
+            <button class="button button-secondary" type="button" data-clear-note ${!state.practiceNote ? "disabled" : ""}>
+              <i data-lucide="trash-2" aria-hidden="true"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+          ${state.noteStatus ? `<small class="mission-local-status">${escapeHtml(state.noteStatus)}</small>` : ""}
         </div>
-        ${state.noteStatus ? `<small class="mission-local-status">${escapeHtml(state.noteStatus)}</small>` : ""}
-      </section>
+      </details>
     `;
   }
 
@@ -584,46 +588,59 @@
     `).join("");
 
     return `
-      <section class="mission-learning-card mission-local-card" aria-label="Feedback local sobre a prática">
-        <span class="mission-side-card__label">Feedback local</span>
-        <p>Este feedback é provisório e não altera progresso oficial.</p>
-        <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
-          <strong>Dificuldade percebida</strong>
-          <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
+      <details class="mission-learning-card mission-local-card" aria-label="Feedback local sobre a prática">
+        <summary>
+          <span>Feedback da prática</span>
+          <small>Não altera progresso oficial.</small>
+        </summary>
+        <div class="mission-local-card__body">
+          <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
+            <strong>Dificuldade percebida</strong>
+            <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
+          </div>
+          <div class="mission-local-fieldset" data-practice-feedback-group="confidence">
+            <strong>Confiança no tema</strong>
+            <div>${renderOptions("practiceConfidence", confidenceOptions, feedback.confidence)}</div>
+          </div>
+          <textarea
+            class="mission-local-textarea"
+            data-practice-feedback-comment
+            rows="3"
+            maxlength="500"
+            placeholder="Comentário opcional sobre esta prática."
+          >${escapeHtml(feedback.comment || "")}</textarea>
+          <button class="button button-secondary" type="button" data-save-practice-feedback>
+            <i data-lucide="message-square-check" aria-hidden="true"></i>
+            <span>Salvar feedback local</span>
+          </button>
+          ${state.feedbackStatus ? `<small class="mission-local-status">${escapeHtml(state.feedbackStatus)}</small>` : ""}
         </div>
-        <div class="mission-local-fieldset" data-practice-feedback-group="confidence">
-          <strong>Confiança no tema</strong>
-          <div>${renderOptions("practiceConfidence", confidenceOptions, feedback.confidence)}</div>
-        </div>
-        <textarea
-          class="mission-local-textarea"
-          data-practice-feedback-comment
-          rows="3"
-          maxlength="500"
-          placeholder="Comentário opcional sobre esta prática."
-        >${escapeHtml(feedback.comment || "")}</textarea>
-        <button class="button button-secondary" type="button" data-save-practice-feedback>
-          <i data-lucide="message-square-check" aria-hidden="true"></i>
-          <span>Salvar feedback local</span>
-        </button>
-        ${state.feedbackStatus ? `<small class="mission-local-status">${escapeHtml(state.feedbackStatus)}</small>` : ""}
-      </section>
+      </details>
     `;
   }
 
   function getResultMismatchGuidance(query) {
     const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
-
-    if (!checks.hasWhere || !checks.hasStatusPaid) {
-      return "Sua consulta agrupou o resultado, mas o exercício pede pedidos pagos por categoria. Primeiro filtre status = 'pago' e depois agrupe por categoria.";
-    }
+    const normalizedQuery = sqlValidation.normalizeSql(query);
 
     if (!checks.hasCountStar) {
-      return "A consulta executou, mas ainda precisa apresentar uma contagem por categoria.";
+      return "Sua consulta listou categorias, mas ainda não contou os pedidos. Para este exercício, use COUNT(*) e agrupe por categoria.";
+    }
+
+    if (/\bselect\s+categoria\s*,\s*count\s*\(\s*\*\s*\)\s+from\s+pedidos\b/.test(normalizedQuery) && !checks.hasGroupByCategoria) {
+      return "Você misturou uma coluna comum com uma contagem. Para contar por categoria, agrupe o resultado usando GROUP BY categoria.";
+    }
+
+    if (!checks.hasWhere || !checks.hasStatusPaid) {
+      return "Você agrupou por categoria, mas ainda precisa filtrar apenas pedidos pagos antes do agrupamento. Use WHERE status = 'pago' antes do GROUP BY.";
+    }
+
+    if (checks.hasWhere && checks.hasStatusPaid && checks.hasGroupByStatus && !checks.hasGroupByCategoria) {
+      return "Você filtrou os pedidos pagos, mas agrupou por status. O exercício pede a contagem de pedidos pagos por categoria.";
     }
 
     if (!checks.hasGroupByCategoria) {
-      return "A consulta executou, mas ainda precisa organizar a contagem por categoria.";
+      return "A consulta executou, mas ainda precisa organizar a contagem por categoria. Use GROUP BY categoria.";
     }
 
     return "A consulta executou, mas ainda não responde exatamente ao exercício. Revise o recorte, a contagem e o agrupamento.";
@@ -862,7 +879,7 @@
             </div>
             ${renderActivity(mission)}
             ${renderActivityActions(mission)}
-            ${renderFeedback()}
+            ${mission.activityType === "sql_workbench" ? "" : renderFeedback()}
           </section>
           ${renderCompletionPanel()}
         </div>
@@ -921,10 +938,6 @@
     }
 
     renderPage();
-    window.requestAnimationFrame(() => {
-      document.querySelector("[data-sql-technical-result]")?.focus({ preventScroll: true });
-      document.querySelector("[data-sql-technical-result]")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
   }
 
   function validateSqlMission() {
@@ -943,7 +956,7 @@
       ? {
           status: "correct",
           title: "Correto",
-          message: "A consulta executou sem erros, filtrou pedidos pagos antes do agrupamento e retornou a contagem esperada por categoria."
+          message: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria."
         }
       : {
           status: "partial",
@@ -959,10 +972,6 @@
     };
 
     renderPage();
-    window.requestAnimationFrame(() => {
-      document.querySelector("[data-feedback-card]")?.focus({ preventScroll: true });
-      document.querySelector("[data-feedback-card]")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
   }
 
   function syncSqlWorkbenchControls() {

@@ -3852,9 +3852,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-shell {
   display: grid;
-  gap: clamp(0.78rem, 1.8vw, 1rem);
-  width: min(1400px, calc(100% - clamp(1.5rem, 4vw, 2.5rem)));
-  padding-top: clamp(0.8rem, 2.2vw, 1.35rem);
+  gap: clamp(0.56rem, 1.35vw, 0.82rem);
+  width: min(1560px, calc(100% - clamp(1.25rem, 3.2vw, 2.2rem)));
+  padding-top: clamp(0.56rem, 1.5vw, 0.9rem);
 }
 
 .mission-layout {
@@ -3864,7 +3864,7 @@ body.analytics-auth-locked .analytics-hero-copy {
     "hero"
     "context"
     "main";
-  gap: clamp(0.76rem, 1.7vw, 0.95rem);
+  gap: clamp(0.58rem, 1.35vw, 0.78rem);
   align-items: start;
 }
 
@@ -3901,15 +3901,15 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-hero__content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(13.5rem, 0.3fr);
-  gap: clamp(0.78rem, 1.8vw, 1.2rem);
+  gap: clamp(0.62rem, 1.4vw, 0.92rem);
   align-items: center;
   min-height: 0;
-  padding: clamp(0.78rem, 1.7vw, 1rem);
+  padding: clamp(0.62rem, 1.35vw, 0.82rem);
 }
 
 .mission-hero__primary {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.38rem;
   min-width: 0;
 }
 
@@ -3917,7 +3917,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   max-width: 43rem;
   margin-bottom: 0;
   color: #083344;
-  font-size: clamp(1.48rem, 3.2vw, 2.24rem);
+  font-size: clamp(1.38rem, 2.7vw, 2rem);
   font-weight: 900;
   line-height: 1.04;
 }
@@ -3926,7 +3926,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   max-width: 42rem;
   margin: 0;
   color: #45616a;
-  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  font-size: clamp(0.86rem, 1vw, 0.95rem);
 }
 
 .mission-hero__meta {
@@ -4088,7 +4088,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-activity-card {
   display: grid;
-  gap: clamp(0.68rem, 1.4vw, 0.86rem);
+  gap: clamp(0.58rem, 1.25vw, 0.75rem);
   border-color: rgba(37, 99, 235, 0.22);
   box-shadow: 0 20px 48px rgba(37, 99, 235, 0.12);
 }
@@ -4136,27 +4136,32 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-workbench {
   display: grid;
-  grid-template-columns: minmax(20rem, 0.86fr) minmax(28rem, 1.14fr);
-  gap: clamp(0.82rem, 1.8vw, 1.08rem);
+  grid-template-columns: minmax(22.5rem, 0.85fr) minmax(32.5rem, 1.15fr);
+  gap: clamp(0.74rem, 1.45vw, 1rem);
   align-items: start;
+  min-height: min(46rem, calc(100vh - var(--header-height) - 2.5rem));
 }
 
 .sql-workbench-support,
 .sql-workbench-terminal {
   display: grid;
-  gap: 0.72rem;
+  gap: 0.56rem;
   min-width: 0;
+  max-height: calc(100vh - var(--header-height) - 2.2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .sql-workbench-terminal {
   position: sticky;
-  top: calc(var(--header-height) + 0.85rem);
+  top: calc(var(--header-height) + 0.64rem);
+  align-self: start;
 }
 
 .sql-workbench-reference {
   display: grid;
-  gap: 0.62rem;
-  padding: 0.68rem;
+  gap: 0.48rem;
+  padding: 0.56rem;
   background: rgba(248, 250, 252, 0.82);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-md);
@@ -4165,7 +4170,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-workbench-reference-grid {
   display: grid;
   grid-template-columns: minmax(12rem, 0.76fr) minmax(0, 1.24fr);
-  gap: 0.68rem;
+  gap: 0.52rem;
 }
 
 .sql-workbench-reference-grid section {
@@ -4230,7 +4235,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-workbench-table-wrap.is-sample {
-  max-height: 10.5rem;
+  max-height: 8.5rem;
   overflow: auto;
 }
 
@@ -4240,7 +4245,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-workbench-editor .mission-query-input {
-  min-height: clamp(14rem, 34vh, 22rem);
+  min-height: clamp(13.75rem, 27vh, 19rem);
+  max-height: 20rem;
   background: #0f172a;
   color: #e2e8f0;
   border-color: #334155;
@@ -4254,7 +4260,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-workbench-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.56rem;
+  gap: 0.44rem;
   align-items: center;
 }
 
@@ -4280,7 +4286,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-workbench-status {
   display: grid;
   gap: 0.48rem;
-  max-height: min(24rem, 42vh);
+  max-height: min(18rem, 32vh);
   overflow: auto;
   padding: 0.72rem;
   color: #475569;
@@ -4332,7 +4338,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-learning-card {
   display: grid;
-  gap: 0.56rem;
+  gap: 0.46rem;
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-md);
@@ -4362,11 +4368,35 @@ body.analytics-auth-locked .analytics-hero-copy {
   border-radius: var(--radius-sm);
 }
 
-.mission-learning-card summary {
+.mission-learning-card summary,
+.mission-local-card > summary {
   color: #0f766e;
   font-size: 0.84rem;
   font-weight: 900;
   cursor: pointer;
+}
+
+.mission-local-card {
+  gap: 0;
+}
+
+.mission-local-card > summary {
+  display: grid;
+  gap: 0.12rem;
+  list-style-position: inside;
+}
+
+.mission-local-card > summary small {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.mission-local-card__body {
+  display: grid;
+  gap: 0.52rem;
+  padding-top: 0.58rem;
 }
 
 .mission-local-card .button {
@@ -4376,7 +4406,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-local-textarea {
   width: 100%;
   resize: vertical;
-  min-height: 5rem;
+  min-height: 4.75rem;
   padding: 0.62rem 0.68rem;
   color: var(--color-text-primary);
   background: rgba(248, 250, 252, 0.86);
@@ -4546,8 +4576,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-template-areas:
     "intro"
     "progress";
-  gap: 0.68rem;
-  padding: clamp(0.86rem, 2vw, 1.08rem);
+  gap: 0.48rem;
+  padding: clamp(0.66rem, 1.5vw, 0.86rem);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(240, 253, 250, 0.8)),
     #ffffff;
@@ -4560,21 +4590,21 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-area: intro;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.34fr);
-  gap: 0.72rem;
+  gap: 0.56rem;
   align-items: start;
 }
 
 .mission-context-panel__progress {
   grid-area: progress;
   display: grid;
-  gap: 0.56rem;
-  padding-top: 0.68rem;
+  gap: 0.42rem;
+  padding-top: 0.5rem;
   border-top: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .mission-sidebar-summary {
   display: grid;
-  gap: 0.38rem;
+  gap: 0.28rem;
 }
 
 .mission-sidebar-summary p,
@@ -4603,12 +4633,12 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-progress-panel__header {
   display: grid;
-  gap: 0.22rem;
+  gap: 0.12rem;
 }
 
 .mission-progress-panel__header strong {
   color: #083344;
-  font-size: clamp(1.05rem, 1.5vw, 1.22rem);
+  font-size: clamp(0.98rem, 1.3vw, 1.12rem);
   line-height: 1.14;
 }
 
@@ -4625,7 +4655,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .mission-progress-line {
-  height: 0.72rem;
+  height: 0.5rem;
   overflow: hidden;
   background: rgba(226, 232, 240, 0.78);
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -4642,15 +4672,15 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-progress-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.42rem;
+  gap: 0.34rem;
 }
 
 .mission-progress-metrics div {
   display: grid;
   gap: 0.12rem;
-  min-height: 3.2rem;
+  min-height: 2.7rem;
   align-content: center;
-  padding: 0.58rem;
+  padding: 0.42rem 0.5rem;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-sm);
@@ -4672,9 +4702,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-completion-rule {
   display: flex;
-  gap: 0.52rem;
+  gap: 0.42rem;
   align-items: flex-start;
-  padding: 0.54rem 0.62rem;
+  padding: 0.44rem 0.52rem;
   color: #164e63;
   background: rgba(236, 253, 245, 0.78);
   border: 1px solid rgba(20, 184, 166, 0.2);
@@ -4705,7 +4735,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-stepper {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.34rem;
 }
 
 .mission-stepper--horizontal {
@@ -4715,11 +4745,11 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-stepper-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.62rem;
+  gap: 0.48rem;
   align-items: center;
   width: 100%;
-  min-height: 3.25rem;
-  padding: 0.58rem 0.62rem;
+  min-height: 2.7rem;
+  padding: 0.42rem 0.5rem;
   text-align: left;
   background: rgba(248, 250, 252, 0.88);
   border: 1px solid rgba(148, 163, 184, 0.24);
@@ -4734,8 +4764,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-stepper-dot {
   display: inline-grid;
   place-items: center;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 1.58rem;
+  height: 1.58rem;
   color: #64748b;
   background: #e2e8f0;
   border-radius: 999px;
@@ -4751,13 +4781,13 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-stepper-copy strong {
   color: var(--color-text-primary);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   line-height: 1.2;
 }
 
 .mission-stepper-copy small {
   color: var(--color-text-secondary);
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -4906,6 +4936,14 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .sql-workbench-terminal {
     position: static;
+    order: -1;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sql-workbench-support {
+    max-height: none;
+    overflow: visible;
   }
 
   .mission-layout {
@@ -5011,6 +5049,11 @@ body.analytics-auth-locked .analytics-hero-copy {
   .mission-query-input {
     min-height: 9rem;
     font-size: 0.82rem;
+  }
+
+  .sql-workbench-editor .mission-query-input {
+    min-height: 11rem;
+    max-height: 15rem;
   }
 
   .sql-workbench-reference {
