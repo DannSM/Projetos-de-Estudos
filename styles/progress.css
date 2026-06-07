@@ -139,7 +139,7 @@
 .progress-ui .progress-hero-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.38fr);
+  grid-template-columns: 1fr;
   gap: clamp(1rem, 2.5vw, 1.45rem);
   align-items: stretch;
   padding: clamp(1rem, 3vw, 1.7rem);
@@ -160,7 +160,8 @@
   display: grid;
   align-content: center;
   justify-items: start;
-  gap: 0.7rem;
+  gap: 0.72rem;
+  width: 100%;
 }
 
 .progress-ui .progress-hero-copy h1 {
@@ -243,15 +244,20 @@
 
 .progress-ui .progress-status-card--practice {
   isolation: isolate;
-  align-content: stretch;
-  gap: 0.7rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  align-content: center;
+  gap: clamp(0.75rem, 2vw, 1.15rem);
+  width: 100%;
+  margin-top: 0.45rem;
+  padding: clamp(0.82rem, 2.2vw, 1rem);
   overflow: hidden;
-  color: #ffffff;
+  color: var(--color-text-primary);
   background:
-    radial-gradient(circle at top right, rgba(45, 212, 191, 0.42), transparent 34%),
-    linear-gradient(135deg, #053b42 0%, #074f59 48%, #0f88a7 100%);
-  border-color: rgba(94, 234, 212, 0.42);
-  box-shadow: 0 24px 52px rgba(8, 47, 73, 0.22);
+    radial-gradient(circle at 96% 12%, rgba(94, 234, 212, 0.26), transparent 28%),
+    linear-gradient(135deg, rgba(240, 253, 250, 0.9), rgba(239, 246, 255, 0.84) 58%, rgba(255, 255, 255, 0.92));
+  border-color: rgba(20, 184, 166, 0.24);
+  box-shadow: 0 18px 38px rgba(15, 118, 110, 0.1);
 }
 
 .progress-ui .progress-status-card--practice::before {
@@ -260,9 +266,32 @@
   inset: 1px;
   z-index: -1;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 52%),
-    radial-gradient(circle at bottom left, rgba(163, 230, 53, 0.18), transparent 38%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0) 54%),
+    radial-gradient(circle at bottom left, rgba(163, 230, 53, 0.14), transparent 36%);
   border-radius: calc(var(--radius-md) - 1px);
+}
+
+.progress-ui .progress-practice-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  color: #0f766e;
+  background: rgba(204, 251, 241, 0.72);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.progress-ui .progress-practice-icon .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.progress-ui .progress-status-content {
+  display: grid;
+  gap: 0.34rem;
+  min-width: 0;
 }
 
 .progress-ui .progress-status-card p {
@@ -280,7 +309,7 @@
 .progress-ui .progress-status-card--practice span,
 .progress-ui .progress-status-card--practice .progress-status-eyebrow,
 .progress-ui .progress-status-card--practice .progress-status-note {
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--color-text-secondary);
 }
 
 .progress-ui .progress-status-eyebrow {
@@ -304,11 +333,11 @@
 
 .progress-ui .progress-status-card--practice .progress-status-eyebrow .lucide,
 .progress-ui .progress-status-card--practice strong {
-  color: #ffffff;
+  color: var(--color-text-primary);
 }
 
 .progress-ui .progress-status-card--practice strong {
-  font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+  font-size: clamp(1.14rem, 2.1vw, 1.42rem);
 }
 
 .progress-ui .progress-status-tags {
@@ -359,13 +388,16 @@
 }
 
 .progress-ui .progress-status-card--practice .progress-status-link {
-  width: 100%;
-  min-height: 3rem;
-  margin-top: 0.15rem;
+  width: auto;
+  min-width: 12.4rem;
+  min-height: 2.7rem;
+  margin-top: 0;
+  padding-inline: 1rem;
   color: #053b42;
   background: linear-gradient(135deg, #a3e635, #5eead4);
-  box-shadow: 0 16px 32px rgba(6, 182, 212, 0.28);
-  font-size: 0.9rem;
+  box-shadow: 0 14px 28px rgba(20, 184, 166, 0.18);
+  font-size: 0.84rem;
+  white-space: nowrap;
 }
 
 .progress-ui .progress-status-link:hover {
@@ -377,10 +409,11 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
+  align-items: stretch;
 }
 
 .progress-ui .progress-metric-card {
-  min-height: 6.9rem;
+  min-height: 6.75rem;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.62rem;
@@ -453,16 +486,19 @@
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr) minmax(0, 0.92fr);
   gap: 0.9rem;
+  align-items: stretch;
 }
 
 .progress-ui .progress-detail-card {
   display: grid;
   align-content: start;
   gap: 0.9rem;
+  min-height: 100%;
   padding: 1rem;
 }
 
 .progress-ui .progress-detail-card--path {
+  grid-template-rows: auto 1fr;
   border-color: rgba(20, 184, 166, 0.22);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(240, 253, 250, 0.78)),
@@ -828,6 +864,22 @@
     padding: 0.7rem;
   }
 
+  .progress-ui .progress-status-card--practice {
+    grid-template-columns: 1fr;
+    gap: 0.48rem;
+    margin-top: 0.28rem;
+    padding: 0.72rem;
+  }
+
+  .progress-ui .progress-practice-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .progress-ui .progress-status-content {
+    gap: 0.26rem;
+  }
+
   .progress-ui .progress-status-card p {
     display: -webkit-box;
     overflow: hidden;
@@ -840,6 +892,14 @@
     margin-top: 0.18rem;
     padding: 0.52rem 0.7rem;
     text-align: center;
+  }
+
+  .progress-ui .progress-status-card--practice .progress-status-link {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.45rem;
+    margin-top: 0.1rem;
+    white-space: normal;
   }
 
   .progress-ui .progress-detail-grid,

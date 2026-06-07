@@ -712,6 +712,32 @@
     `;
   }
 
+  function renderNextStepCard(nextStep, progressStatus) {
+    return `
+      <div class="progress-status-card${nextStep.isRecommendedPractice ? " progress-status-card--practice" : ""}" aria-label="Recomendação de próxima etapa">
+        ${nextStep.isRecommendedPractice ? `
+          <span class="progress-practice-icon" aria-hidden="true">
+            <i data-lucide="sparkles"></i>
+          </span>
+        ` : ""}
+        <div class="progress-status-content">
+          <span class="progress-status-eyebrow">
+            ${nextStep.isRecommendedPractice ? "" : `<i data-lucide="sparkles" aria-hidden="true"></i>`}
+            ${escapeHtml(nextStep.eyebrow || "Próxima etapa")}
+          </span>
+          <strong>${escapeHtml(nextStep.title)}</strong>
+          <p>${escapeHtml(nextStep.text)}</p>
+          <div class="progress-status-tags" aria-label="Contexto da prática">
+            <small>${escapeHtml(progressStatus)}</small>
+            ${nextStep.pathTitle ? `<small>${escapeHtml(nextStep.pathTitle)}</small>` : ""}
+          </div>
+          ${nextStep.note ? `<span class="progress-status-note">${escapeHtml(nextStep.note)}</span>` : ""}
+        </div>
+        <a class="progress-status-link" href="${escapeHtml(nextStep.href)}">${escapeHtml(nextStep.cta)}</a>
+      </div>
+    `;
+  }
+
   function renderAuthenticatedState(session, data) {
     const user = session?.user || {};
     const displayName = pickDisplayName(data.profile, user);
@@ -777,20 +803,7 @@
                 <strong>${escapeHtml(priorityArea ? getAreaDisplayName(priorityArea.area) : "A definir")}</strong>
               </div>
             </div>
-          </div>
-          <div class="progress-status-card${nextStep.isRecommendedPractice ? " progress-status-card--practice" : ""}" aria-label="Recomendação de próxima etapa">
-            <span class="progress-status-eyebrow">
-              <i data-lucide="sparkles" aria-hidden="true"></i>
-              ${escapeHtml(nextStep.eyebrow || "Próxima etapa")}
-            </span>
-            <strong>${escapeHtml(nextStep.title)}</strong>
-            <p>${escapeHtml(nextStep.text)}</p>
-            <div class="progress-status-tags" aria-label="Contexto da prática">
-              <small>${escapeHtml(progressStatus)}</small>
-              ${nextStep.pathTitle ? `<small>${escapeHtml(nextStep.pathTitle)}</small>` : ""}
-            </div>
-            ${nextStep.note ? `<span class="progress-status-note">${escapeHtml(nextStep.note)}</span>` : ""}
-            <a class="progress-status-link" href="${escapeHtml(nextStep.href)}">${escapeHtml(nextStep.cta)}</a>
+            ${renderNextStepCard(nextStep, progressStatus)}
           </div>
         </section>
 
