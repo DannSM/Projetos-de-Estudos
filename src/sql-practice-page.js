@@ -1,0 +1,1000 @@
+(function initSqlPracticePage(globalScope) {
+  const mount = document.querySelector("#sqlPracticePageMount");
+  if (!mount) {
+    return;
+  }
+
+  const sqlValidation = globalScope.SqlMissionValidation;
+  const sqlPocEngine = globalScope.SqlPocEngine;
+  if (!sqlValidation || !sqlPocEngine) {
+    mount.innerHTML = `
+      <div class="mission-loading">
+        <strong>Nao foi possivel carregar a Central SQL.</strong>
+        <span>Recarregue a pagina para tentar novamente.</span>
+      </div>
+    `;
+    return;
+  }
+
+  const PRACTICE_NOTE_STORAGE_PREFIX = "dsm:sql-practice-note";
+  const PRACTICE_FEEDBACK_STORAGE_PREFIX = "dsm:sql-practice-feedback";
+
+  const practices = [
+    {
+      slug: "sql-introducao",
+      navTitle: "Introducao ao SQL",
+      shortTitle: "Introducao ao SQL",
+      status: "completed",
+      estimatedMinutes: 8,
+      level: "SQL Junior",
+      topic: "Base",
+      note: "validada localmente"
+    },
+    {
+      slug: "sql-essencial-filtros-where",
+      navTitle: "Etapa 1 - Filtros com WHERE",
+      shortTitle: "Etapa 1: Filtrando pedidos pagos",
+      status: "active",
+      estimatedMinutes: 15,
+      level: "SQL Junior",
+      topic: "WHERE + GROUP BY",
+      table: "pedidos",
+      columns: "pedido_id, status, categoria, valor",
+      prompt: "Crie uma consulta para contar pedidos pagos por categoria. O filtro de status precisa acontecer antes do agrupamento.",
+      objective: "Treine como aplicar WHERE antes de contar ou resumir uma metrica.",
+      why: "Esta pratica apareceu porque o diagnostico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
+      contentTitle: "Primeiro recorte, depois resumo",
+      content: "Quando a metrica e sobre um grupo especifico, aplique o WHERE antes de contar ou somar. A ordem logica e escolher os campos, indicar a fonte, filtrar o recorte e so entao agrupar.",
+      example: "select campo_de_grupo, count(*) from tabela where condicao group by campo_de_grupo;",
+      hintText: "O enunciado pede pedidos pagos por categoria. Filtre status = 'pago' antes do GROUP BY e agrupe por categoria.",
+      solutionText: "Uma solucao possivel: select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
+      placeholder: "select campo_de_grupo, agregacao\nfrom tabela\nwhere condicao\ngroup by campo_de_grupo;"
+    },
+    {
+      slug: "sql-essencial-count-nulos-distintos",
+      navTitle: "Etapa 2 - COUNT e Distintos",
+      shortTitle: "COUNT, nulos e distintos",
+      status: "soon",
+      estimatedMinutes: 12,
+      level: "SQL Junior",
+      topic: "Agregacoes",
+      note: "em breve"
+    },
+    {
+      slug: "sql-essencial-filtro-antes-agregacao",
+      navTitle: "Etapa 3 - Filtro e Agregacao",
+      shortTitle: "Filtro antes da agregacao",
+      status: "soon",
+      estimatedMinutes: 15,
+      level: "SQL Junior",
+      topic: "WHERE + GROUP BY",
+      note: "em breve"
+    },
+    {
+      slug: "sql-essencial-group-by",
+      navTitle: "Etapa 4 - GROUP BY",
+      shortTitle: "Agrupamentos com GROUP BY",
+      status: "soon",
+      estimatedMinutes: 18,
+      level: "SQL Junior",
+      topic: "GROUP BY",
+      note: "em breve"
+    },
+    {
+      slug: "sql-essencial-join",
+      navTitle: "Etapa 5 - JOIN",
+      shortTitle: "Relacionando tabelas com JOIN",
+      status: "soon",
+      estimatedMinutes: 20,
+      level: "SQL Junior",
+      topic: "JOIN",
+      note: "em breve"
+    }
+  ];
+
+  const activePracticeIndex = Math.max(1, getInitialPracticeIndex());
+
+  const state = {
+    activeIndex: practices[activePracticeIndex]?.status === "active" ? activePracticeIndex : 1,
+    queryAnswer: "",
+    attempts: {},
+    feedback: null,
+    sqlWorkbench: {
+      status: "idle",
+      engine: null,
+      execution: null,
+      executionQuery: "",
+      error: ""
+    },
+    practiceNote: "",
+    noteStatus: "",
+    practiceFeedback: {
+      difficulty: "",
+      confidence: "",
+      comment: ""
+    },
+    feedbackStatus: ""
+  };
+
+  function getInitialPracticeIndex() {
+    const params = new URLSearchParams(globalScope.location.search);
+    const slug = params.get("pratica") || params.get("missao") || "sql-essencial-filtros-where";
+    const index = practices.findIndex((practice) => practice.slug === slug);
+    return index >= 0 ? index : 1;
+  }
+
+  function getStorageKey(prefix, slug) {
+    return `${prefix}:${slug}`;
+  }
+
+  function readLocalJson(key, fallback) {
+    try {
+      const rawValue = globalScope.localStorage.getItem(key);
+      return rawValue ? JSON.parse(rawValue) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function writeLocalJson(key, value) {
+    try {
+      globalScope.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function removeLocalItem(key) {
+    try {
+      globalScope.localStorage.removeItem(key);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function loadLocalPracticeDrafts(practice) {
+    state.practiceNote = readLocalJson(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug), "");
+    state.practiceFeedback = readLocalJson(
+      getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug),
+      { difficulty: "", confidence: "", comment: "" }
+    );
+    state.noteStatus = "";
+    state.feedbackStatus = "";
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function getActivePractice() {
+    return practices[state.activeIndex] || practices[1];
+  }
+
+  function getAttemptCount(practice) {
+    return state.attempts[practice.slug]?.attemptCount || 0;
+  }
+
+  function getRuntimeStatus(practice) {
+    const attempt = state.attempts[practice.slug];
+    const workbench = state.sqlWorkbench;
+
+    if (attempt?.status === "correct") return { label: "Correto", tone: "correct" };
+    if (state.feedback?.status === "partial") return { label: "Incorreto", tone: "warning" };
+    if (workbench.error) return { label: "Erro de SQL", tone: "error" };
+    if (workbench.status === "loading") return { label: "Preparando ambiente", tone: "info" };
+    if (workbench.status === "running") return { label: "Executando consulta", tone: "info" };
+    if (workbench.execution) return { label: "Resultado pronto", tone: "ready" };
+    return { label: "Aguardando tentativa", tone: "idle" };
+  }
+
+  function getSidebarStatus(practice, index) {
+    if (practice.status === "completed") return "completed";
+    if (index === state.activeIndex) {
+      return state.attempts[practice.slug]?.status === "correct" ? "completed" : "active";
+    }
+    return "locked";
+  }
+
+  function getSidebarIcon(status) {
+    if (status === "completed") return "check-circle-2";
+    if (status === "active") return "play-circle";
+    return "lock";
+  }
+
+  function getSidebarLabel(status) {
+    if (status === "completed") return "validada local";
+    if (status === "active") return "ativa";
+    return "em breve";
+  }
+
+  function renderSidebar() {
+    return `
+      <aside class="sql-practice-sidebar" aria-label="Roteiro SQL Essencial">
+        <div class="sql-practice-sidebar__header">
+          <span class="section-kicker">SQL Essencial</span>
+          <h1>Trilha de pratica</h1>
+          <span class="sql-practice-pill">Piloto local</span>
+        </div>
+        <nav class="sql-practice-steps" aria-label="Etapas da Central SQL">
+          ${practices.map((practice, index) => {
+            const status = getSidebarStatus(practice, index);
+            const isLocked = status === "locked";
+            return `
+              <button
+                class="sql-practice-step is-${status}"
+                type="button"
+                data-select-practice="${index}"
+                ${isLocked ? "disabled" : ""}
+              >
+                <span class="sql-practice-step__icon" aria-hidden="true">
+                  <i data-lucide="${getSidebarIcon(status)}"></i>
+                </span>
+                <span class="sql-practice-step__copy">
+                  <strong>${escapeHtml(practice.navTitle)}</strong>
+                  <small>${escapeHtml(getSidebarLabel(status))} - ${practice.estimatedMinutes} min</small>
+                </span>
+              </button>
+            `;
+          }).join("")}
+        </nav>
+        <div class="sql-practice-sidebar__footer">
+          <a class="button button-secondary" href="meu-progresso.html">
+            <i data-lucide="line-chart" aria-hidden="true"></i>
+            <span>Ver Meu Progresso</span>
+          </a>
+          <a class="button button-secondary" href="index.html#trilhas">
+            <i data-lucide="route" aria-hidden="true"></i>
+            <span>Voltar para Trilhas</span>
+          </a>
+        </div>
+      </aside>
+    `;
+  }
+
+  function renderWorkspaceHeader(practice) {
+    const status = getRuntimeStatus(practice);
+    return `
+      <header class="sql-practice-workspace__header">
+        <div>
+          <span class="section-kicker">Pratica ativa</span>
+          <h2>${escapeHtml(practice.shortTitle)}</h2>
+        </div>
+        <div class="sql-practice-workspace__tools" aria-label="Acoes da pratica">
+          <span class="sql-practice-status is-${status.tone}">
+            <span aria-hidden="true"></span>
+            ${escapeHtml(status.label)}
+          </span>
+          <span class="sql-practice-counter">${getAttemptCount(practice)} tentativa(s)</span>
+          <a href="#apoio-sql" class="sql-practice-tool" aria-label="Abrir dica">
+            <i data-lucide="lightbulb" aria-hidden="true"></i>
+          </a>
+          <a href="#anotacoes-sql" class="sql-practice-tool" aria-label="Abrir anotacoes">
+            <i data-lucide="sticky-note" aria-hidden="true"></i>
+          </a>
+          <a href="#feedback-local-sql" class="sql-practice-tool" aria-label="Abrir feedback local">
+            <i data-lucide="message-square" aria-hidden="true"></i>
+          </a>
+        </div>
+      </header>
+    `;
+  }
+
+  function renderTags(practice) {
+    return `
+      <div class="mission-context-list sql-practice-tags" aria-label="Contexto da pratica">
+        <span>Tabela: ${escapeHtml(practice.table)}</span>
+        <span>Colunas: ${escapeHtml(practice.columns)}</span>
+        <span>Nivel: ${escapeHtml(practice.level)}</span>
+        <span>Validacao local</span>
+      </div>
+    `;
+  }
+
+  function renderDataTable(columns, rows, className = "") {
+    if (!columns.length) {
+      return `<p class="sql-workbench-empty">A consulta foi executada sem retornar colunas.</p>`;
+    }
+
+    return `
+      <div class="sql-workbench-table-wrap ${escapeHtml(className)}">
+        <table class="sql-workbench-table">
+          <thead>
+            <tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                ${columns.map((column) => `<td>${escapeHtml(row[column] ?? "null")}</td>`).join("")}
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderSupportPanels(practice) {
+    const schemaColumns = ["coluna", "tipo"];
+    const schemaRows = sqlPocEngine.PEDIDOS_SCHEMA.map((column) => ({
+      coluna: column.name,
+      tipo: column.type
+    }));
+    const sampleColumns = ["pedido_id", "status", "categoria", "valor"];
+
+    return `
+      <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da pratica SQL">
+        <details class="mission-learning-card" open>
+          <summary>Apoio teorico</summary>
+          <h3>${escapeHtml(practice.contentTitle)}</h3>
+          <p>${escapeHtml(practice.content)}</p>
+          <code class="code-block">${escapeHtml(practice.example)}</code>
+        </details>
+        <details class="mission-learning-card">
+          <summary>Schema local</summary>
+          <div class="sql-workbench-heading">
+            <span>Tabela</span>
+            <strong>pedidos</strong>
+          </div>
+          ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+        </details>
+        <details class="mission-learning-card">
+          <summary>Amostra sintetica</summary>
+          <div class="sql-workbench-heading">
+            <span>Dados locais</span>
+            <strong>${sqlPocEngine.PEDIDOS_SAMPLE.length} registros</strong>
+          </div>
+          ${renderDataTable(sampleColumns, sqlPocEngine.PEDIDOS_SAMPLE, "is-sample")}
+        </details>
+        <details class="mission-learning-card">
+          <summary>Dica rapida</summary>
+          <p>${escapeHtml(practice.hintText)}</p>
+        </details>
+        <details class="mission-learning-card">
+          <summary>Solucao comentada</summary>
+          <p>Use a solucao para comparar depois de tentar.</p>
+          <code class="code-block">${escapeHtml(practice.solutionText)}</code>
+        </details>
+      </aside>
+    `;
+  }
+
+  function renderTechnicalResult() {
+    const workbench = state.sqlWorkbench;
+    const query = state.queryAnswer.trim();
+    const executionIsCurrent = workbench.execution && workbench.executionQuery === query;
+    const executionIsEvaluable = sqlPocEngine.isEvaluableResult(workbench.execution);
+
+    if (workbench.status === "loading") {
+      return `
+        <div class="sql-workbench-status is-loading" data-sql-technical-result>
+          <strong>Preparando PostgreSQL local...</strong>
+          <p>A base sintetica esta sendo carregada apenas na memoria deste navegador.</p>
+        </div>
+      `;
+    }
+
+    if (workbench.status === "running") {
+      return `
+        <div class="sql-workbench-status is-loading" data-sql-technical-result>
+          <strong>Executando consulta...</strong>
+          <p>O resultado sera exibido aqui antes da validacao didatica.</p>
+        </div>
+      `;
+    }
+
+    if (workbench.error) {
+      return `
+        <div class="sql-workbench-status is-error" data-sql-technical-result>
+          <strong>Erro ao executar</strong>
+          <p class="sql-workbench-technical-error">${escapeHtml(workbench.error)}</p>
+          <div class="sql-workbench-guidance">
+            <span>Como pensar sobre o erro</span>
+            <p>${escapeHtml(getSqlErrorGuidance(query, workbench.error))}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    if (workbench.execution) {
+      const resultState = executionIsEvaluable ? "is-info" : "is-warning";
+      const resultTitle = executionIsEvaluable
+        ? `Consulta executada: ${workbench.execution.totalRows ?? workbench.execution.rows.length} linha(s)`
+        : "Consulta executada, mas sem resultado util";
+
+      return `
+        <div class="sql-workbench-status ${resultState}" data-sql-technical-result>
+          <strong>${escapeHtml(resultTitle)}</strong>
+          ${executionIsEvaluable
+            ? `<p>Consulta executada. Agora valide se o resultado responde ao exercicio.</p>
+              ${renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")}`
+            : "<p>A consulta rodou, mas nao retornou um resultado tabular util para avaliar. Nesta pratica, o resultado precisa trazer uma categoria e uma contagem.</p>"}
+          ${workbench.execution.truncated
+            ? `<p>Exibindo apenas as primeiras ${sqlPocEngine.MAX_RESULT_ROWS} linhas para manter a bancada responsiva.</p>`
+            : ""}
+          <p data-sql-stale-note ${executionIsCurrent ? "hidden" : ""}>O editor mudou. Execute novamente antes de validar.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="sql-workbench-status is-idle" data-sql-technical-result>
+        <strong>Escreva sua consulta e execute</strong>
+        <p>O resultado do PostgreSQL local aparecera aqui apos a execucao.</p>
+      </div>
+    `;
+  }
+
+  function getSqlErrorGuidance(query, errorMessage) {
+    const normalizedQuery = sqlValidation.normalizeSql(query);
+    const normalizedError = String(errorMessage || "").toLowerCase();
+
+    if (/^s(?:e(?:l(?:e(?:c(?:t)?)?)?)?)?$/.test(normalizedQuery) || normalizedError.includes("sua consulta esta incompleta")) {
+      return "Sua consulta esta incompleta. Comece com SELECT e indique os campos que deseja consultar.";
+    }
+
+    if (normalizedError.includes("must appear in the group by")) {
+      return "Voce exibiu uma coluna comum junto com uma contagem. Para contar por categoria, agrupe usando GROUP BY categoria.";
+    }
+
+    if (
+      normalizedError.includes("syntax error") &&
+      (normalizedError.includes('near "from"') || /\bselect\s+categoria\s+count\s*\(/.test(normalizedQuery))
+    ) {
+      return "Confira se os campos no SELECT estao separados corretamente. Cada campo selecionado precisa ser separado por virgula.";
+    }
+
+    if (!/\bfrom\b/.test(normalizedQuery) || normalizedError.includes('column "categoria" does not exist')) {
+      return "Voce escolheu uma coluna, mas ainda nao informou de qual tabela os dados vem. Use FROM pedidos.";
+    }
+
+    if (normalizedError.includes("syntax error")) {
+      return "Revise a ordem das clausulas: SELECT, FROM, WHERE e depois GROUP BY.";
+    }
+
+    return "Leia a mensagem tecnica e revise a parte da consulta indicada antes de executar novamente.";
+  }
+
+  function getResultMismatchGuidance(query) {
+    const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
+    const normalizedQuery = sqlValidation.normalizeSql(query);
+
+    if (!checks.hasCountStar) {
+      return "Sua consulta listou categorias, mas ainda nao contou os pedidos. Use COUNT(*) e agrupe por categoria.";
+    }
+
+    if (/\bselect\s+categoria\s*,\s*count\s*\(\s*\*\s*\)\s+from\s+pedidos\b/.test(normalizedQuery) && !checks.hasGroupByCategoria) {
+      return "Voce misturou uma coluna comum com uma contagem. Para contar por categoria, use GROUP BY categoria.";
+    }
+
+    if (!checks.hasWhere || !checks.hasStatusPaid) {
+      return "Voce agrupou por categoria, mas ainda precisa filtrar apenas pedidos pagos antes do agrupamento. Use WHERE status = 'pago' antes do GROUP BY.";
+    }
+
+    if (checks.hasWhere && checks.hasStatusPaid && checks.hasGroupByStatus && !checks.hasGroupByCategoria) {
+      return "Voce filtrou os pedidos pagos, mas agrupou por status. O exercicio pede a contagem de pedidos pagos por categoria.";
+    }
+
+    if (!checks.hasGroupByCategoria) {
+      return "A consulta executou, mas ainda precisa organizar a contagem por categoria. Use GROUP BY categoria.";
+    }
+
+    return "A consulta executou, mas ainda nao responde exatamente ao exercicio. Revise o recorte, a contagem e o agrupamento.";
+  }
+
+  function getEmptyFeedbackContent() {
+    const workbench = state.sqlWorkbench;
+    const query = state.queryAnswer.trim();
+    const executionIsCurrent = workbench.execution && workbench.executionQuery === query;
+    const hasResultReady = executionIsCurrent && sqlPocEngine.isEvaluableResult(workbench.execution);
+
+    if (hasResultReady) {
+      return {
+        title: "Resultado pronto para validar",
+        message: "Resultado executado. Agora valide para comparar com o objetivo da pratica."
+      };
+    }
+
+    return {
+      title: "Como receber feedback",
+      message: "Execute sua consulta para ver o resultado. Depois valide se ela responde ao exercicio."
+    };
+  }
+
+  function renderFeedback() {
+    if (!state.feedback) {
+      const emptyFeedback = getEmptyFeedbackContent();
+      return `
+        <div class="mission-feedback mission-feedback--empty">
+          <strong data-empty-feedback-title>${escapeHtml(emptyFeedback.title)}</strong>
+          <p data-empty-feedback-message>${escapeHtml(emptyFeedback.message)}</p>
+        </div>
+      `;
+    }
+
+    const icon = state.feedback.status === "correct" ? "check-circle-2" : "circle-alert";
+    return `
+      <div class="mission-feedback mission-feedback--${escapeHtml(state.feedback.status)}" data-feedback-card>
+        <strong><i data-lucide="${icon}" aria-hidden="true"></i>${escapeHtml(state.feedback.title)}</strong>
+        <p>${escapeHtml(state.feedback.message)}</p>
+        <div class="mission-feedback__actions">
+          <a class="button button-secondary" href="meu-progresso.html">
+            <i data-lucide="line-chart" aria-hidden="true"></i>
+            <span>Ver Meu Progresso</span>
+          </a>
+          <button class="button button-secondary" type="button" data-save-progress>
+            <i data-lucide="info" aria-hidden="true"></i>
+            <span>Sobre progresso oficial</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderEditorPanel(practice) {
+    const workbench = state.sqlWorkbench;
+    const query = state.queryAnswer.trim();
+    const canExecute = Boolean(query) && workbench.status === "ready";
+    const canValidate = sqlPocEngine.canValidateExecution(workbench.execution, workbench.executionQuery, query);
+    const isBusy = workbench.status === "loading" || workbench.status === "running";
+    let validationHint = "Execute uma consulta valida antes de validar o exercicio.";
+
+    if (workbench.status === "loading") {
+      validationHint = "Aguarde a preparacao do PostgreSQL local.";
+    } else if (workbench.error) {
+      validationHint = "Corrija o erro e execute a consulta novamente.";
+    } else if (workbench.execution && workbench.executionQuery !== query) {
+      validationHint = "A consulta foi alterada. Execute novamente antes de validar.";
+    } else if (workbench.execution && !sqlPocEngine.isEvaluableResult(workbench.execution)) {
+      validationHint = "O resultado precisa ter colunas e linhas para ser validado.";
+    } else if (canValidate) {
+      validationHint = "Consulta executada. Valide para verificar se ela responde ao exercicio.";
+    }
+
+    return `
+      <section class="sql-practice-editor-panel" id="atividade" aria-label="Editor e resultado SQL">
+        <label class="sql-workbench-editor">
+          <span>Sua consulta SQL</span>
+          <textarea
+            class="mission-query-input"
+            data-query-answer
+            rows="8"
+            spellcheck="false"
+            aria-label="Resposta em SQL"
+            placeholder="${escapeHtml(practice.placeholder)}"
+          >${escapeHtml(state.queryAnswer)}</textarea>
+        </label>
+        <div class="sql-workbench-actions">
+          <button class="button button-secondary" type="button" data-execute-query ${!canExecute ? "disabled" : ""}>
+            <i data-lucide="play" aria-hidden="true"></i>
+            <span>Executar consulta</span>
+          </button>
+          <button class="button button-primary" type="button" data-validate-query ${!canValidate || isBusy ? "disabled" : ""}>
+            <i data-lucide="badge-check" aria-hidden="true"></i>
+            <span>Validar exercicio</span>
+          </button>
+          <button class="button button-secondary" type="button" data-clear-query ${!state.queryAnswer ? "disabled" : ""}>
+            <i data-lucide="eraser" aria-hidden="true"></i>
+            <span>Limpar</span>
+          </button>
+          <p class="sql-workbench-action-hint ${canValidate ? "is-ready" : ""}">${escapeHtml(validationHint)}</p>
+        </div>
+        <div class="sql-practice-result-grid">
+          ${renderTechnicalResult()}
+          ${renderFeedback()}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderPracticeNotes(practice) {
+    return `
+      <details class="mission-learning-card mission-local-card" id="anotacoes-sql" aria-label="Anotacoes pessoais">
+        <summary>
+          <span>Anotacoes pessoais</span>
+          <small>Salvo apenas neste navegador.</small>
+        </summary>
+        <div class="mission-local-card__body">
+          <textarea
+            class="mission-local-textarea"
+            data-practice-note
+            rows="4"
+            maxlength="800"
+            placeholder="Registre uma duvida, insight ou query que queira revisar depois."
+          >${escapeHtml(state.practiceNote)}</textarea>
+          <div class="mission-local-actions">
+            <button class="button button-secondary" type="button" data-save-note>
+              <i data-lucide="save" aria-hidden="true"></i>
+              <span>Salvar anotacao</span>
+            </button>
+            <button class="button button-secondary" type="button" data-clear-note ${!state.practiceNote ? "disabled" : ""}>
+              <i data-lucide="trash-2" aria-hidden="true"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+          ${state.noteStatus ? `<small class="mission-local-status">${escapeHtml(state.noteStatus)}</small>` : ""}
+        </div>
+      </details>
+    `;
+  }
+
+  function renderPracticeFeedbackForm(practice) {
+    const feedback = state.practiceFeedback || {};
+    const difficultyOptions = ["Facil", "Media", "Dificil"];
+    const confidenceOptions = ["Baixa", "Media", "Alta"];
+    const renderOptions = (name, values, selectedValue) => values.map((value) => `
+      <label>
+        <input type="radio" name="${name}" value="${escapeHtml(value)}" ${selectedValue === value ? "checked" : ""}>
+        <span>${escapeHtml(value)}</span>
+      </label>
+    `).join("");
+
+    return `
+      <details class="mission-learning-card mission-local-card" id="feedback-local-sql" aria-label="Feedback local sobre a pratica">
+        <summary>
+          <span>Feedback da pratica</span>
+          <small>Nao altera progresso oficial.</small>
+        </summary>
+        <div class="mission-local-card__body">
+          <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
+            <strong>Dificuldade percebida</strong>
+            <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
+          </div>
+          <div class="mission-local-fieldset" data-practice-feedback-group="confidence">
+            <strong>Confianca no tema</strong>
+            <div>${renderOptions("practiceConfidence", confidenceOptions, feedback.confidence)}</div>
+          </div>
+          <textarea
+            class="mission-local-textarea"
+            data-practice-feedback-comment
+            rows="3"
+            maxlength="500"
+            placeholder="Comentario opcional sobre esta pratica."
+          >${escapeHtml(feedback.comment || "")}</textarea>
+          <button class="button button-secondary" type="button" data-save-practice-feedback>
+            <i data-lucide="message-square-check" aria-hidden="true"></i>
+            <span>Salvar feedback local</span>
+          </button>
+          ${state.feedbackStatus ? `<small class="mission-local-status">${escapeHtml(state.feedbackStatus)}</small>` : ""}
+        </div>
+      </details>
+    `;
+  }
+
+  function renderLocalPanels(practice) {
+    return `
+      <section class="sql-practice-local-grid" aria-label="Anotacoes e feedback local">
+        ${renderPracticeNotes(practice)}
+        ${renderPracticeFeedbackForm(practice)}
+      </section>
+    `;
+  }
+
+  function renderWorkspace(practice) {
+    return `
+      <main class="sql-practice-workspace" aria-label="Central SQL">
+        ${renderWorkspaceHeader(practice)}
+        <div class="sql-practice-workspace__scroll">
+          <section class="sql-practice-brief" aria-label="Enunciado da pratica">
+            <div>
+              <span class="section-kicker">Pratique agora</span>
+              <h1>${escapeHtml(practice.prompt)}</h1>
+              <p>${escapeHtml(practice.objective)}</p>
+            </div>
+            ${renderTags(practice)}
+          </section>
+          <section class="sql-practice-app-grid" aria-label="Workspace de execucao SQL">
+            ${renderSupportPanels(practice)}
+            ${renderEditorPanel(practice)}
+          </section>
+          <section class="sql-practice-why" aria-label="Contexto da recomendacao">
+            <strong>Por que esta pratica?</strong>
+            <p>${escapeHtml(practice.why)}</p>
+            <small>Prototipo local: esta pratica treina e valida no navegador. O progresso oficial sera salvo em uma etapa futura.</small>
+          </section>
+          ${renderLocalPanels(practice)}
+        </div>
+      </main>
+    `;
+  }
+
+  function renderPage() {
+    const practice = getActivePractice();
+    mount.innerHTML = `
+      <div class="sql-practice-app">
+        ${renderSidebar()}
+        ${renderWorkspace(practice)}
+      </div>
+    `;
+
+    if (globalScope.lucide && typeof globalScope.lucide.createIcons === "function") {
+      globalScope.lucide.createIcons();
+    }
+
+    void ensureSqlWorkbench();
+  }
+
+  async function ensureSqlWorkbench() {
+    if (state.sqlWorkbench.status !== "idle") {
+      return;
+    }
+
+    state.sqlWorkbench.status = "loading";
+    renderPage();
+
+    try {
+      state.sqlWorkbench.engine = await sqlPocEngine.createBrowserWorkbench();
+      state.sqlWorkbench.status = "ready";
+    } catch (error) {
+      state.sqlWorkbench.status = "error-loading";
+      state.sqlWorkbench.error = "Nao foi possivel iniciar o PostgreSQL local. Verifique sua conexao e recarregue a pagina.";
+      console.error("Falha ao iniciar PGlite:", error);
+    }
+
+    renderPage();
+  }
+
+  async function executeSqlQuery() {
+    const workbench = state.sqlWorkbench;
+    if (!workbench.engine || workbench.status !== "ready") {
+      return;
+    }
+
+    const query = state.queryAnswer.trim();
+    workbench.status = "running";
+    workbench.execution = null;
+    workbench.executionQuery = "";
+    workbench.error = "";
+    state.feedback = null;
+    renderPage();
+
+    try {
+      workbench.execution = await workbench.engine.execute(query);
+      workbench.executionQuery = query;
+    } catch (error) {
+      workbench.error = error instanceof Error ? error.message : String(error);
+    } finally {
+      workbench.status = "ready";
+    }
+
+    renderPage();
+  }
+
+  function validateSqlPractice() {
+    const practice = getActivePractice();
+    const workbench = state.sqlWorkbench;
+    const query = state.queryAnswer.trim();
+
+    if (!workbench.execution || workbench.executionQuery !== query) {
+      workbench.error = "Execute a versao atual da consulta antes de validar o exercicio.";
+      renderPage();
+      return;
+    }
+
+    const isCorrect = sqlPocEngine.validateMissionResult(workbench.execution, query);
+    const result = isCorrect
+      ? {
+          status: "correct",
+          title: "Correto",
+          message: "Correto. Voce filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria."
+        }
+      : {
+          status: "partial",
+          title: "Resultado diferente do esperado",
+          message: getResultMismatchGuidance(query)
+        };
+    const previousAttemptCount = state.attempts[practice.slug]?.attemptCount || 0;
+
+    state.feedback = result;
+    state.attempts[practice.slug] = {
+      ...result,
+      attemptCount: previousAttemptCount + 1
+    };
+
+    renderPage();
+  }
+
+  function syncSqlWorkbenchControls() {
+    const query = state.queryAnswer.trim();
+    const workbench = state.sqlWorkbench;
+    const executeButton = mount.querySelector("[data-execute-query]");
+    const validateButton = mount.querySelector("[data-validate-query]");
+    const actionHint = mount.querySelector(".sql-workbench-action-hint");
+    const staleNote = mount.querySelector("[data-sql-stale-note]");
+    const emptyFeedbackTitle = mount.querySelector("[data-empty-feedback-title]");
+    const emptyFeedbackMessage = mount.querySelector("[data-empty-feedback-message]");
+    const executionIsCurrent = workbench.execution && workbench.executionQuery === query;
+
+    if (executeButton) {
+      executeButton.disabled = !query || workbench.status !== "ready";
+    }
+
+    if (validateButton) {
+      validateButton.disabled = !sqlPocEngine.canValidateExecution(workbench.execution, workbench.executionQuery, query);
+    }
+
+    if (actionHint) {
+      actionHint.classList.remove("is-ready");
+      actionHint.textContent = executionIsCurrent
+        ? "Consulta executada. Valide para verificar se ela responde ao exercicio."
+        : workbench.execution
+          ? "A consulta foi alterada. Execute novamente antes de validar."
+          : "Execute uma consulta valida antes de validar o exercicio.";
+    }
+
+    if (staleNote) {
+      staleNote.hidden = Boolean(executionIsCurrent);
+    }
+
+    if (emptyFeedbackTitle && emptyFeedbackMessage) {
+      const emptyFeedback = getEmptyFeedbackContent();
+      emptyFeedbackTitle.textContent = emptyFeedback.title;
+      emptyFeedbackMessage.textContent = emptyFeedback.message;
+    }
+  }
+
+  function resetPracticeInteraction(practice) {
+    const attempt = state.attempts[practice.slug];
+    state.queryAnswer = "";
+    state.feedback = attempt
+      ? { status: attempt.status, title: attempt.title, message: attempt.message }
+      : null;
+    state.sqlWorkbench.error = "";
+    state.sqlWorkbench.execution = null;
+    state.sqlWorkbench.executionQuery = "";
+    loadLocalPracticeDrafts(practice);
+  }
+
+  function selectPractice(index) {
+    const practice = practices[index];
+    if (!practice || practice.status !== "active") {
+      return;
+    }
+
+    state.activeIndex = index;
+    resetPracticeInteraction(practice);
+    const nextUrl = new URL(globalScope.location.href);
+    nextUrl.searchParams.set("pratica", practice.slug);
+    globalScope.history.replaceState({}, "", nextUrl);
+    renderPage();
+  }
+
+  mount.addEventListener("click", (event) => {
+    const executeButton = event.target.closest("[data-execute-query]");
+    if (executeButton && !executeButton.disabled) {
+      void executeSqlQuery();
+      return;
+    }
+
+    const validateButton = event.target.closest("[data-validate-query]");
+    if (validateButton && !validateButton.disabled) {
+      validateSqlPractice();
+      return;
+    }
+
+    const clearQueryButton = event.target.closest("[data-clear-query]");
+    if (clearQueryButton && !clearQueryButton.disabled) {
+      state.queryAnswer = "";
+      state.feedback = null;
+      state.sqlWorkbench.error = "";
+      state.sqlWorkbench.execution = null;
+      state.sqlWorkbench.executionQuery = "";
+      renderPage();
+      return;
+    }
+
+    const saveButton = event.target.closest("[data-save-progress]");
+    if (saveButton) {
+      state.feedback = {
+        status: "partial",
+        title: "Validacao local",
+        message: "Esta pratica ainda nao altera progresso oficial. Ela treina e valida no navegador para preparar a futura missao oficial."
+      };
+      renderPage();
+      return;
+    }
+
+    const saveNoteButton = event.target.closest("[data-save-note]");
+    if (saveNoteButton) {
+      const practice = getActivePractice();
+      const noteInput = mount.querySelector("[data-practice-note]");
+      state.practiceNote = noteInput ? noteInput.value : state.practiceNote;
+      state.noteStatus = writeLocalJson(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug), state.practiceNote)
+        ? "Anotacao salva apenas neste navegador."
+        : "Nao foi possivel salvar a anotacao neste navegador.";
+      renderPage();
+      return;
+    }
+
+    const clearNoteButton = event.target.closest("[data-clear-note]");
+    if (clearNoteButton && !clearNoteButton.disabled) {
+      const practice = getActivePractice();
+      state.practiceNote = "";
+      state.noteStatus = removeLocalItem(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug))
+        ? "Anotacao local removida."
+        : "Nao foi possivel remover a anotacao local.";
+      renderPage();
+      return;
+    }
+
+    const savePracticeFeedbackButton = event.target.closest("[data-save-practice-feedback]");
+    if (savePracticeFeedbackButton) {
+      const practice = getActivePractice();
+      const difficulty = mount.querySelector('input[name="practiceDifficulty"]:checked')?.value || "";
+      const confidence = mount.querySelector('input[name="practiceConfidence"]:checked')?.value || "";
+      const comment = mount.querySelector("[data-practice-feedback-comment]")?.value || "";
+      state.practiceFeedback = { difficulty, confidence, comment };
+      state.feedbackStatus = writeLocalJson(getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug), state.practiceFeedback)
+        ? "Feedback salvo localmente neste navegador."
+        : "Nao foi possivel salvar o feedback neste navegador.";
+      renderPage();
+      return;
+    }
+
+    const practiceButton = event.target.closest("[data-select-practice]");
+    if (practiceButton) {
+      selectPractice(Number(practiceButton.dataset.selectPractice));
+    }
+  });
+
+  mount.addEventListener("input", (event) => {
+    if (event.target.matches("[data-query-answer]")) {
+      state.queryAnswer = event.target.value;
+      state.feedback = null;
+      state.sqlWorkbench.error = "";
+      syncSqlWorkbenchControls();
+    }
+
+    if (event.target.matches("[data-practice-note]")) {
+      state.practiceNote = event.target.value;
+      state.noteStatus = "";
+    }
+
+    if (event.target.matches("[data-practice-feedback-comment]")) {
+      state.practiceFeedback = {
+        ...state.practiceFeedback,
+        comment: event.target.value
+      };
+      state.feedbackStatus = "";
+    }
+
+    if (event.target.matches('input[name="practiceDifficulty"]')) {
+      state.practiceFeedback = {
+        ...state.practiceFeedback,
+        difficulty: event.target.value
+      };
+      state.feedbackStatus = "";
+    }
+
+    if (event.target.matches('input[name="practiceConfidence"]')) {
+      state.practiceFeedback = {
+        ...state.practiceFeedback,
+        confidence: event.target.value
+      };
+      state.feedbackStatus = "";
+    }
+  });
+
+  mount.addEventListener("keydown", (event) => {
+    if (!event.target.matches("[data-query-answer]")) {
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      const executeButton = mount.querySelector("[data-execute-query]");
+      if (executeButton && !executeButton.disabled) {
+        void executeSqlQuery();
+      }
+    }
+  });
+
+  loadLocalPracticeDrafts(getActivePractice());
+  renderPage();
+})(window);

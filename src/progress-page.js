@@ -15,9 +15,9 @@
     Indicadores: "Indicadores e KPIs"
   };
   const SQL_MISSION_URLS_BY_STEP_KEY = {
-    "sql-essencial-01-where": "missao.html?missao=sql-essencial-filtros-where",
-    "sql-essencial-02-contagens": "missao.html?missao=sql-essencial-count-nulos-distintos",
-    "sql-essencial-03-filtro-mais-agregacao": "missao.html?missao=sql-essencial-filtro-antes-agregacao"
+    "sql-essencial-01-where": "praticas-sql.html?pratica=sql-essencial-filtros-where",
+    "sql-essencial-02-contagens": "praticas-sql.html?pratica=sql-essencial-count-nulos-distintos",
+    "sql-essencial-03-filtro-mais-agregacao": "praticas-sql.html?pratica=sql-essencial-filtro-antes-agregacao"
   };
   const SQL_MISSION_URLS_BY_TITLE = [
     { pattern: /filtros?\s+com\s+where/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-01-where"] },
@@ -145,7 +145,25 @@
   }
 
   function isMissionUrl(value) {
-    return /(^|\/)missao(?:\.html)?(?:$|[?#])/.test(String(value || ""));
+    return /(^|\/)(?:missao|praticas-sql)(?:\.html)?(?:$|[?#])/.test(String(value || ""));
+  }
+
+  function normalizeRecommendedPracticeHref(value) {
+    const href = String(value || "").trim();
+    if (!href) return "";
+    if (!isMissionUrl(href)) return href;
+
+    try {
+      const parsedUrl = new URL(href, window.location.href);
+      const practice = parsedUrl.searchParams.get("pratica")
+        || parsedUrl.searchParams.get("missao")
+        || "sql-essencial-filtros-where";
+      return `praticas-sql.html?pratica=${encodeURIComponent(practice)}`;
+    } catch (error) {
+      const match = href.match(/[?&](?:missao|pratica)=([^&#]+)/);
+      const practice = match ? decodeURIComponent(match[1]) : "sql-essencial-filtros-where";
+      return `praticas-sql.html?pratica=${encodeURIComponent(practice)}`;
+    }
   }
 
   function getRecommendedPracticeHref(step) {
@@ -153,7 +171,7 @@
 
     const contentUrl = String(step.content_url || "").trim();
     if (contentUrl) {
-      return contentUrl;
+      return normalizeRecommendedPracticeHref(contentUrl);
     }
 
     const stepKey = String(step.step_key || "").trim();
@@ -163,7 +181,7 @@
 
     const title = String(step.title || "").trim();
     const matchedTitle = SQL_MISSION_URLS_BY_TITLE.find((item) => item.pattern.test(title));
-    return matchedTitle?.href || "";
+    return normalizeRecommendedPracticeHref(matchedTitle?.href || "");
   }
 
   function getPriorityAreaFromSession(latestSession) {
@@ -273,7 +291,7 @@
           ? "Pratique a lacuna identificada no diagnóstico com feedback imediato."
           : step.description || (path ? `Continue a trilha ${path.title}.` : "Continue sua trilha de estudos."),
         href: practiceHref || "index.html#trilhas",
-        cta: isRecommendedPractice ? "Iniciar prática recomendada" : "Ver trilhas",
+        cta: isRecommendedPractice ? "Abrir Práticas SQL" : "Ver trilhas",
         isRecommendedPractice,
         pathTitle: path?.title || "",
         note: isRecommendedPractice ? "Piloto local, sem marcar conclusão real." : ""

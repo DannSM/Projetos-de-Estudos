@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prática Guiada SQL - Data Skill Map</title>
-  <meta name="description" content="Prática guiada SQL do Data Skill Map, com validação local e feedback imediato.">
+  <title>Prática movida para a Central SQL | Data Skill Map</title>
+  <meta name="description" content="Esta prática agora está na Central SQL do Data Skill Map.">
+  <meta http-equiv="refresh" content="0; url=praticas-sql.html?pratica=sql-essencial-filtros-where">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -12,114 +13,24 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function redirectLegacyMissionUrl() {
+      var params = new URLSearchParams(window.location.search);
+      var practice = params.get("missao") || params.get("pratica") || "sql-essencial-filtros-where";
+      var target = "praticas-sql.html?pratica=" + encodeURIComponent(practice);
+      window.location.replace(target + (window.location.hash || "#atividade"));
+    })();
+  </script>
 </head>
 <body class="mission-ui">
-  <header class="app-header">
-    <a class="brand" href="index.html" aria-label="Data Skill Map">
-      <span class="brand-logo-wrap" aria-hidden="true">
-        <img class="brand-logo" src="assets/header-logo.png" alt="Data Skill Map">
-      </span>
-      <span class="brand-name">
-        <span><strong>D</strong>ata</span>
-        <span><strong>S</strong>kill</span>
-        <span><strong>M</strong>ap</span>
-      </span>
-    </a>
-
-    <nav class="header-nav" data-global-nav="desktop" aria-label="Navegação principal"></nav>
-    <div class="header-actions" data-global-actions="desktop"></div>
-    <button
-      class="mobile-nav-toggle"
-      type="button"
-      aria-label="Abrir menu de navegação"
-      aria-expanded="false"
-      aria-controls="mobileGlobalNav"
-    >
-      <i data-lucide="menu" aria-hidden="true"></i>
-    </button>
-  </header>
-
-  <div class="mobile-nav-backdrop" hidden></div>
-  <nav id="mobileGlobalNav" class="mobile-nav-panel" data-global-nav="mobile" aria-label="Menu principal"></nav>
-
   <main class="mission-page">
-    <section id="missionPageMount" class="section-shell mission-shell" aria-live="polite">
-      <div class="mission-loading">
-        <strong>Carregando prática guiada SQL...</strong>
-        <span>Validação local do piloto SQL Essencial.</span>
-      </div>
+    <section class="section-shell mission-shell">
+      <article class="mission-loading">
+        <strong>Esta prática agora está na Central SQL.</strong>
+        <span>Você será redirecionado automaticamente.</span>
+        <a class="button button-primary" href="praticas-sql.html?pratica=sql-essencial-filtros-where#atividade">Abrir Práticas SQL</a>
+      </article>
     </section>
   </main>
-
-  <footer class="contact-footer contact-footer--compact">
-    <div class="contact-footer__content">
-      <div class="contact-footer__intro">
-        <p class="contact-footer__eyebrow">Data Skill Map</p>
-        <h2>Continue sua evolução em Dados.</h2>
-        <p>Estude SQL, Estatística, Analytics e desenvolva seu raciocínio com desafios práticos.</p>
-      </div>
-
-      <div class="contact-footer__brand">
-        <strong>Daniellysson Souza Mendes</strong>
-        <span>Consultor de Qualidade - Dados - Analytics - Melhoria Contínua</span>
-      </div>
-
-      <div class="contact-footer__grid">
-        <a href="mailto:daniellysson@gmail.com" class="contact-footer__item">
-          <i data-lucide="mail" aria-hidden="true"></i>
-          <span>daniellysson@gmail.com</span>
-        </a>
-
-        <a href="https://wa.me/5538991452743" target="_blank" rel="noopener noreferrer" class="contact-footer__item">
-          <i data-lucide="message-circle" aria-hidden="true"></i>
-          <span>WhatsApp</span>
-        </a>
-
-        <a href="https://www.linkedin.com/in/daniellysson" target="_blank" rel="noopener noreferrer" class="contact-footer__item">
-          <i data-lucide="linkedin" aria-hidden="true"></i>
-          <span>LinkedIn</span>
-        </a>
-
-        <a href="https://github.com/DannSM" target="_blank" rel="noopener noreferrer" class="contact-footer__item">
-          <i data-lucide="github" aria-hidden="true"></i>
-          <span>GitHub</span>
-        </a>
-      </div>
-
-      <nav class="contact-footer__links" aria-label="Links úteis">
-        <a href="index.html#home">Sobre a plataforma</a>
-        <a href="index.html#trilhas">Trilhas de estudo</a>
-        <a href="diagnostico.html">Diagnóstico</a>
-        <a href="meu-progresso.html">Meu Progresso</a>
-        <a data-admin-nav href="analytics.html" hidden>Analytics</a>
-      </nav>
-
-      <a
-        href="https://wa.me/5538991452743"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="contact-footer__whatsapp"
-        aria-label="Abrir conversa no WhatsApp"
-        title="Abrir conversa no WhatsApp"
-      >
-        <i data-lucide="message-circle" aria-hidden="true"></i>
-        <span>WhatsApp</span>
-      </a>
-    </div>
-
-    <div class="contact-footer__bottom">
-      <span>&copy; 2026 Data Skill Map. Desenvolvido por Daniellysson Souza Mendes.</span>
-    </div>
-  </footer>
-
-  <script src="src/supabase-config.js"></script>
-  <script src="src/auth-service.js"></script>
-  <script src="src/auth-modal.js"></script>
-  <script src="src/app.js"></script>
-  <script src="src/sql-mission-validation.js"></script>
-  <script src="src/sql-poc-engine.js"></script>
-  <script src="src/learning-mission-page.js"></script>
 </body>
 </html>

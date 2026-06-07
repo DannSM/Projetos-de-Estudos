@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Práticas SQL | Data Skill Map</title>
+  <meta name="description" content="Central SQL do Data Skill Map com práticas locais, editor SQL, resultado e feedback imediato.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="mission-ui sql-practice-ui">
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="Data Skill Map">
+      <span class="brand-logo-wrap" aria-hidden="true">
+        <img class="brand-logo" src="assets/header-logo.png" alt="Data Skill Map">
+      </span>
+      <span class="brand-name">
+        <span><strong>D</strong>ata</span>
+        <span><strong>S</strong>kill</span>
+        <span><strong>M</strong>ap</span>
+      </span>
+    </a>
+
+    <nav class="header-nav" data-global-nav="desktop" aria-label="Navegação principal"></nav>
+    <div class="header-actions" data-global-actions="desktop"></div>
+    <button
+      class="mobile-nav-toggle"
+      type="button"
+      aria-label="Abrir menu de navegação"
+      aria-expanded="false"
+      aria-controls="mobileGlobalNav"
+    >
+      <i data-lucide="menu" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <div class="mobile-nav-backdrop" hidden></div>
+  <nav id="mobileGlobalNav" class="mobile-nav-panel" data-global-nav="mobile" aria-label="Menu principal"></nav>
+
+  <main class="sql-practice-page">
+    <section id="sqlPracticePageMount" class="sql-practice-shell" aria-live="polite">
+      <div class="mission-loading">
+        <strong>Carregando Central SQL...</strong>
+        <span>Validação local do piloto SQL Essencial.</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="src/supabase-config.js"></script>
+  <script src="src/auth-service.js"></script>
+  <script src="src/auth-modal.js"></script>
+  <script src="src/app.js"></script>
+  <script src="src/sql-mission-validation.js"></script>
+  <script src="src/sql-poc-engine.js"></script>
+  <script src="src/sql-practice-page.js"></script>
+</body>
+</html>
