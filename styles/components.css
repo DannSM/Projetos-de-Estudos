@@ -3837,7 +3837,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   transform: translateY(0);
 }
 
-/* Missão pós-diagnóstico: protótipo local visual/funcional, sem integração Supabase. */
+/* Prática guiada SQL: protótipo local visual/funcional, sem integração Supabase. */
 .mission-ui {
   background:
     linear-gradient(rgba(15, 118, 110, 0.035) 1px, transparent 1px),
@@ -3853,7 +3853,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-shell {
   display: grid;
   gap: clamp(0.78rem, 1.8vw, 1rem);
-  width: min(1040px, calc(100% - clamp(1.5rem, 4vw, 2.5rem)));
+  width: min(1400px, calc(100% - clamp(1.5rem, 4vw, 2.5rem)));
   padding-top: clamp(0.8rem, 2.2vw, 1.35rem);
 }
 
@@ -4060,6 +4060,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .mission-content-card,
 .mission-activity-card,
 .mission-side-card,
+.mission-learning-card,
 .mission-progress-panel {
   padding: clamp(0.9rem, 2vw, 1.15rem);
 }
@@ -4087,7 +4088,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .mission-activity-card {
   display: grid;
-  gap: clamp(0.78rem, 1.8vw, 1rem);
+  gap: clamp(0.68rem, 1.4vw, 0.86rem);
   border-color: rgba(37, 99, 235, 0.22);
   box-shadow: 0 20px 48px rgba(37, 99, 235, 0.12);
 }
@@ -4135,20 +4136,39 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-workbench {
   display: grid;
-  gap: 0.78rem;
+  grid-template-columns: minmax(20rem, 0.86fr) minmax(28rem, 1.14fr);
+  gap: clamp(0.82rem, 1.8vw, 1.08rem);
+  align-items: start;
+}
+
+.sql-workbench-support,
+.sql-workbench-terminal {
+  display: grid;
+  gap: 0.72rem;
+  min-width: 0;
+}
+
+.sql-workbench-terminal {
+  position: sticky;
+  top: calc(var(--header-height) + 0.85rem);
 }
 
 .sql-workbench-reference {
   display: grid;
-  grid-template-columns: minmax(13rem, 0.72fr) minmax(0, 1.28fr);
-  gap: 0.68rem;
+  gap: 0.62rem;
   padding: 0.68rem;
   background: rgba(248, 250, 252, 0.82);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-md);
 }
 
-.sql-workbench-reference section {
+.sql-workbench-reference-grid {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.76fr) minmax(0, 1.24fr);
+  gap: 0.68rem;
+}
+
+.sql-workbench-reference-grid section {
   display: grid;
   gap: 0.46rem;
   min-width: 0;
@@ -4210,7 +4230,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-workbench-table-wrap.is-sample {
-  max-height: 12rem;
+  max-height: 10.5rem;
   overflow: auto;
 }
 
@@ -4220,6 +4240,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-workbench-editor .mission-query-input {
+  min-height: clamp(14rem, 34vh, 22rem);
   background: #0f172a;
   color: #e2e8f0;
   border-color: #334155;
@@ -4259,6 +4280,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-workbench-status {
   display: grid;
   gap: 0.48rem;
+  max-height: min(24rem, 42vh);
+  overflow: auto;
   padding: 0.72rem;
   color: #475569;
   background: rgba(248, 250, 252, 0.9);
@@ -4305,6 +4328,111 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-workbench-status.is-info .sql-workbench-table th {
   color: #1e3a8a;
   background: rgba(219, 234, 254, 0.78);
+}
+
+.mission-learning-card {
+  display: grid;
+  gap: 0.56rem;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.mission-learning-card h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: clamp(1.02rem, 1.4vw, 1.18rem);
+  line-height: 1.18;
+}
+
+.mission-learning-card p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.42;
+}
+
+.mission-learning-card details {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.58rem 0.64rem;
+  background: rgba(248, 250, 252, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.mission-learning-card summary {
+  color: #0f766e;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mission-local-card .button {
+  width: fit-content;
+}
+
+.mission-local-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 5rem;
+  padding: 0.62rem 0.68rem;
+  color: var(--color-text-primary);
+  background: rgba(248, 250, 252, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  line-height: 1.42;
+}
+
+.mission-local-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.44rem;
+}
+
+.mission-local-actions .button[disabled],
+.sql-workbench-actions .button[disabled],
+.mission-local-card .button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.56;
+  box-shadow: none;
+}
+
+.mission-local-status {
+  color: #0f766e;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.mission-local-fieldset {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.mission-local-fieldset strong {
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+}
+
+.mission-local-fieldset > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.mission-local-fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.48rem;
+  color: #164e63;
+  background: rgba(236, 253, 245, 0.82);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .sql-workbench-technical-error {
@@ -4771,8 +4899,13 @@ body.analytics-auth-locked .analytics-hero-copy {
 @media (max-width: 1024px) {
   .mission-layout,
   .mission-hero,
-  .mission-workbench {
+  .mission-workbench,
+  .sql-workbench {
     grid-template-columns: 1fr;
+  }
+
+  .sql-workbench-terminal {
+    position: static;
   }
 
   .mission-layout {
@@ -4822,6 +4955,10 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-workbench-reference {
+    grid-template-columns: 1fr;
+  }
+
+  .sql-workbench-reference-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -4880,6 +5017,10 @@ body.analytics-auth-locked .analytics-hero-copy {
     padding: 0.56rem;
   }
 
+  .sql-workbench-reference-grid {
+    grid-template-columns: 1fr;
+  }
+
   .sql-workbench-actions {
     display: grid;
     grid-template-columns: 1fr;
@@ -4887,6 +5028,20 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .sql-workbench-actions .button {
     width: 100%;
+  }
+
+  .mission-local-card .button,
+  .mission-local-actions .button {
+    width: 100%;
+  }
+
+  .mission-local-fieldset > div {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sql-workbench-status {
+    max-height: none;
   }
 
   .sql-workbench-action-hint {

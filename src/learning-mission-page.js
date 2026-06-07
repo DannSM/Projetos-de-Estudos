@@ -16,20 +16,25 @@
     return;
   }
 
-  // Protótipo local do piloto: dados controlados em memória, sem Supabase e sem progresso real.
+  const PRACTICE_NOTE_STORAGE_PREFIX = "dsm:sql-practice-note";
+  const PRACTICE_FEEDBACK_STORAGE_PREFIX = "dsm:sql-practice-feedback";
+
+  // Prática guiada local do piloto: dados controlados em memória, sem Supabase e sem progresso oficial.
   const missions = [
     {
       slug: "sql-essencial-filtros-where",
-      title: "Missão recomendada: filtre exatamente o recorte pedido",
+      title: "Pratique SQL: filtre exatamente o recorte pedido",
       gap: "filtros com WHERE",
       skillCode: "sql.filtering.where_logic",
       level: "Básico",
       estimatedMinutes: 10,
       objective: "Escolher o WHERE que traduz exatamente a pergunta de negócio.",
-      why: "Esta missão apareceu porque o diagnóstico encontrou uma lacuna em filtros com SQL. Corrigir isso ajuda você a responder perguntas de negócio sem trazer dados fora do recorte.",
+      why: "Esta prática apareceu porque o diagnóstico encontrou uma lacuna em filtros com SQL. Treinar isso ajuda você a responder perguntas de negócio sem trazer dados fora do recorte.",
       contentTitle: "O que o WHERE precisa fazer",
       content: "O WHERE deve traduzir exatamente o recorte da pergunta. Se a pergunta pede pedidos pagos em janeiro, o filtro precisa limitar status e período ao mesmo tempo.",
       example: "select * from pedidos where status = 'pago' and data_pedido >= '2026-01-01' and data_pedido < '2026-02-01';",
+      hintText: "Procure todos os critérios pedidos no enunciado: status e período precisam aparecer no WHERE.",
+      solutionText: "Use status = 'pago' e limite janeiro com data_pedido >= '2026-01-01' and data_pedido < '2026-02-01'.",
       activityType: "multiple_choice",
       activityTitle: "Pratique agora",
       prompt: "A área comercial pediu pedidos pagos em janeiro de 2026. Qual WHERE responde exatamente ao recorte?",
@@ -54,7 +59,7 @@
           return {
             status: "partial",
             title: "Parcial",
-            message: "Quase lá. Você acertou parte do raciocínio, mas ainda falta ajustar um critério importante antes de concluir a missão."
+            message: "Quase lá. Você acertou parte do raciocínio, mas ainda falta ajustar um critério importante antes de validar a prática."
           };
         }
 
@@ -67,16 +72,18 @@
     },
     {
       slug: "sql-essencial-count-nulos-distintos",
-      title: "Missão recomendada: conte sem se enganar com nulos",
+      title: "Pratique SQL: conte sem se enganar com nulos",
       gap: "COUNT, nulos e distintos",
       skillCode: "sql.aggregation.counting",
       level: "Básico",
       estimatedMinutes: 12,
       objective: "Escolher a contagem adequada para a pergunta e interpretar diferenças.",
-      why: "Esta missão apareceu porque o diagnóstico indicou risco de confundir linhas, valores preenchidos e valores distintos.",
+      why: "Esta prática apareceu porque o diagnóstico indicou risco de confundir linhas, valores preenchidos e valores distintos.",
       contentTitle: "COUNT(*) não é sempre igual a COUNT(coluna)",
       content: "COUNT(*) conta linhas. COUNT(coluna) conta apenas linhas em que aquela coluna não está nula. COUNT(distinct coluna) conta valores distintos não nulos.",
       example: "select count(*) as linhas, count(email) as emails_preenchidos, count(distinct cliente_id) as clientes from clientes;",
+      hintText: "Pergunte se o objetivo é contar linhas, valores preenchidos ou valores distintos.",
+      solutionText: "Para contar todas as linhas, use count(*). COUNT(coluna) ignora nulos e count(distinct coluna) muda a pergunta.",
       activityType: "multiple_choice",
       activityTitle: "Pratique agora",
       prompt: "Você quer saber quantas linhas existem na tabela pedidos, mesmo quando cliente_id estiver nulo. Qual expressão usar?",
@@ -110,16 +117,18 @@
     },
     {
       slug: "sql-essencial-filtro-antes-agregacao",
-      title: "Missão recomendada: filtre antes de resumir",
+      title: "Pratique SQL: filtre antes de resumir",
       gap: "filtro antes da agregação",
       skillCode: "sql.filtering.where_logic",
       level: "Básico",
       estimatedMinutes: 15,
-      objective: "Aplicar filtro antes de contar ou resumir uma métrica.",
-      why: "Esta missão apareceu porque o diagnóstico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
+      objective: "Treine como aplicar WHERE antes de contar ou resumir uma métrica.",
+      why: "Esta prática apareceu porque o diagnóstico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
       contentTitle: "Primeiro recorte, depois resumo",
       content: "Quando a métrica é sobre um grupo específico, aplique o WHERE antes de contar ou somar. A ordem lógica é: escolher os campos, indicar a fonte, filtrar o recorte e só então agrupar.",
       example: "select campo_de_grupo, count(*) from tabela where condição group by campo_de_grupo;",
+      hintText: "O enunciado pede pedidos pagos por categoria. Filtre status = 'pago' antes do GROUP BY e agrupe por categoria.",
+      solutionText: "Uma solução possível: select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
       activityType: "sql_workbench",
       activityTitle: "Pratique agora",
       prompt: "Crie uma consulta para contar pedidos pagos por categoria. O filtro de status precisa acontecer antes do agrupamento.",
@@ -141,8 +150,60 @@
       execution: null,
       executionQuery: "",
       error: ""
-    }
+    },
+    practiceNote: "",
+    noteStatus: "",
+    practiceFeedback: {
+      difficulty: "",
+      confidence: "",
+      comment: ""
+    },
+    feedbackStatus: ""
   };
+
+  function getStorageKey(prefix, slug) {
+    return `${prefix}:${slug}`;
+  }
+
+  function readLocalJson(key, fallback) {
+    try {
+      const rawValue = window.localStorage.getItem(key);
+      return rawValue ? JSON.parse(rawValue) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function writeLocalJson(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function removeLocalItem(key) {
+    try {
+      window.localStorage.removeItem(key);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function loadLocalPracticeDrafts(mission) {
+    state.practiceNote = readLocalJson(
+      getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, mission.slug),
+      ""
+    );
+    state.practiceFeedback = readLocalJson(
+      getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, mission.slug),
+      { difficulty: "", confidence: "", comment: "" }
+    );
+    state.noteStatus = "";
+    state.feedbackStatus = "";
+  }
 
   function getInitialMissionIndex() {
     const params = new URLSearchParams(window.location.search);
@@ -183,7 +244,7 @@
 
   function getCompletionText(status) {
     const labels = {
-      completed: "concluída",
+      completed: "validada",
       current: "atual",
       available: "disponível",
       locked: "bloqueada"
@@ -201,34 +262,35 @@
       <section class="mission-hero">
         <div class="mission-hero__content">
           <div class="mission-hero__primary">
-            <span class="section-kicker">Missão recomendada</span>
+            <span class="section-kicker">Prática guiada recomendada</span>
             <h1>${escapeHtml(mission.title)}</h1>
             <p>${escapeHtml(mission.objective)}</p>
-            <div class="mission-hero__meta" aria-label="Resumo da missão">
-              <span><i data-lucide="scan-search" aria-hidden="true"></i>Lacuna: ${escapeHtml(mission.gap)}</span>
+            <div class="mission-hero__meta" aria-label="Resumo da prática">
+              <span><i data-lucide="signal" aria-hidden="true"></i>SQL Junior</span>
+              <span><i data-lucide="scan-search" aria-hidden="true"></i>WHERE + GROUP BY</span>
               <span><i data-lucide="clock-3" aria-hidden="true"></i>${mission.estimatedMinutes} min</span>
-              <span><i data-lucide="signal" aria-hidden="true"></i>${escapeHtml(mission.level)}</span>
+              <span><i data-lucide="badge-check" aria-hidden="true"></i>Validação local</span>
             </div>
             <div class="mission-hero__actions">
               <button class="button button-primary" type="button" data-start-mission>
                 <i data-lucide="play" aria-hidden="true"></i>
-                <span>Comece aqui</span>
+                <span>Começar prática</span>
               </button>
               <a class="button button-secondary" href="#atividade">
                 <i data-lucide="arrow-down" aria-hidden="true"></i>
-                <span>Pratique agora</span>
+                <span>Ir para o editor</span>
               </a>
             </div>
           </div>
-          <aside class="mission-hero__brief" aria-label="Como avançar nesta missão">
-            <span class="mission-side-card__label">Nesta sessão</span>
+          <aside class="mission-hero__brief" aria-label="Aviso da prática guiada">
+            <span class="mission-side-card__label">Piloto local</span>
             <div>
               <i data-lucide="target" aria-hidden="true"></i>
-              <p><strong>Você vai praticar</strong>${escapeHtml(mission.gap)}</p>
+              <p><strong>Você vai treinar</strong>${escapeHtml(mission.gap)}</p>
             </div>
             <div>
               <i data-lucide="shield-check" aria-hidden="true"></i>
-              <p><strong>Critério para avançar</strong>Enviar uma resposta correta após receber feedback.</p>
+              <p><strong>Validação local</strong>Esta prática não conta progresso oficial nesta versão.</p>
             </div>
           </aside>
         </div>
@@ -307,7 +369,7 @@
     const canValidate = sqlPocEngine.canValidateExecution(workbench.execution, workbench.executionQuery, query);
     const isBusy = workbench.status === "loading" || workbench.status === "running";
     const canExecute = Boolean(query) && workbench.status === "ready";
-    let validationHint = "Execute uma consulta válida antes de validar a missão.";
+    let validationHint = "Execute uma consulta válida antes de validar o exercício.";
 
     if (workbench.status === "loading") {
       validationHint = "Aguarde a preparação do PostgreSQL local.";
@@ -318,13 +380,13 @@
     } else if (workbench.execution && !executionIsEvaluable) {
       validationHint = "O resultado precisa ter colunas e linhas para ser validado.";
     } else if (canValidate) {
-      validationHint = "Consulta executada. Valide para verificar se ela responde ao desafio.";
+      validationHint = "Consulta executada. Valide para verificar se ela responde ao exercício.";
     }
 
     let technicalResult = `
-      <div class="sql-workbench-status is-idle" data-sql-technical-result>
-        <strong>Resultado técnico</strong>
-        <p>Execute sua consulta para ver colunas, linhas ou erros do PostgreSQL local.</p>
+        <div class="sql-workbench-status is-idle" data-sql-technical-result>
+        <strong>Escreva sua consulta e execute</strong>
+        <p>O resultado do PostgreSQL local aparecerá aqui antes da validação didática.</p>
       </div>
     `;
 
@@ -362,9 +424,9 @@
         <div class="sql-workbench-status ${resultState}" data-sql-technical-result tabindex="-1">
           <strong>${resultTitle}</strong>
           ${executionIsEvaluable
-            ? `<p>Consulta executada. Agora valide se o resultado responde ao desafio.</p>
+            ? `<p>Consulta executada. Agora valide se o resultado responde ao exercício.</p>
               ${renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")}`
-            : "<p>A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta missão, o resultado precisa trazer uma categoria e uma contagem.</p>"}
+            : "<p>A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta prática, o resultado precisa trazer uma categoria e uma contagem.</p>"}
           ${workbench.execution.truncated
             ? `<p>Exibindo apenas as primeiras ${sqlPocEngine.MAX_RESULT_ROWS} linhas para manter a bancada responsiva.</p>`
             : ""}
@@ -375,45 +437,76 @@
 
     return `
       <div class="sql-workbench">
-        <div class="sql-workbench-reference">
-          <section aria-label="Schema sintético da tabela pedidos">
-            <div class="sql-workbench-heading">
-              <span>Schema local</span>
-              <strong>pedidos</strong>
-            </div>
-            ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+        <div class="sql-workbench-support">
+          <section class="mission-learning-card" aria-label="Conteúdo curto da prática">
+            <span class="section-kicker">Conteúdo curto</span>
+            <h3>${escapeHtml(mission.contentTitle)}</h3>
+            <p>${escapeHtml(mission.content)}</p>
+            <code class="code-block">${escapeHtml(mission.example)}</code>
           </section>
-          <section aria-label="Amostra de dados sintéticos">
-            <div class="sql-workbench-heading">
-              <span>Amostra sintética</span>
-              <strong>${sqlPocEngine.PEDIDOS_SAMPLE.length} registros</strong>
+          <section class="sql-workbench-reference" aria-label="Referência da prática">
+            <div class="sql-workbench-reference-grid">
+              <section aria-label="Schema sintético da tabela pedidos">
+                <div class="sql-workbench-heading">
+                  <span>Schema local</span>
+                  <strong>pedidos</strong>
+                </div>
+                ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+              </section>
+              <section aria-label="Amostra de dados sintéticos">
+                <div class="sql-workbench-heading">
+                  <span>Amostra sintética</span>
+                  <strong>${sqlPocEngine.PEDIDOS_SAMPLE.length} registros</strong>
+                </div>
+                ${renderDataTable(sampleColumns, sqlPocEngine.PEDIDOS_SAMPLE, "is-sample")}
+              </section>
             </div>
-            ${renderDataTable(sampleColumns, sqlPocEngine.PEDIDOS_SAMPLE, "is-sample")}
           </section>
+          <section class="mission-learning-card" aria-label="Apoio didático">
+            <span class="mission-side-card__label">Dica e solução</span>
+            <details>
+              <summary>Ver dica rápida</summary>
+              <p>${escapeHtml(mission.hintText || "Leia o enunciado e identifique primeiro qual recorte precisa entrar no WHERE.")}</p>
+            </details>
+            <details>
+              <summary>Ver solução comentada</summary>
+              <p>Use a solução para comparar depois de tentar.</p>
+              <code class="code-block">${escapeHtml(mission.solutionText || mission.example)}</code>
+            </details>
+          </section>
+          ${renderPracticeNotes(mission)}
+          ${renderPracticeFeedbackForm(mission)}
         </div>
-        <label class="sql-workbench-editor">
-          <span>Sua consulta SQL</span>
-          <textarea
-            class="mission-query-input"
-            data-query-answer
-            rows="7"
-            spellcheck="false"
-            aria-label="Resposta em SQL"
-            placeholder="${escapeHtml(mission.placeholder)}"
-          >${escapeHtml(state.queryAnswer)}</textarea>
-        </label>
-        <div class="sql-workbench-actions">
-          <button class="button button-secondary" type="button" data-execute-query ${!canExecute ? "disabled" : ""}>
-            <i data-lucide="play" aria-hidden="true"></i>
-            <span>Executar consulta</span>
-          </button>
-          <button class="button button-primary" type="button" data-validate-query ${!canValidate || isBusy ? "disabled" : ""}>
-            <i data-lucide="badge-check" aria-hidden="true"></i>
-            <span>Validar resultado</span>
-          </button>
-          <p class="sql-workbench-action-hint ${canValidate ? "is-ready" : ""}">${escapeHtml(validationHint)}</p>
+        <div class="sql-workbench-terminal">
+          <label class="sql-workbench-editor">
+            <span>Sua consulta SQL</span>
+            <textarea
+              class="mission-query-input"
+              data-query-answer
+              rows="9"
+              spellcheck="false"
+              aria-label="Resposta em SQL"
+              placeholder="${escapeHtml(mission.placeholder)}"
+            >${escapeHtml(state.queryAnswer)}</textarea>
+          </label>
+          <div class="sql-workbench-actions">
+            <button class="button button-secondary" type="button" data-execute-query ${!canExecute ? "disabled" : ""}>
+              <i data-lucide="play" aria-hidden="true"></i>
+              <span>Executar consulta</span>
+            </button>
+            <button class="button button-primary" type="button" data-validate-query ${!canValidate || isBusy ? "disabled" : ""}>
+              <i data-lucide="badge-check" aria-hidden="true"></i>
+              <span>Validar exercício</span>
+            </button>
+            <button class="button button-secondary" type="button" data-clear-query ${!state.queryAnswer ? "disabled" : ""}>
+              <i data-lucide="eraser" aria-hidden="true"></i>
+              <span>Limpar</span>
+            </button>
+            <p class="sql-workbench-action-hint ${canValidate ? "is-ready" : ""}">${escapeHtml(validationHint)}</p>
+          </div>
+          ${technicalResult}
+          ${renderFeedback()}
         </div>
-        ${technicalResult}
       </div>
     `;
   }
@@ -451,22 +544,89 @@
     return "Leia a mensagem técnica e revise a parte da consulta indicada antes de executar novamente.";
   }
 
+  function renderPracticeNotes(mission) {
+    return `
+      <section class="mission-learning-card mission-local-card" aria-label="Anotações pessoais">
+        <span class="mission-side-card__label">Anotações pessoais</span>
+        <p>Anotação salva apenas neste navegador nesta versão piloto.</p>
+        <textarea
+          class="mission-local-textarea"
+          data-practice-note
+          rows="4"
+          maxlength="800"
+          placeholder="Registre uma dúvida, insight ou query que queira revisar depois."
+        >${escapeHtml(state.practiceNote)}</textarea>
+        <div class="mission-local-actions">
+          <button class="button button-secondary" type="button" data-save-note>
+            <i data-lucide="save" aria-hidden="true"></i>
+            <span>Salvar anotação</span>
+          </button>
+          <button class="button button-secondary" type="button" data-clear-note ${!state.practiceNote ? "disabled" : ""}>
+            <i data-lucide="trash-2" aria-hidden="true"></i>
+            <span>Limpar</span>
+          </button>
+        </div>
+        ${state.noteStatus ? `<small class="mission-local-status">${escapeHtml(state.noteStatus)}</small>` : ""}
+      </section>
+    `;
+  }
+
+  function renderPracticeFeedbackForm(mission) {
+    const feedback = state.practiceFeedback || {};
+    const difficultyOptions = ["Fácil", "Média", "Difícil"];
+    const confidenceOptions = ["Baixa", "Média", "Alta"];
+
+    const renderOptions = (name, values, selectedValue) => values.map((value) => `
+      <label>
+        <input type="radio" name="${name}" value="${escapeHtml(value)}" ${selectedValue === value ? "checked" : ""}>
+        <span>${escapeHtml(value)}</span>
+      </label>
+    `).join("");
+
+    return `
+      <section class="mission-learning-card mission-local-card" aria-label="Feedback local sobre a prática">
+        <span class="mission-side-card__label">Feedback local</span>
+        <p>Este feedback é provisório e não altera progresso oficial.</p>
+        <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
+          <strong>Dificuldade percebida</strong>
+          <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
+        </div>
+        <div class="mission-local-fieldset" data-practice-feedback-group="confidence">
+          <strong>Confiança no tema</strong>
+          <div>${renderOptions("practiceConfidence", confidenceOptions, feedback.confidence)}</div>
+        </div>
+        <textarea
+          class="mission-local-textarea"
+          data-practice-feedback-comment
+          rows="3"
+          maxlength="500"
+          placeholder="Comentário opcional sobre esta prática."
+        >${escapeHtml(feedback.comment || "")}</textarea>
+        <button class="button button-secondary" type="button" data-save-practice-feedback>
+          <i data-lucide="message-square-check" aria-hidden="true"></i>
+          <span>Salvar feedback local</span>
+        </button>
+        ${state.feedbackStatus ? `<small class="mission-local-status">${escapeHtml(state.feedbackStatus)}</small>` : ""}
+      </section>
+    `;
+  }
+
   function getResultMismatchGuidance(query) {
     const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
 
     if (!checks.hasWhere || !checks.hasStatusPaid) {
-      return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Considere quais registros devem ser filtrados antes da contagem.";
+      return "Sua consulta agrupou o resultado, mas o exercício pede pedidos pagos por categoria. Primeiro filtre status = 'pago' e depois agrupe por categoria.";
     }
 
     if (!checks.hasCountStar) {
-      return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Verifique se ele apresenta uma contagem por categoria.";
+      return "A consulta executou, mas ainda precisa apresentar uma contagem por categoria.";
     }
 
     if (!checks.hasGroupByCategoria) {
-      return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Verifique como a contagem deve ser organizada.";
+      return "A consulta executou, mas ainda precisa organizar a contagem por categoria.";
     }
 
-    return "A consulta executou, mas o resultado ainda não responde exatamente ao pedido da missão. Revise o recorte, a contagem e o agrupamento.";
+    return "A consulta executou, mas ainda não responde exatamente ao exercício. Revise o recorte, a contagem e o agrupamento.";
   }
 
   function renderActivityActions(mission) {
@@ -496,20 +656,20 @@
     if (hasResultReady) {
       return {
         title: "Resultado pronto para validar",
-        message: "Resultado executado. Agora valide para comparar com o objetivo da missão."
+        message: "Resultado executado. Agora valide para comparar com o objetivo da prática."
       };
     }
 
     if (mission.activityType === "sql_workbench") {
       return {
         title: "Como receber feedback",
-        message: "Execute sua consulta para ver o resultado. Depois valide se ela responde ao desafio."
+        message: "Execute sua consulta para ver o resultado. Depois valide se ela responde ao exercício."
       };
     }
 
     return {
       title: "Ver feedback",
-      message: "Envie uma tentativa para receber feedback imediato. A missão só aparece como concluída depois da resposta."
+      message: "Envie uma tentativa para receber feedback imediato nesta prática."
     };
   }
 
@@ -531,7 +691,7 @@
     let nextActionHtml = `
       <button class="button button-primary" type="button" data-next-mission disabled>
         <i data-lucide="arrow-right" aria-hidden="true"></i>
-        <span>Continuar para próxima missão</span>
+        <span>Continuar para próxima etapa</span>
       </button>
     `;
 
@@ -539,14 +699,14 @@
       nextActionHtml = `
           <button class="button button-primary" type="button" data-next-mission>
             <i data-lucide="arrow-right" aria-hidden="true"></i>
-            <span>Continuar para próxima missão</span>
+            <span>Continuar para próxima etapa</span>
           </button>
         `;
     } else if (state.feedback.status === "correct") {
       nextActionHtml = `
           <a class="button button-primary" href="#piloto-concluido">
             <i data-lucide="check-circle-2" aria-hidden="true"></i>
-            <span>Ver fechamento do piloto</span>
+            <span>Ver fechamento do roteiro</span>
           </a>
         `;
     }
@@ -562,8 +722,8 @@
             <span>Ver Meu Progresso</span>
           </a>
           <button class="button button-secondary" type="button" data-save-progress>
-            <i data-lucide="log-in" aria-hidden="true"></i>
-            <span>Entrar para salvar progresso</span>
+            <i data-lucide="info" aria-hidden="true"></i>
+            <span>Sobre progresso oficial</span>
           </button>
         </div>
       </div>
@@ -574,28 +734,28 @@
     const completedCount = getCompletedCount();
     const currentMission = missions[state.activeIndex];
     const currentAttempt = state.attempts[currentMission.slug];
-    const progressPercent = Math.round((completedCount / missions.length) * 100);
+    const progressPercent = Math.round(((state.activeIndex + 1) / missions.length) * 100);
     const isPilotComplete = completedCount === missions.length;
 
     return `
-      <section class="mission-context-panel" aria-label="Contexto e avanço da missão">
+      <section class="mission-context-panel" aria-label="Contexto e roteiro da prática guiada">
         <div class="mission-context-panel__intro">
           <div class="mission-sidebar-summary">
-            <span class="mission-side-card__label">Por que esta missão?</span>
+            <span class="mission-side-card__label">Por que esta prática?</span>
             <p>${escapeHtml(currentMission.why)}</p>
           </div>
-          <small class="mission-prototype-note">Protótipo local: o progresso real será salvo após integração com Supabase.</small>
+          <small class="mission-prototype-note">Protótipo local: esta prática treina e valida no navegador. Progresso oficial será salvo em uma etapa futura.</small>
         </div>
         <div class="mission-context-panel__progress">
           <div class="mission-progress-panel__header">
-            <span class="mission-side-card__label">Seu avanço</span>
-            <strong>${completedCount} de ${missions.length} missões concluídas</strong>
-            <p>${isPilotComplete ? "Piloto concluído com evidência em todas as missões." : "Pratique, envie uma tentativa e avance pela próxima lacuna liberada."}</p>
+            <span class="mission-side-card__label">Roteiro de treino</span>
+            <strong>Etapa ${state.activeIndex + 1} de ${missions.length} do roteiro</strong>
+            <p>${isPilotComplete ? "Roteiro local praticado. Use isso como treino antes das missões oficiais." : "Pratique, valide localmente e avance para a próxima lacuna do roteiro."}</p>
           </div>
-          <div class="mission-progress-line" aria-label="${completedCount} de ${missions.length} missões concluídas">
+          <div class="mission-progress-line" aria-label="Etapa ${state.activeIndex + 1} de ${missions.length} do roteiro">
             <span style="width: ${progressPercent}%"></span>
           </div>
-          <div class="mission-progress-metrics" aria-label="Resumo da missão atual">
+          <div class="mission-progress-metrics" aria-label="Resumo da prática atual">
             <div>
               <span>Etapa atual</span>
               <strong>${state.activeIndex + 1}/${missions.length}</strong>
@@ -605,21 +765,21 @@
               <strong>${currentAttempt?.attemptCount || 0}</strong>
             </div>
             <div>
-              <span>Status</span>
-              <strong>${currentAttempt?.status === "correct" ? "ok" : "em curso"}</strong>
+              <span>Validação local</span>
+              <strong>${currentAttempt?.status === "correct" ? "ok" : "em treino"}</strong>
             </div>
           </div>
           <div class="mission-completion-rule">
             <i data-lucide="shield-check" aria-hidden="true"></i>
-            <span>Critério de conclusão: tentativa enviada, feedback exibido e resposta correta.</span>
+            <span>Critério de validação local: executar, validar e comparar o feedback. Isso ainda não altera progresso oficial.</span>
           </div>
           ${isPilotComplete ? `
             <div class="mission-pilot-complete">
-              <strong>SQL Essencial praticado</strong>
-              <span>Filtros, contagens e filtro antes da agregação foram respondidos no protótipo local.</span>
+              <strong>Roteiro SQL Essencial praticado</strong>
+              <span>Filtros, contagens e filtro antes da agregação foram treinados no protótipo local.</span>
             </div>
           ` : ""}
-          <div class="mission-stepper mission-stepper--horizontal" aria-label="Etapas do piloto">
+          <div class="mission-stepper mission-stepper--horizontal" aria-label="Etapas do roteiro de treino">
             ${missions.map((mission, index) => {
               const status = getMissionStatus(index);
               return `
@@ -649,10 +809,10 @@
     }
 
     return `
-      <section id="piloto-concluido" class="mission-complete-panel" aria-label="Piloto SQL Essencial concluído">
-        <span class="section-kicker">Piloto SQL Essencial concluído</span>
-        <h2>Você concluiu as 3 missões do piloto SQL Essencial.</h2>
-        <p>Filtros com WHERE, contagens com nulos/distintos e filtro antes da agregação foram praticados nesta bancada.</p>
+      <section id="piloto-concluido" class="mission-complete-panel" aria-label="Roteiro SQL Essencial praticado">
+        <span class="section-kicker">Roteiro SQL Essencial praticado</span>
+        <h2>Você treinou as 3 etapas do piloto SQL Essencial.</h2>
+        <p>Filtros com WHERE, contagens com nulos/distintos e filtro antes da agregação foram praticados nesta bancada local.</p>
         <div class="mission-complete-actions">
           <a class="button button-primary" href="meu-progresso.html">
             <i data-lucide="line-chart" aria-hidden="true"></i>
@@ -674,18 +834,20 @@
   function renderPage() {
     const mission = missions[state.activeIndex];
     const attempt = state.attempts[mission.slug];
+    const shouldRenderStandaloneContent = mission.activityType !== "sql_workbench";
 
     mount.innerHTML = `
       <div class="mission-layout">
         ${renderMissionHero(mission)}
         ${renderMissionContextPanel()}
         <div class="mission-main">
-          <section class="mission-content-card" aria-label="Conteúdo curto da missão">
+          ${shouldRenderStandaloneContent ? `
+          <section class="mission-content-card" aria-label="Conteúdo curto da prática">
             <span class="section-kicker">Conteúdo curto</span>
             <h2>${escapeHtml(mission.contentTitle)}</h2>
             <p>${escapeHtml(mission.content)}</p>
             <code class="code-block">${escapeHtml(mission.example)}</code>
-          </section>
+          </section>` : ""}
 
           <section id="atividade" class="mission-activity-card" aria-label="Atividade prática">
             <div class="mission-card-heading">
@@ -693,7 +855,7 @@
                 <span class="section-kicker">${escapeHtml(mission.activityTitle)}</span>
                 <h2>${escapeHtml(mission.prompt)}</h2>
               </div>
-              <span class="mission-attempt-pill">${attempt ? "Tentativa enviada" : "Aguardando tentativa"}</span>
+              <span class="mission-attempt-pill">${attempt ? "Validação local feita" : "Aguardando tentativa"}</span>
             </div>
             <div class="mission-context-list">
               ${mission.context.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
@@ -771,7 +933,7 @@
     const query = state.queryAnswer.trim();
 
     if (!workbench.execution || workbench.executionQuery !== query) {
-      workbench.error = "Execute a versão atual da consulta antes de validar a missão.";
+      workbench.error = "Execute a versão atual da consulta antes de validar o exercício.";
       renderPage();
       return;
     }
@@ -781,7 +943,7 @@
       ? {
           status: "correct",
           title: "Correto",
-          message: "A consulta executou sem erros e retornou a contagem esperada de pedidos pagos em cada categoria."
+          message: "A consulta executou sem erros, filtrou pedidos pagos antes do agrupamento e retornou a contagem esperada por categoria."
         }
       : {
           status: "partial",
@@ -829,7 +991,7 @@
     if (actionHint) {
       actionHint.classList.remove("is-ready");
       actionHint.textContent = executionIsCurrent
-        ? "Consulta executada. Valide para verificar se ela responde ao desafio."
+        ? "Consulta executada. Valide para verificar se ela responde ao exercício."
         : workbench.execution
           ? "A consulta foi alterada. Execute novamente antes de validar."
           : "Execute uma consulta válida antes de validar o resultado.";
@@ -851,6 +1013,7 @@
     const attempt = state.attempts[mission.slug];
     state.selectedOption = null;
     state.queryAnswer = "";
+    loadLocalPracticeDrafts(mission);
     state.feedback = attempt
       ? { status: attempt.status, title: attempt.title, message: attempt.message }
       : null;
@@ -879,7 +1042,7 @@
       state.feedback = {
         status: "incorrect",
         title: "Resposta pendente",
-        message: "Escolha uma alternativa antes de enviar. A missão não conclui sem tentativa."
+        message: "Escolha uma alternativa antes de receber feedback da prática."
       };
       renderPage();
       return;
@@ -889,7 +1052,7 @@
       state.feedback = {
         status: "incorrect",
         title: "Resposta pendente",
-        message: "Digite uma tentativa de query antes de enviar. A missão não conclui sem resposta."
+        message: "Digite uma tentativa de query antes de receber feedback da prática."
       };
       renderPage();
       return;
@@ -964,8 +1127,56 @@
       state.feedback = {
         status: "partial",
         title: "Protótipo local",
-        message: "Entrar para salvar progresso será conectado depois da integração com Supabase. Nesta tela, o progresso é simulado apenas em memória."
+        message: "O progresso oficial será conectado depois da integração com Supabase. Nesta tela, a validação é local e serve para treino."
       };
+      renderPage();
+      return;
+    }
+
+    const clearQueryButton = event.target.closest("[data-clear-query]");
+    if (clearQueryButton && !clearQueryButton.disabled) {
+      state.queryAnswer = "";
+      state.feedback = null;
+      state.sqlWorkbench.error = "";
+      state.sqlWorkbench.execution = null;
+      state.sqlWorkbench.executionQuery = "";
+      renderPage();
+      return;
+    }
+
+    const saveNoteButton = event.target.closest("[data-save-note]");
+    if (saveNoteButton) {
+      const mission = missions[state.activeIndex];
+      const noteInput = mount.querySelector("[data-practice-note]");
+      state.practiceNote = noteInput ? noteInput.value : state.practiceNote;
+      state.noteStatus = writeLocalJson(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, mission.slug), state.practiceNote)
+        ? "Anotação salva apenas neste navegador."
+        : "Não foi possível salvar a anotação neste navegador.";
+      renderPage();
+      return;
+    }
+
+    const clearNoteButton = event.target.closest("[data-clear-note]");
+    if (clearNoteButton && !clearNoteButton.disabled) {
+      const mission = missions[state.activeIndex];
+      state.practiceNote = "";
+      state.noteStatus = removeLocalItem(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, mission.slug))
+        ? "Anotação local removida."
+        : "Não foi possível remover a anotação local.";
+      renderPage();
+      return;
+    }
+
+    const savePracticeFeedbackButton = event.target.closest("[data-save-practice-feedback]");
+    if (savePracticeFeedbackButton) {
+      const mission = missions[state.activeIndex];
+      const difficulty = mount.querySelector('input[name="practiceDifficulty"]:checked')?.value || "";
+      const confidence = mount.querySelector('input[name="practiceConfidence"]:checked')?.value || "";
+      const comment = mount.querySelector("[data-practice-feedback-comment]")?.value || "";
+      state.practiceFeedback = { difficulty, confidence, comment };
+      state.feedbackStatus = writeLocalJson(getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, mission.slug), state.practiceFeedback)
+        ? "Feedback salvo localmente neste navegador."
+        : "Não foi possível salvar o feedback neste navegador.";
       renderPage();
       return;
     }
@@ -984,7 +1195,37 @@
       state.sqlWorkbench.error = "";
       syncSqlWorkbenchControls();
     }
+
+    if (event.target.matches("[data-practice-note]")) {
+      state.practiceNote = event.target.value;
+      state.noteStatus = "";
+    }
+
+    if (event.target.matches("[data-practice-feedback-comment]")) {
+      state.practiceFeedback = {
+        ...state.practiceFeedback,
+        comment: event.target.value
+      };
+      state.feedbackStatus = "";
+    }
+
+    if (event.target.matches('input[name="practiceDifficulty"]')) {
+      state.practiceFeedback = {
+        ...state.practiceFeedback,
+        difficulty: event.target.value
+      };
+      state.feedbackStatus = "";
+    }
+
+    if (event.target.matches('input[name="practiceConfidence"]')) {
+      state.practiceFeedback = {
+        ...state.practiceFeedback,
+        confidence: event.target.value
+      };
+      state.feedbackStatus = "";
+    }
   });
 
+  loadLocalPracticeDrafts(missions[state.activeIndex]);
   renderPage();
 })();
