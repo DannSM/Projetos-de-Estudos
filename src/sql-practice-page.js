@@ -218,8 +218,7 @@
     return `
       <aside class="sql-practice-sidebar" aria-label="Roteiro SQL Essencial">
         <div class="sql-practice-sidebar__header">
-          <span class="section-kicker">SQL Essencial</span>
-          <h1>Trilha de pratica</h1>
+          <h1>SQL Essencial <span aria-hidden="true">·</span> Trilha de pratica</h1>
           <span class="sql-practice-pill">Piloto local</span>
         </div>
         <nav class="sql-practice-steps" aria-label="Etapas da Central SQL">
@@ -330,13 +329,14 @@
 
     return `
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da pratica SQL">
-        <details class="mission-learning-card" open>
+        <details class="mission-learning-card sql-support-card" open>
           <summary>Apoio teorico</summary>
           <h3>${escapeHtml(practice.contentTitle)}</h3>
           <p>${escapeHtml(practice.content)}</p>
+          <p>${escapeHtml(practice.hintText)}</p>
           <code class="code-block">${escapeHtml(practice.example)}</code>
         </details>
-        <details class="mission-learning-card">
+        <details class="mission-learning-card sql-support-card">
           <summary>Schema local</summary>
           <div class="sql-workbench-heading">
             <span>Tabela</span>
@@ -344,7 +344,7 @@
           </div>
           ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
         </details>
-        <details class="mission-learning-card">
+        <details class="mission-learning-card sql-support-card">
           <summary>Amostra sintetica</summary>
           <div class="sql-workbench-heading">
             <span>Dados locais</span>
@@ -352,15 +352,13 @@
           </div>
           ${renderDataTable(sampleColumns, sqlPocEngine.PEDIDOS_SAMPLE, "is-sample")}
         </details>
-        <details class="mission-learning-card">
-          <summary>Dica rapida</summary>
-          <p>${escapeHtml(practice.hintText)}</p>
-        </details>
-        <details class="mission-learning-card">
+        <details class="mission-learning-card sql-support-card">
           <summary>Solucao comentada</summary>
           <p>Use a solucao para comparar depois de tentar.</p>
           <code class="code-block">${escapeHtml(practice.solutionText)}</code>
         </details>
+        ${renderPracticeNotes(practice)}
+        ${renderPracticeFeedbackForm(practice)}
       </aside>
     `;
   }
@@ -668,12 +666,7 @@
   }
 
   function renderLocalPanels(practice) {
-    return `
-      <section class="sql-practice-local-grid" aria-label="Anotacoes e feedback local">
-        ${renderPracticeNotes(practice)}
-        ${renderPracticeFeedbackForm(practice)}
-      </section>
-    `;
+    return "";
   }
 
   function renderWorkspace(practice) {
@@ -692,11 +685,6 @@
           <section class="sql-practice-app-grid" aria-label="Workspace de execucao SQL">
             ${renderSupportPanels(practice)}
             ${renderEditorPanel(practice)}
-          </section>
-          <section class="sql-practice-why" aria-label="Contexto da recomendacao">
-            <strong>Por que esta pratica?</strong>
-            <p>${escapeHtml(practice.why)}</p>
-            <small>Prototipo local: esta pratica treina e valida no navegador. O progresso oficial sera salvo em uma etapa futura.</small>
           </section>
           ${renderLocalPanels(practice)}
         </div>
