@@ -5,6 +5,7 @@ const {
   createWorkbench,
   isEvaluableResult,
   MAX_RESULT_ROWS,
+  validateConfiguredResult,
   validateMissionQueryStructure,
   validateMissionResult
 } = require("../src/sql-poc-engine");
@@ -162,6 +163,55 @@ async function run() {
   } finally {
     await workbench.close();
   }
+
+  const configuredWorkbench = await createWorkbench(PGlite, {
+    schemaConfig: {
+      table: "pedidos",
+      columns: [
+        { name: "pedido_id", type: "integer", constraints: "primary key" },
+        { name: "status", type: "text", constraints: "not null" },
+        { name: "categoria", type: "text", constraints: "not null" },
+        { name: "valor", type: "numeric(10,2)", constraints: "not null" }
+      ]
+    },
+    seedData: [
+      { pedido_id: 1, status: "pago", categoria: "eletrônicos", valor: 129.9 },
+      { pedido_id: 2, status: "pendente", categoria: "eletrônicos", valor: 89.5 },
+      { pedido_id: 3, status: "pago", categoria: "livros", valor: 54 },
+      { pedido_id: 4, status: "pago", categoria: "eletrônicos", valor: 219 },
+      { pedido_id: 5, status: "cancelado", categoria: "livros", valor: 45 },
+      { pedido_id: 6, status: "pago", categoria: "casa", valor: 78.3 },
+      { pedido_id: 7, status: "pago", categoria: "livros", valor: 36.5 }
+    ]
+  });
+
+  try {
+    const configuredResult = await configuredWorkbench.execute(
+      "select categoria, count(*) from pedidos where status = 'pago' group by categoria"
+    );
+    assert.strictEqual(
+      validateConfiguredResult(
+        configuredResult,
+        configuredResult.query,
+        { validator: "paid_orders_by_category" },
+        { rows: [["casa", 1], ["eletrônicos", 2], ["livros", 2]] }
+      ),
+      true
+    );
+  } finally {
+    await configuredWorkbench.close();
+  }
+
+  await assert.rejects(
+    () => createWorkbench(PGlite, {
+      schemaConfig: {
+        table: "pedidos; drop table profiles",
+        columns: [{ name: "id", type: "integer" }]
+      },
+      seedData: []
+    }),
+    /identificador SQL invalido/i
+  );
 
   console.log("SQL POC execution tests passed");
 }

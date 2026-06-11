@@ -43,6 +43,50 @@
       (7, 'pago', 'livros', 36.50);
   `;
 
+  function assertSafeIdentifier(value) {
+    const identifier = String(value || "");
+    if (!/^[a-z_][a-z0-9_]*$/i.test(identifier)) {
+      throw new Error("O dataset possui um identificador SQL invalido.");
+    }
+    return identifier;
+  }
+
+  function serializeSqlValue(value) {
+    if (value === null || value === undefined) return "null";
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) throw new Error("O dataset possui um numero invalido.");
+      return String(value);
+    }
+    if (typeof value === "boolean") return value ? "true" : "false";
+    return `'${String(value).replace(/'/g, "''")}'`;
+  }
+
+  function buildSetupSql(datasetConfig) {
+    const schema = datasetConfig?.schemaConfig;
+    const rows = datasetConfig?.seedData;
+    if (!schema || !Array.isArray(schema.columns) || !Array.isArray(rows)) {
+      return SETUP_SQL;
+    }
+
+    const table = assertSafeIdentifier(schema.table);
+    const columns = schema.columns.map((column) => {
+      const name = assertSafeIdentifier(column.name);
+      const type = String(column.type || "").trim();
+      const constraints = String(column.constraints || "").trim();
+      if (!/^[a-z0-9_(),\s]+$/i.test(type) || !/^[a-z0-9_\s]*$/i.test(constraints)) {
+        throw new Error("O schema do dataset possui uma definicao invalida.");
+      }
+      return `${name} ${type}${constraints ? ` ${constraints}` : ""}`;
+    });
+    const columnNames = schema.columns.map((column) => assertSafeIdentifier(column.name));
+    const values = rows.map((row) => `(${columnNames.map((name) => serializeSqlValue(row[name])).join(", ")})`);
+
+    return `
+      create table ${table} (${columns.join(", ")});
+      ${values.length ? `insert into ${table} (${columnNames.join(", ")}) values ${values.join(", ")};` : ""}
+    `;
+  }
+
   function stripSqlComments(value) {
     return String(value || "")
       .replace(/\/\*[\s\S]*?\*\//g, " ")
@@ -159,11 +203,11 @@
     return result.rows[0] ? Object.keys(result.rows[0]) : [];
   }
 
-  function normalizeMissionResult(result) {
+  function normalizeMissionResult(result, expectedRows = EXPECTED_RESULT) {
     const rows = Array.isArray(result?.rows) ? result.rows : [];
     const columns = getColumns({ ...result, rows });
 
-    if (columns.length !== 2 || rows.length !== EXPECTED_RESULT.length) {
+    if (columns.length !== 2 || rows.length !== expectedRows.length) {
       return null;
     }
 
@@ -189,15 +233,26 @@
     return normalizedRows.sort((left, right) => left[0].localeCompare(right[0], "pt-BR"));
   }
 
-  function validateMissionResult(result, query = result?.query) {
-    const normalized = normalizeMissionResult(result);
+  function validateMissionResult(result, query = result?.query, expectedRows = EXPECTED_RESULT) {
+    const normalized = normalizeMissionResult(result, expectedRows);
     const structure = validateMissionQueryStructure(query);
 
     if (!normalized || !structure.hasCorrectStructure) {
       return false;
     }
 
-    return JSON.stringify(normalized) === JSON.stringify(EXPECTED_RESULT);
+    const normalizedExpected = [...expectedRows].sort((left, right) =>
+      String(left[0]).localeCompare(String(right[0]), "pt-BR")
+    );
+    return JSON.stringify(normalized) === JSON.stringify(normalizedExpected);
+  }
+
+  function validateConfiguredResult(result, query, validationConfig, expectedResult) {
+    if (validationConfig?.validator !== "paid_orders_by_category") {
+      return false;
+    }
+    const expectedRows = Array.isArray(expectedResult?.rows) ? expectedResult.rows : EXPECTED_RESULT;
+    return validateMissionResult(result, query, expectedRows);
   }
 
   function isEvaluableResult(result) {
@@ -217,10 +272,11 @@
     );
   }
 
-  async function createWorkbench(PGliteClass) {
+  async function createWorkbench(PGliteClass, datasetConfig) {
+    const setupSql = buildSetupSql(datasetConfig);
     const db = new PGliteClass("memory://");
     await db.waitReady;
-    await db.exec(SETUP_SQL);
+    await db.exec(setupSql);
 
     return {
       async execute(query) {
@@ -241,9 +297,9 @@
     };
   }
 
-  async function createBrowserWorkbench() {
+  async function createBrowserWorkbench(datasetConfig) {
     const { PGlite } = await import(PGLITE_CDN_URL);
-    return createWorkbench(PGlite);
+    return createWorkbench(PGlite, datasetConfig);
   }
 
   const api = {
@@ -256,6 +312,7 @@
     canValidateExecution,
     isEvaluableResult,
     normalizeMissionResult,
+    validateConfiguredResult,
     validateMissionQueryStructure,
     validateMissionResult
   };

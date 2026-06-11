@@ -6,6 +6,7 @@
 
   const sqlValidation = globalScope.SqlMissionValidation;
   const sqlPocEngine = globalScope.SqlPocEngine;
+  const sqlPracticeService = globalScope.sqlPracticeService;
   if (!sqlValidation || !sqlPocEngine) {
     mount.innerHTML = `
       <div class="mission-loading">
@@ -19,7 +20,7 @@
   const PRACTICE_NOTE_STORAGE_PREFIX = "dsm:sql-practice-note";
   const PRACTICE_FEEDBACK_STORAGE_PREFIX = "dsm:sql-practice-feedback";
 
-  const practices = [
+  let practices = [
     {
       slug: "sql-introducao",
       navTitle: "Introdução ao SQL",
@@ -114,7 +115,12 @@
       comment: ""
     },
     feedbackStatus: "",
-    activeUtility: ""
+    activeUtility: "",
+    dataSource: "loading",
+    sourceStatus: "Carregando dados da prática...",
+    isAuthenticated: false,
+    lastQueryRunId: null,
+    persistenceStatus: ""
   };
 
   function getInitialPracticeIndex() {
@@ -176,6 +182,18 @@
 
   function getActivePractice() {
     return practices[state.activeIndex] || practices[1];
+  }
+
+  function getPracticeSchemaColumns(practice) {
+    return Array.isArray(practice.schemaColumns) && practice.schemaColumns.length
+      ? practice.schemaColumns
+      : sqlPocEngine.PEDIDOS_SCHEMA;
+  }
+
+  function getPracticeSampleRows(practice) {
+    return Array.isArray(practice.sampleRows) && practice.sampleRows.length
+      ? practice.sampleRows
+      : sqlPocEngine.PEDIDOS_SAMPLE;
   }
 
   function getAttemptCount(practice) {
@@ -259,6 +277,11 @@
 
   function renderWorkspaceHeader(practice) {
     const status = getRuntimeStatus(practice);
+    const sourceTone = state.dataSource === "supabase"
+      ? "remote"
+      : state.dataSource === "loading"
+        ? "loading"
+        : "fallback";
     return `
       <header class="sql-practice-workspace__header">
         <div class="sql-practice-workspace__title">
@@ -266,6 +289,9 @@
           <h2>${escapeHtml(practice.shortTitle)}</h2>
         </div>
         <div class="sql-practice-workspace__tools" aria-label="Ações da prática">
+          <span class="sql-practice-source is-${sourceTone}" title="${escapeHtml(state.sourceStatus)}">
+            ${state.dataSource === "supabase" ? "Dados Supabase" : state.dataSource === "loading" ? "Carregando dados" : "Modo local"}
+          </span>
           <span class="sql-practice-status is-${status.tone}">
             <span aria-hidden="true"></span>
             ${escapeHtml(status.label)}
@@ -324,10 +350,11 @@
 
   function renderSupportPanels(practice) {
     const schemaColumns = ["coluna", "tipo"];
-    const schemaRows = sqlPocEngine.PEDIDOS_SCHEMA.map((column) => ({
+    const schemaRows = getPracticeSchemaColumns(practice).map((column) => ({
       coluna: column.name,
       tipo: column.type
     }));
+    const sampleRows = getPracticeSampleRows(practice);
 
     return `
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da prática SQL">
@@ -341,8 +368,8 @@
         </section>
         <section class="mission-learning-card sql-support-card">
           <header class="sql-support-card__header">
-            <strong><i data-lucide="table-2" aria-hidden="true"></i>Schema local</strong>
-            <small>${sqlPocEngine.PEDIDOS_SAMPLE.length} registros</small>
+            <strong><i data-lucide="table-2" aria-hidden="true"></i>Schema da prática</strong>
+            <small>${sampleRows.length} registros</small>
           </header>
           ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
         </section>
@@ -601,9 +628,12 @@
   }
 
   function renderPracticeNotes(practice) {
+    const storageDescription = state.isAuthenticated
+      ? "Salva na sua conta. Não altera o progresso oficial."
+      : "Salva apenas neste navegador. Não altera o progresso oficial.";
     return `
       <div class="mission-local-card__body" id="anotacoes-sql">
-        <p class="sql-practice-utility-note">Salvo apenas neste navegador. Não altera o progresso oficial.</p>
+        <p class="sql-practice-utility-note">${escapeHtml(storageDescription)}</p>
           <textarea
             class="mission-local-textarea"
             data-practice-note
@@ -644,10 +674,13 @@
         <span>${escapeHtml(option.label)}</span>
       </label>
     `).join("");
+    const storageDescription = state.isAuthenticated
+      ? "Este feedback é salvo na sua conta e não altera o progresso oficial."
+      : "Este feedback fica somente neste navegador e não altera o progresso oficial.";
 
     return `
       <div class="mission-local-card__body" id="feedback-local-sql">
-        <p class="sql-practice-utility-note">Este feedback fica somente neste navegador e não altera o progresso oficial.</p>
+        <p class="sql-practice-utility-note">${escapeHtml(storageDescription)}</p>
           <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
             <strong>Dificuldade percebida</strong>
             <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
@@ -665,7 +698,7 @@
           >${escapeHtml(feedback.comment || "")}</textarea>
           <button class="button button-secondary sql-practice-feedback-submit" type="button" data-save-practice-feedback>
             <i data-lucide="message-square-check" aria-hidden="true"></i>
-            <span>Salvar feedback local</span>
+            <span>Salvar feedback</span>
           </button>
           ${state.feedbackStatus ? `<small class="mission-local-status">${escapeHtml(state.feedbackStatus)}</small>` : ""}
       </div>
@@ -735,6 +768,7 @@
               <h1>${escapeHtml(practice.prompt)}</h1>
             </div>
             ${renderTags(practice)}
+            ${state.persistenceStatus ? `<small class="sql-practice-persistence-status">${escapeHtml(state.persistenceStatus)}</small>` : ""}
           </section>
           <section class="sql-practice-app-grid" aria-label="Workspace de execução SQL">
             ${renderSupportPanels(practice)}
@@ -771,7 +805,7 @@
     renderPage();
 
     try {
-      state.sqlWorkbench.engine = await sqlPocEngine.createBrowserWorkbench();
+      state.sqlWorkbench.engine = await sqlPocEngine.createBrowserWorkbench(getActivePractice().datasetConfig);
       state.sqlWorkbench.status = "ready";
     } catch (error) {
       state.sqlWorkbench.status = "error-loading";
@@ -806,9 +840,23 @@
     }
 
     renderPage();
+
+    if (sqlPracticeService) {
+      const saveResult = await sqlPracticeService.saveQueryRun(
+        getActivePractice(),
+        query,
+        workbench.execution,
+        workbench.error
+      );
+      state.lastQueryRunId = saveResult.ok ? saveResult.id : null;
+      if (saveResult.authenticated && !saveResult.ok) {
+        state.persistenceStatus = "A consulta rodou localmente, mas não foi possível salvar esta execução.";
+        renderPage();
+      }
+    }
   }
 
-  function validateSqlPractice() {
+  async function validateSqlPractice() {
     const practice = getActivePractice();
     const workbench = state.sqlWorkbench;
     const query = state.queryAnswer.trim();
@@ -819,17 +867,25 @@
       return;
     }
 
-    const isCorrect = sqlPocEngine.validateMissionResult(workbench.execution, query);
+    const validationDetails = sqlValidation.validatePaidOrdersByCategorySql(query);
+    const isCorrect = sqlPocEngine.validateConfiguredResult(
+      workbench.execution,
+      query,
+      practice.validationConfig || { validator: "paid_orders_by_category" },
+      practice.expectedResult
+    );
     const result = isCorrect
       ? {
           status: "correct",
           title: "Correto",
-          message: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria."
+          message: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria.",
+          details: validationDetails.checks
         }
       : {
           status: "partial",
           title: "Resultado diferente do esperado",
-          message: getResultMismatchGuidance(query)
+          message: getResultMismatchGuidance(query),
+          details: validationDetails.checks
         };
     const previousAttemptCount = state.attempts[practice.slug]?.attemptCount || 0;
 
@@ -840,6 +896,19 @@
     };
 
     renderPage();
+
+    if (sqlPracticeService) {
+      const saveResult = await sqlPracticeService.saveAttempt(
+        practice,
+        state.lastQueryRunId,
+        result,
+        previousAttemptCount + 1
+      );
+      if (saveResult.authenticated && !saveResult.ok) {
+        state.persistenceStatus = "A validação local foi concluída, mas a tentativa não pôde ser salva.";
+        renderPage();
+      }
+    }
   }
 
   function syncSqlWorkbenchControls() {
@@ -890,8 +959,55 @@
     state.sqlWorkbench.error = "";
     state.sqlWorkbench.execution = null;
     state.sqlWorkbench.executionQuery = "";
+    state.lastQueryRunId = null;
     state.activeUtility = "";
     loadLocalPracticeDrafts(practice);
+  }
+
+  async function persistNote(practice) {
+    const localSaved = writeLocalJson(
+      getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug),
+      state.practiceNote
+    );
+    const remoteResult = sqlPracticeService
+      ? await sqlPracticeService.saveNote(practice, state.practiceNote)
+      : { ok: false, skipped: true, authenticated: false };
+
+    if (remoteResult.ok) {
+      state.noteStatus = "Anotação salva na sua conta.";
+    } else if (remoteResult.authenticated) {
+      state.noteStatus = localSaved
+        ? "Falha ao salvar na conta. A anotação ficou salva neste navegador."
+        : "Não foi possível salvar a anotação.";
+    } else {
+      state.noteStatus = localSaved
+        ? "Anotação salva apenas neste navegador."
+        : "Não foi possível salvar a anotação neste navegador.";
+    }
+    renderPage();
+  }
+
+  async function persistFeedback(practice) {
+    const localSaved = writeLocalJson(
+      getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug),
+      state.practiceFeedback
+    );
+    const remoteResult = sqlPracticeService
+      ? await sqlPracticeService.saveFeedback(practice, state.practiceFeedback)
+      : { ok: false, skipped: true, authenticated: false };
+
+    if (remoteResult.ok) {
+      state.feedbackStatus = "Feedback salvo na sua conta.";
+    } else if (remoteResult.authenticated) {
+      state.feedbackStatus = localSaved
+        ? "Falha ao salvar na conta. O feedback ficou salvo neste navegador."
+        : "Não foi possível salvar o feedback.";
+    } else {
+      state.feedbackStatus = localSaved
+        ? "Feedback salvo localmente neste navegador."
+        : "Não foi possível salvar o feedback neste navegador.";
+    }
+    renderPage();
   }
 
   function selectPractice(index) {
@@ -932,7 +1048,7 @@
 
     const validateButton = event.target.closest("[data-validate-query]");
     if (validateButton && !validateButton.disabled) {
-      validateSqlPractice();
+      void validateSqlPractice();
       return;
     }
 
@@ -963,10 +1079,7 @@
       const practice = getActivePractice();
       const noteInput = mount.querySelector("[data-practice-note]");
       state.practiceNote = noteInput ? noteInput.value : state.practiceNote;
-      state.noteStatus = writeLocalJson(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug), state.practiceNote)
-        ? "Anotação salva apenas neste navegador."
-        : "Não foi possível salvar a anotação neste navegador.";
-      renderPage();
+      void persistNote(practice);
       return;
     }
 
@@ -974,10 +1087,8 @@
     if (clearNoteButton && !clearNoteButton.disabled) {
       const practice = getActivePractice();
       state.practiceNote = "";
-      state.noteStatus = removeLocalItem(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug))
-        ? "Anotação local removida."
-        : "Não foi possível remover a anotação local.";
-      renderPage();
+      removeLocalItem(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug));
+      void persistNote(practice);
       return;
     }
 
@@ -988,10 +1099,7 @@
       const confidence = mount.querySelector('input[name="practiceConfidence"]:checked')?.value || "";
       const comment = mount.querySelector("[data-practice-feedback-comment]")?.value || "";
       state.practiceFeedback = { difficulty, confidence, comment };
-      state.feedbackStatus = writeLocalJson(getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug), state.practiceFeedback)
-        ? "Feedback salvo localmente neste navegador."
-        : "Não foi possível salvar o feedback neste navegador.";
-      renderPage();
+      void persistFeedback(practice);
       return;
     }
 
@@ -1059,6 +1167,68 @@
     }
   });
 
-  loadLocalPracticeDrafts(getActivePractice());
-  renderPage();
+  async function initializePage() {
+    const params = new URLSearchParams(globalScope.location.search);
+    const slug = params.get("pratica") || params.get("missao") || "sql-essencial-filtros-where";
+
+    if (sqlPracticeService) {
+      const loadResult = await sqlPracticeService.loadPractice(slug);
+      if (loadResult.ok) {
+        const localPractice = practices.find((item) => item.slug === loadResult.practice.slug) || {};
+        const mergedPractice = {
+          ...localPractice,
+          ...loadResult.practice,
+          solutionText: localPractice.solutionText || "",
+          validationConfig: localPractice.validationConfig || { validator: "paid_orders_by_category" },
+          expectedResult: localPractice.expectedResult
+        };
+        practices = (loadResult.catalog || []).map((item) =>
+          item.slug === mergedPractice.slug ? mergedPractice : {
+            ...(practices.find((localItem) => localItem.slug === item.slug) || {}),
+            ...item
+          }
+        );
+        state.activeIndex = Math.max(
+          0,
+          practices.findIndex((item) => item.slug === mergedPractice.slug)
+        );
+        state.dataSource = "supabase";
+        state.sourceStatus = "Conteúdo público e dataset carregados do Supabase; validação executada localmente.";
+
+        loadLocalPracticeDrafts(mergedPractice);
+        const userState = await sqlPracticeService.loadUserState(mergedPractice);
+        state.isAuthenticated = Boolean(userState.authenticated);
+        if (userState.ok && userState.authenticated) {
+          if (userState.hasNote) {
+            state.practiceNote = userState.note || "";
+          }
+          if (userState.hasFeedback) {
+            state.practiceFeedback = userState.feedback;
+          }
+          state.attempts[mergedPractice.slug] = {
+            attemptCount: userState.attemptCount || 0
+          };
+        } else {
+          if (userState.authenticated) {
+            state.persistenceStatus = "Não foi possível carregar seus dados salvos. O modo local continua disponível.";
+          }
+        }
+      } else {
+        state.dataSource = "fallback";
+        state.sourceStatus = loadResult.notFound
+          ? "Prática não encontrada no Supabase. Usando conteúdo local."
+          : "Supabase indisponível. Usando conteúdo local.";
+        state.activeIndex = Math.max(1, getInitialPracticeIndex());
+        loadLocalPracticeDrafts(getActivePractice());
+      }
+    } else {
+      state.dataSource = "fallback";
+      state.sourceStatus = "Service do Supabase indisponível. Usando conteúdo local.";
+      loadLocalPracticeDrafts(getActivePractice());
+    }
+
+    renderPage();
+  }
+
+  void initializePage();
 })(window);
