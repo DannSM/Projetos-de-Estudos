@@ -44,8 +44,8 @@
       objective: "Treine como aplicar WHERE antes de contar ou resumir uma metrica.",
       why: "Esta pratica apareceu porque o diagnostico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
       contentTitle: "Primeiro recorte, depois resumo",
-      content: "Quando a metrica e sobre um grupo especifico, aplique o WHERE antes de contar ou somar. A ordem logica e escolher os campos, indicar a fonte, filtrar o recorte e so entao agrupar.",
-      example: "select campo_de_grupo, count(*) from tabela where condicao group by campo_de_grupo;",
+      content: "Quando a metrica e sobre um grupo especifico, aplique o WHERE antes de contar ou somar.",
+      example: "select campo, count(*)\nfrom tabela\nwhere condicao\ngroup by campo;",
       hintText: "O enunciado pede pedidos pagos por categoria. Filtre status = 'pago' antes do GROUP BY e agrupe por categoria.",
       solutionText: "Uma solucao possivel: select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
       placeholder: "select campo_de_grupo, agregacao\nfrom tabela\nwhere condicao\ngroup by campo_de_grupo;"
@@ -113,7 +113,8 @@
       confidence: "",
       comment: ""
     },
-    feedbackStatus: ""
+    feedbackStatus: "",
+    activeUtility: ""
   };
 
   function getInitialPracticeIndex() {
@@ -219,7 +220,6 @@
       <aside class="sql-practice-sidebar" aria-label="Roteiro SQL Essencial">
         <div class="sql-practice-sidebar__header">
           <h1>SQL Essencial <span aria-hidden="true">·</span> Trilha de pratica</h1>
-          <span class="sql-practice-pill">Piloto local</span>
         </div>
         <nav class="sql-practice-steps" aria-label="Etapas da Central SQL">
           ${practices.map((practice, index) => {
@@ -261,7 +261,7 @@
     const status = getRuntimeStatus(practice);
     return `
       <header class="sql-practice-workspace__header">
-        <div>
+        <div class="sql-practice-workspace__title">
           <span class="section-kicker">Pratica ativa</span>
           <h2>${escapeHtml(practice.shortTitle)}</h2>
         </div>
@@ -271,15 +271,15 @@
             ${escapeHtml(status.label)}
           </span>
           <span class="sql-practice-counter">${getAttemptCount(practice)} tentativa(s)</span>
-          <a href="#apoio-sql" class="sql-practice-tool" aria-label="Abrir dica">
+          <button class="sql-practice-tool" type="button" data-open-practice-utility="hint" aria-label="Abrir dica rapida" title="Dica rapida">
             <i data-lucide="lightbulb" aria-hidden="true"></i>
-          </a>
-          <a href="#anotacoes-sql" class="sql-practice-tool" aria-label="Abrir anotacoes">
+          </button>
+          <button class="sql-practice-tool" type="button" data-open-practice-utility="notes" aria-label="Abrir anotacoes pessoais" title="Anotacoes pessoais">
             <i data-lucide="sticky-note" aria-hidden="true"></i>
-          </a>
-          <a href="#feedback-local-sql" class="sql-practice-tool" aria-label="Abrir feedback local">
+          </button>
+          <button class="sql-practice-tool" type="button" data-open-practice-utility="feedback" aria-label="Abrir feedback da pratica" title="Feedback da pratica">
             <i data-lucide="message-square" aria-hidden="true"></i>
-          </a>
+          </button>
         </div>
       </header>
     `;
@@ -288,10 +288,13 @@
   function renderTags(practice) {
     return `
       <div class="mission-context-list sql-practice-tags" aria-label="Contexto da pratica">
-        <span>Tabela: ${escapeHtml(practice.table)}</span>
-        <span>Colunas: ${escapeHtml(practice.columns)}</span>
-        <span>Nivel: ${escapeHtml(practice.level)}</span>
-        <span>Validacao local</span>
+        <span><i data-lucide="table-2" aria-hidden="true"></i>Tabela: ${escapeHtml(practice.table)}</span>
+        <span><i data-lucide="graduation-cap" aria-hidden="true"></i>Nivel: ${escapeHtml(practice.level)}</span>
+        <span><i data-lucide="shield-check" aria-hidden="true"></i>Validacao local</span>
+        <details class="sql-practice-columns">
+          <summary><i data-lucide="columns-3" aria-hidden="true"></i>Colunas: ver detalhes</summary>
+          <div>${escapeHtml(practice.columns)}</div>
+        </details>
       </div>
     `;
   }
@@ -325,40 +328,37 @@
       coluna: column.name,
       tipo: column.type
     }));
-    const sampleColumns = ["pedido_id", "status", "categoria", "valor"];
 
     return `
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da pratica SQL">
-        <details class="mission-learning-card sql-support-card" open>
-          <summary>Apoio teorico</summary>
+        <section class="mission-learning-card sql-support-card">
+          <header class="sql-support-card__header">
+            <strong><i data-lucide="book-open" aria-hidden="true"></i>Apoio teorico</strong>
+          </header>
           <h3>${escapeHtml(practice.contentTitle)}</h3>
           <p>${escapeHtml(practice.content)}</p>
-          <p>${escapeHtml(practice.hintText)}</p>
           <code class="code-block">${escapeHtml(practice.example)}</code>
-        </details>
-        <details class="mission-learning-card sql-support-card">
-          <summary>Schema local</summary>
-          <div class="sql-workbench-heading">
-            <span>Tabela</span>
-            <strong>pedidos</strong>
-          </div>
+        </section>
+        <section class="mission-learning-card sql-support-card">
+          <header class="sql-support-card__header">
+            <strong><i data-lucide="table-2" aria-hidden="true"></i>Schema local</strong>
+            <small>${sqlPocEngine.PEDIDOS_SAMPLE.length} registros</small>
+          </header>
           ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
-        </details>
-        <details class="mission-learning-card sql-support-card">
-          <summary>Amostra sintetica</summary>
-          <div class="sql-workbench-heading">
-            <span>Dados locais</span>
-            <strong>${sqlPocEngine.PEDIDOS_SAMPLE.length} registros</strong>
+        </section>
+        <section class="mission-learning-card sql-support-card sql-support-chat">
+          <header class="sql-support-card__header">
+            <strong><i data-lucide="bot" aria-hidden="true"></i>Chat com IA</strong>
+            <small>Em breve</small>
+          </header>
+          <p>IA tutora em breve. Aqui voce podera pedir ajuda sobre o enunciado, erro da query ou explicacao da solucao.</p>
+          <div class="sql-support-chat__composer" aria-label="Chat com IA indisponivel">
+            <input type="text" placeholder="Pergunte algo sobre este exercicio..." disabled>
+            <button type="button" disabled aria-label="Enviar mensagem">
+              <i data-lucide="send" aria-hidden="true"></i>
+            </button>
           </div>
-          ${renderDataTable(sampleColumns, sqlPocEngine.PEDIDOS_SAMPLE, "is-sample")}
-        </details>
-        <details class="mission-learning-card sql-support-card">
-          <summary>Solucao comentada</summary>
-          <p>Use a solucao para comparar depois de tentar.</p>
-          <code class="code-block">${escapeHtml(practice.solutionText)}</code>
-        </details>
-        ${renderPracticeNotes(practice)}
-        ${renderPracticeFeedbackForm(practice)}
+        </section>
       </aside>
     `;
   }
@@ -557,17 +557,20 @@
 
     return `
       <section class="sql-practice-editor-panel" id="atividade" aria-label="Editor e resultado SQL">
-        <label class="sql-workbench-editor">
-          <span>Sua consulta SQL</span>
+        <div class="sql-workbench-editor">
+          <div class="sql-workbench-editor__header">
+            <strong>Sua consulta SQL</strong>
+            <span>PostgreSQL</span>
+          </div>
           <textarea
             class="mission-query-input"
             data-query-answer
             rows="8"
             spellcheck="false"
             aria-label="Resposta em SQL"
-            placeholder="${escapeHtml(practice.placeholder)}"
+            placeholder="-- Escreva sua consulta SQL aqui&#10;-- Ctrl+Enter para executar"
           >${escapeHtml(state.queryAnswer)}</textarea>
-        </label>
+        </div>
         <div class="sql-workbench-actions">
           <button class="button button-secondary" type="button" data-execute-query ${!canExecute ? "disabled" : ""}>
             <i data-lucide="play" aria-hidden="true"></i>
@@ -584,8 +587,14 @@
           <p class="sql-workbench-action-hint ${canValidate ? "is-ready" : ""}">${escapeHtml(validationHint)}</p>
         </div>
         <div class="sql-practice-result-grid">
-          ${renderTechnicalResult()}
-          ${renderFeedback()}
+          <section class="sql-practice-output-card" aria-label="Resultado da execucao">
+            <h3><i data-lucide="table-properties" aria-hidden="true"></i>Resultado da execucao</h3>
+            ${renderTechnicalResult()}
+          </section>
+          <section class="sql-practice-output-card" aria-label="Feedback da validacao">
+            <h3><i data-lucide="shield-check" aria-hidden="true"></i>Feedback da validacao</h3>
+            ${renderFeedback()}
+          </section>
         </div>
       </section>
     `;
@@ -593,12 +602,8 @@
 
   function renderPracticeNotes(practice) {
     return `
-      <details class="mission-learning-card mission-local-card" id="anotacoes-sql" aria-label="Anotacoes pessoais">
-        <summary>
-          <span>Anotacoes pessoais</span>
-          <small>Salvo apenas neste navegador.</small>
-        </summary>
-        <div class="mission-local-card__body">
+      <div class="mission-local-card__body" id="anotacoes-sql">
+        <p class="sql-practice-utility-note">Salvo apenas neste navegador. Nao altera o progresso oficial.</p>
           <textarea
             class="mission-local-textarea"
             data-practice-note
@@ -617,8 +622,7 @@
             </button>
           </div>
           ${state.noteStatus ? `<small class="mission-local-status">${escapeHtml(state.noteStatus)}</small>` : ""}
-        </div>
-      </details>
+      </div>
     `;
   }
 
@@ -634,12 +638,8 @@
     `).join("");
 
     return `
-      <details class="mission-learning-card mission-local-card" id="feedback-local-sql" aria-label="Feedback local sobre a pratica">
-        <summary>
-          <span>Feedback da pratica</span>
-          <small>Nao altera progresso oficial.</small>
-        </summary>
-        <div class="mission-local-card__body">
+      <div class="mission-local-card__body" id="feedback-local-sql">
+        <p class="sql-practice-utility-note">Este feedback fica somente neste navegador e nao altera o progresso oficial.</p>
           <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
             <strong>Dificuldade percebida</strong>
             <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
@@ -660,13 +660,60 @@
             <span>Salvar feedback local</span>
           </button>
           ${state.feedbackStatus ? `<small class="mission-local-status">${escapeHtml(state.feedbackStatus)}</small>` : ""}
-        </div>
-      </details>
+      </div>
     `;
   }
 
-  function renderLocalPanels(practice) {
-    return "";
+  function renderPracticeUtility(practice) {
+    if (!state.activeUtility) {
+      return "";
+    }
+
+    const utilityContent = {
+      hint: {
+        icon: "lightbulb",
+        title: "Dica rapida",
+        content: `
+          <div class="sql-practice-hint">
+            <p>${escapeHtml(practice.hintText)}</p>
+          </div>
+        `
+      },
+      notes: {
+        icon: "sticky-note",
+        title: "Anotacoes pessoais",
+        content: renderPracticeNotes(practice)
+      },
+      feedback: {
+        icon: "message-square",
+        title: "Feedback da pratica",
+        content: renderPracticeFeedbackForm(practice)
+      }
+    }[state.activeUtility];
+
+    if (!utilityContent) {
+      return "";
+    }
+
+    return `
+      <div class="sql-practice-utility-backdrop" data-close-practice-utility>
+        <section
+          class="sql-practice-utility"
+          role="dialog"
+          aria-modal="true"
+          aria-label="${escapeHtml(utilityContent.title)}"
+          data-practice-utility-panel
+        >
+          <header>
+            <strong><i data-lucide="${utilityContent.icon}" aria-hidden="true"></i>${escapeHtml(utilityContent.title)}</strong>
+            <button type="button" data-close-practice-utility aria-label="Fechar">
+              <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+          </header>
+          ${utilityContent.content}
+        </section>
+      </div>
+    `;
   }
 
   function renderWorkspace(practice) {
@@ -678,7 +725,6 @@
             <div>
               <span class="section-kicker">Pratique agora</span>
               <h1>${escapeHtml(practice.prompt)}</h1>
-              <p>${escapeHtml(practice.objective)}</p>
             </div>
             ${renderTags(practice)}
           </section>
@@ -686,8 +732,8 @@
             ${renderSupportPanels(practice)}
             ${renderEditorPanel(practice)}
           </section>
-          ${renderLocalPanels(practice)}
         </div>
+        ${renderPracticeUtility(practice)}
       </main>
     `;
   }
@@ -836,6 +882,7 @@
     state.sqlWorkbench.error = "";
     state.sqlWorkbench.execution = null;
     state.sqlWorkbench.executionQuery = "";
+    state.activeUtility = "";
     loadLocalPracticeDrafts(practice);
   }
 
@@ -854,6 +901,21 @@
   }
 
   mount.addEventListener("click", (event) => {
+    const utilityPanel = event.target.closest("[data-practice-utility-panel]");
+    const closeUtilityButton = event.target.closest("[data-close-practice-utility]");
+    if (closeUtilityButton && (!utilityPanel || event.target.closest("button[data-close-practice-utility]"))) {
+      state.activeUtility = "";
+      renderPage();
+      return;
+    }
+
+    const openUtilityButton = event.target.closest("[data-open-practice-utility]");
+    if (openUtilityButton) {
+      state.activeUtility = openUtilityButton.dataset.openPracticeUtility;
+      renderPage();
+      return;
+    }
+
     const executeButton = event.target.closest("[data-execute-query]");
     if (executeButton && !executeButton.disabled) {
       void executeSqlQuery();
@@ -970,6 +1032,12 @@
   });
 
   mount.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.activeUtility) {
+      state.activeUtility = "";
+      renderPage();
+      return;
+    }
+
     if (!event.target.matches("[data-query-answer]")) {
       return;
     }

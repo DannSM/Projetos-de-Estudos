@@ -5170,12 +5170,12 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 /* Central SQL: workspace de pratica local, sem progresso oficial. */
 .sql-practice-ui {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .sql-practice-page {
   min-height: calc(100vh - var(--header-height));
-  overflow: hidden;
 }
 
 .sql-practice-shell {
@@ -5186,14 +5186,17 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-practice-app {
   display: grid;
   grid-template-columns: clamp(18rem, 19vw, 20rem) minmax(0, 1fr);
-  height: calc(100vh - var(--header-height));
-  overflow: hidden;
+  min-height: calc(100vh - var(--header-height));
   color: var(--color-text-primary);
 }
 
 .sql-practice-sidebar {
+  position: sticky;
+  top: var(--header-height);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  align-self: start;
+  height: calc(100vh - var(--header-height));
   min-height: 0;
   background: rgba(255, 255, 255, 0.92);
   border-right: 1px solid rgba(148, 163, 184, 0.24);
@@ -5202,11 +5205,13 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-practice-sidebar__header {
-  display: grid;
-  gap: 0.55rem;
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: space-between;
   align-content: center;
-  min-height: 5rem;
-  padding: clamp(1rem, 2vw, 1.25rem);
+  min-height: 4.4rem;
+  padding: 0.75rem clamp(1rem, 2vw, 1.25rem);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
 }
 
@@ -5216,17 +5221,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   font-size: clamp(1rem, 1.25vw, 1.15rem);
   line-height: 1.1;
   white-space: nowrap;
-}
-
-.sql-practice-pill {
-  width: fit-content;
-  padding: 0.34rem 0.56rem;
-  color: #0f766e;
-  background: rgba(204, 251, 241, 0.64);
-  border: 1px solid rgba(20, 184, 166, 0.24);
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 900;
 }
 
 .sql-practice-steps {
@@ -5329,22 +5323,29 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-practice-workspace {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
-  min-height: 0;
 }
 
 .sql-practice-workspace__header {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 9;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
-  min-height: 5rem;
-  padding: 0.78rem clamp(1rem, 2vw, 1.4rem);
+  min-height: 4.4rem;
+  padding: 0.68rem clamp(1rem, 2vw, 1.4rem);
   background: rgba(255, 255, 255, 0.88);
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   backdrop-filter: blur(14px) saturate(140%);
+}
+
+.sql-practice-workspace__title {
+  display: flex;
+  gap: 0.65rem;
+  align-items: baseline;
+  min-width: 0;
 }
 
 .sql-practice-workspace__header h2 {
@@ -5420,6 +5421,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   width: 2rem;
   padding: 0;
   color: #0f766e;
+  cursor: pointer;
 }
 
 .sql-practice-tool .lucide {
@@ -5431,10 +5433,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   align-content: start;
   gap: 0.72rem;
-  min-height: 0;
   padding: clamp(0.75rem, 1.35vw, 1rem);
-  overflow: auto;
-  overscroll-behavior: contain;
 }
 
 .sql-practice-brief,
@@ -5445,8 +5444,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-practice-brief {
   display: grid;
-  gap: 0.42rem;
-  padding: clamp(0.72rem, 1.3vw, 0.9rem);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem 1rem;
+  align-items: end;
+  padding: clamp(0.58rem, 1vw, 0.72rem) clamp(0.72rem, 1.3vw, 0.9rem);
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-lg);
@@ -5457,27 +5458,70 @@ body.analytics-auth-locked .analytics-hero-copy {
   max-width: 76rem;
   margin: 0;
   color: #0f172a;
-  font-size: clamp(1.2rem, 2vw, 1.72rem);
-  line-height: 1.05;
-}
-
-.sql-practice-brief p {
-  margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
+  font-size: clamp(1rem, 1.35vw, 1.25rem);
+  line-height: 1.2;
 }
 
 .sql-practice-tags {
   gap: 0.38rem;
+  justify-content: flex-end;
+}
+
+.sql-practice-tags > span,
+.sql-practice-columns > summary {
+  display: inline-flex;
+  gap: 0.34rem;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.36rem 0.58rem;
+  color: #334155;
+  background: rgba(248, 250, 252, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.sql-practice-tags .lucide {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: #2563eb;
+}
+
+.sql-practice-columns {
+  position: relative;
+}
+
+.sql-practice-columns > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.sql-practice-columns > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sql-practice-columns > div {
+  position: absolute;
+  z-index: 12;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  width: max-content;
+  max-width: min(20rem, 80vw);
+  padding: 0.65rem 0.72rem;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+  font-size: 0.78rem;
 }
 
 .sql-practice-app-grid {
   display: grid;
-  grid-template-columns: minmax(19rem, 25rem) minmax(38rem, 1fr);
+  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
   gap: clamp(0.75rem, 1.2vw, 1rem);
   align-items: start;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .sql-practice-support,
@@ -5488,17 +5532,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-practice-support {
-  max-height: calc(100vh - var(--header-height) - 12rem);
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
+  align-content: start;
 }
 
 .sql-practice-editor-panel {
-  position: static;
-  max-height: calc(100vh - var(--header-height) - 12rem);
-  overflow-y: auto;
-  overflow-x: hidden;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(37, 99, 235, 0.2);
@@ -5507,8 +5544,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-practice-editor-panel .sql-workbench-editor .mission-query-input {
-  min-height: clamp(13rem, 31vh, 18.5rem);
-  max-height: 19rem;
+  min-height: clamp(11.5rem, 26vh, 15rem);
+  max-height: 18rem;
+  border: 0;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .sql-practice-result-grid {
@@ -5518,7 +5557,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-practice-result-grid .sql-workbench-status {
-  max-height: min(16rem, 28vh);
+  max-height: none;
 }
 
 .sql-practice-support .code-block,
@@ -5532,10 +5571,34 @@ body.analytics-auth-locked .analytics-hero-copy {
   overflow: hidden;
 }
 
-.sql-support-card > summary {
+.sql-support-card__header {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: space-between;
   margin: 0;
-  padding: 0.82rem clamp(0.85rem, 1.5vw, 1rem);
+  padding: 0.72rem clamp(0.85rem, 1.5vw, 1rem);
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.sql-support-card__header strong {
+  display: inline-flex;
+  gap: 0.42rem;
+  align-items: center;
+  color: #0f172a;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.sql-support-card__header small {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.sql-support-card__header .lucide {
+  width: 1rem;
+  height: 1rem;
+  color: #2563eb;
 }
 
 .sql-support-card > h3,
@@ -5549,13 +5612,179 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-support-card > h3,
 .sql-support-card > p,
 .sql-support-card > .sql-workbench-heading {
-  margin-top: 0.7rem;
+  margin-top: 0.58rem;
 }
 
 .sql-support-card > code,
 .sql-support-card > .sql-workbench-table-wrap {
-  margin-top: 0.65rem;
-  margin-bottom: 0.85rem;
+  margin-top: 0.56rem;
+  margin-bottom: 0.72rem;
+}
+
+.sql-support-card > h3 {
+  font-size: 0.95rem;
+}
+
+.sql-support-card > p {
+  font-size: 0.8rem;
+}
+
+.sql-support-card > .code-block {
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.sql-support-chat {
+  padding-bottom: 0.8rem;
+}
+
+.sql-support-chat__composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.4rem;
+  gap: 0.4rem;
+  margin: 0.65rem clamp(0.85rem, 1.5vw, 1rem) 0;
+}
+
+.sql-support-chat__composer input {
+  min-width: 0;
+  padding: 0.65rem 0.72rem;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: var(--radius-sm);
+}
+
+.sql-support-chat__composer button {
+  display: grid;
+  place-items: center;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: var(--radius-sm);
+  opacity: 0.65;
+}
+
+.sql-workbench-editor {
+  gap: 0;
+  overflow: hidden;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: var(--radius-md);
+}
+
+.sql-workbench-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.35rem;
+  padding: 0.48rem 0.72rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.sql-workbench-editor__header strong {
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sql-workbench-editor__header span {
+  padding: 0.2rem 0.48rem;
+  color: #7dd3fc;
+  background: rgba(37, 99, 235, 0.25);
+  border-radius: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.sql-practice-output-card {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.sql-practice-output-card > h3 {
+  display: inline-flex;
+  gap: 0.42rem;
+  align-items: center;
+  margin: 0;
+  padding-top: 0.25rem;
+  color: #0f172a;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.sql-practice-output-card > h3 .lucide {
+  width: 1rem;
+  height: 1rem;
+  color: #2563eb;
+}
+
+.sql-practice-utility-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.sql-practice-utility {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 34rem);
+  max-height: min(80vh, 40rem);
+  overflow: auto;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.sql-practice-utility > header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sql-practice-utility > header strong {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  color: #0f172a;
+}
+
+.sql-practice-utility > header .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sql-practice-utility > header button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.sql-practice-hint {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.sql-practice-hint p,
+.sql-practice-utility-note {
+  margin: 0;
+  color: #475569;
+  font-size: 0.84rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 1100px) {
@@ -5576,11 +5805,11 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-practice-sidebar {
-    position: sticky;
-    top: var(--header-height);
     z-index: 10;
     display: grid;
     grid-template-rows: auto auto;
+    width: 100%;
+    height: auto;
     border-right: 0;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   }
@@ -5610,6 +5839,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-practice-workspace__header {
+    position: static;
     align-items: flex-start;
   }
 
@@ -5625,13 +5855,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   .sql-practice-editor-panel {
     position: static;
     order: -1;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .sql-practice-support {
-    max-height: none;
-    overflow: visible;
   }
 }
 
@@ -5642,6 +5865,11 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .sql-practice-workspace__tools {
     justify-content: flex-start;
+  }
+
+  .sql-practice-workspace__title {
+    display: grid;
+    gap: 0.18rem;
   }
 
   .sql-practice-counter {
@@ -5657,8 +5885,32 @@ body.analytics-auth-locked .analytics-hero-copy {
     border-radius: var(--radius-md);
   }
 
+  .sql-practice-brief {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
   .sql-practice-brief h1 {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
+  }
+
+  .sql-practice-tags {
+    justify-content: flex-start;
+  }
+
+  .sql-practice-tags > span,
+  .sql-practice-columns {
+    flex: 1 1 10rem;
+  }
+
+  .sql-practice-columns > summary {
+    width: 100%;
+  }
+
+  .sql-practice-columns > div {
+    position: static;
+    width: 100%;
+    margin-top: 0.35rem;
   }
 
   .sql-practice-editor-panel .sql-workbench-editor .mission-query-input {
