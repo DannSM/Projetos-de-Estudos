@@ -5319,8 +5319,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   gap: 0.5rem;
   padding: 0.85rem;
-  background: rgba(248, 250, 252, 0.72);
-  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
 }
 
 .sql-practice-sidebar__footer .button {
@@ -5897,14 +5896,32 @@ body.analytics-auth-locked .analytics-hero-copy {
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
 }
 
+@media (max-width: 1280px) {
+  .sql-practice-brief {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .sql-practice-brief h1 {
+    max-width: 62rem;
+  }
+
+  .sql-practice-tags {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 1100px) {
   .sql-practice-ui {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .sql-practice-page,
   .sql-practice-shell,
   .sql-practice-app {
+    width: 100%;
+    min-width: 0;
     min-height: calc(100vh - var(--header-height));
     height: auto;
     overflow: visible;
@@ -5916,13 +5933,20 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-practice-sidebar {
+    position: static;
     z-index: 10;
     display: grid;
     grid-template-rows: auto auto;
+    align-self: auto;
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     height: auto;
+    min-height: 0;
+    overflow: hidden;
     border-right: 0;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   }
 
   .sql-practice-sidebar__header {
@@ -5935,10 +5959,14 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-practice-steps {
+    width: 100%;
+    max-width: 100%;
     grid-auto-flow: column;
     grid-auto-columns: minmax(13.5rem, 1fr);
     padding: 0 0.75rem 0.75rem;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
   }
 
   .sql-practice-step {
@@ -5946,19 +5974,25 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-practice-workspace {
+    width: 100%;
+    min-width: 0;
     min-height: auto;
   }
 
   .sql-practice-workspace__header {
     position: static;
     align-items: flex-start;
+    min-width: 0;
+    padding-block: 0.72rem;
   }
 
   .sql-practice-workspace__scroll {
+    min-width: 0;
     overflow: visible;
   }
 
   .sql-practice-app-grid {
+    min-width: 0;
     grid-template-columns: 1fr;
     overflow: visible;
   }
@@ -5970,17 +6004,49 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 @media (max-width: 620px) {
+  .sql-practice-sidebar__header {
+    padding: 0.68rem 0.75rem 0.52rem;
+  }
+
+  .sql-practice-sidebar__header h1 {
+    font-size: 0.92rem;
+    white-space: normal;
+  }
+
+  .sql-practice-steps {
+    grid-auto-columns: minmax(11.5rem, 78vw);
+    gap: 0.4rem;
+    padding: 0 0.65rem 0.65rem;
+  }
+
+  .sql-practice-step {
+    min-width: 0;
+    padding: 0.62rem;
+  }
+
   .sql-practice-workspace__header {
     display: grid;
+    gap: 0.62rem;
+    padding: 0.68rem 0.75rem;
   }
 
   .sql-practice-workspace__tools {
     justify-content: flex-start;
+    gap: 0.38rem;
   }
 
   .sql-practice-workspace__title {
     display: grid;
     gap: 0.18rem;
+  }
+
+  .sql-practice-workspace__header h2 {
+    font-size: 1.02rem;
+    white-space: normal;
+  }
+
+  .sql-practice-status {
+    flex: 1 1 auto;
   }
 
   .sql-practice-counter {
@@ -6011,9 +6077,10 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .sql-practice-tags > span,
   .sql-practice-columns {
-    flex: 1 1 10rem;
+    flex: 1 1 100%;
   }
 
+  .sql-practice-tags > span,
   .sql-practice-columns > summary {
     width: 100%;
   }
@@ -6029,11 +6096,57 @@ body.analytics-auth-locked .analytics-hero-copy {
     max-height: 14rem;
   }
 
+  .sql-workbench-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sql-workbench-actions .button {
+    width: 100%;
+  }
+
+  .sql-workbench-actions [data-clear-query],
+  .sql-workbench-action-hint {
+    grid-column: 1 / -1;
+  }
+
   .sql-practice-result-grid .sql-workbench-status {
     max-height: 16rem;
   }
 
+  .sql-practice-utility-backdrop {
+    align-items: end;
+    padding: 0.5rem;
+  }
+
+  .sql-practice-utility {
+    width: 100%;
+    max-height: calc(100dvh - 1rem);
+    border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
+  }
+
   .sql-practice-utility.is-feedback .mission-local-fieldset > div {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .sql-practice-steps {
+    grid-auto-columns: minmax(10.75rem, 82vw);
+  }
+
+  .sql-practice-workspace__tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(3, 2rem);
+  }
+
+  .sql-workbench-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .sql-workbench-actions .button,
+  .sql-workbench-actions [data-clear-query],
+  .sql-workbench-action-hint {
+    grid-column: 1;
   }
 }
