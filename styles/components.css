@@ -5201,7 +5201,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   position: sticky;
   top: var(--header-height);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-content: start;
   align-self: start;
   height: calc(100dvh - var(--header-height));
   min-height: calc(100vh - var(--header-height));
@@ -5233,9 +5234,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   align-content: start;
   gap: 0.48rem;
-  min-height: 0;
   padding: 0.85rem;
-  overflow: auto;
+  overflow: visible;
 }
 
 .sql-practice-step {
@@ -5318,7 +5318,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-practice-sidebar__footer {
   display: grid;
   gap: 0.5rem;
-  padding: 0.85rem;
+  padding: 0 0.85rem 0.85rem;
   background: inherit;
   border: 0;
   box-shadow: none;
