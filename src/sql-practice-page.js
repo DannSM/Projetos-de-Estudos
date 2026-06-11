@@ -9,8 +9,8 @@
   if (!sqlValidation || !sqlPocEngine) {
     mount.innerHTML = `
       <div class="mission-loading">
-        <strong>Nao foi possivel carregar a Central SQL.</strong>
-        <span>Recarregue a pagina para tentar novamente.</span>
+        <strong>Não foi possível carregar a Central SQL.</strong>
+        <span>Recarregue a página para tentar novamente.</span>
       </div>
     `;
     return;
@@ -22,8 +22,8 @@
   const practices = [
     {
       slug: "sql-introducao",
-      navTitle: "Introducao ao SQL",
-      shortTitle: "Introducao ao SQL",
+      navTitle: "Introdução ao SQL",
+      shortTitle: "Introdução ao SQL",
       status: "completed",
       estimatedMinutes: 8,
       level: "SQL Junior",
@@ -41,13 +41,13 @@
       table: "pedidos",
       columns: "pedido_id, status, categoria, valor",
       prompt: "Crie uma consulta para contar pedidos pagos por categoria. O filtro de status precisa acontecer antes do agrupamento.",
-      objective: "Treine como aplicar WHERE antes de contar ou resumir uma metrica.",
-      why: "Esta pratica apareceu porque o diagnostico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
+      objective: "Treine como aplicar WHERE antes de contar ou resumir uma métrica.",
+      why: "Esta prática apareceu porque o diagnóstico mostrou que o resumo pode ficar correto na forma, mas errado no recorte.",
       contentTitle: "Primeiro recorte, depois resumo",
-      content: "Quando a metrica e sobre um grupo especifico, aplique o WHERE antes de contar ou somar.",
+      content: "Quando a métrica é sobre um grupo específico, aplique o WHERE antes de contar ou somar.",
       example: "select campo, count(*)\nfrom tabela\nwhere condicao\ngroup by campo;",
       hintText: "O enunciado pede pedidos pagos por categoria. Filtre status = 'pago' antes do GROUP BY e agrupe por categoria.",
-      solutionText: "Uma solucao possivel: select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
+      solutionText: "Uma solução possível: select categoria, count(*) from pedidos where status = 'pago' group by categoria;",
       placeholder: "select campo_de_grupo, agregacao\nfrom tabela\nwhere condicao\ngroup by campo_de_grupo;"
     },
     {
@@ -57,7 +57,7 @@
       status: "soon",
       estimatedMinutes: 12,
       level: "SQL Junior",
-      topic: "Agregacoes",
+      topic: "Agregações",
       note: "em breve"
     },
     {
@@ -219,7 +219,7 @@
     return `
       <aside class="sql-practice-sidebar" aria-label="Roteiro SQL Essencial">
         <div class="sql-practice-sidebar__header">
-          <h1>SQL Essencial <span aria-hidden="true">·</span> Trilha de pratica</h1>
+          <h1>SQL Essencial <span aria-hidden="true">·</span> Trilha de prática</h1>
         </div>
         <nav class="sql-practice-steps" aria-label="Etapas da Central SQL">
           ${practices.map((practice, index) => {
@@ -262,22 +262,22 @@
     return `
       <header class="sql-practice-workspace__header">
         <div class="sql-practice-workspace__title">
-          <span class="section-kicker">Pratica ativa</span>
+          <span class="section-kicker">Prática ativa</span>
           <h2>${escapeHtml(practice.shortTitle)}</h2>
         </div>
-        <div class="sql-practice-workspace__tools" aria-label="Acoes da pratica">
+        <div class="sql-practice-workspace__tools" aria-label="Ações da prática">
           <span class="sql-practice-status is-${status.tone}">
             <span aria-hidden="true"></span>
             ${escapeHtml(status.label)}
           </span>
           <span class="sql-practice-counter">${getAttemptCount(practice)} tentativa(s)</span>
-          <button class="sql-practice-tool" type="button" data-open-practice-utility="hint" aria-label="Abrir dica rapida" title="Dica rapida">
+          <button class="sql-practice-tool" type="button" data-open-practice-utility="hint" aria-label="Abrir dica rápida" title="Dica rápida">
             <i data-lucide="lightbulb" aria-hidden="true"></i>
           </button>
-          <button class="sql-practice-tool" type="button" data-open-practice-utility="notes" aria-label="Abrir anotacoes pessoais" title="Anotacoes pessoais">
+          <button class="sql-practice-tool" type="button" data-open-practice-utility="notes" aria-label="Abrir anotações pessoais" title="Anotações pessoais">
             <i data-lucide="sticky-note" aria-hidden="true"></i>
           </button>
-          <button class="sql-practice-tool" type="button" data-open-practice-utility="feedback" aria-label="Abrir feedback da pratica" title="Feedback da pratica">
+          <button class="sql-practice-tool" type="button" data-open-practice-utility="feedback" aria-label="Abrir feedback da prática" title="Feedback da prática">
             <i data-lucide="message-square" aria-hidden="true"></i>
           </button>
         </div>
@@ -287,10 +287,10 @@
 
   function renderTags(practice) {
     return `
-      <div class="mission-context-list sql-practice-tags" aria-label="Contexto da pratica">
+      <div class="mission-context-list sql-practice-tags" aria-label="Contexto da prática">
         <span><i data-lucide="table-2" aria-hidden="true"></i>Tabela: ${escapeHtml(practice.table)}</span>
-        <span><i data-lucide="graduation-cap" aria-hidden="true"></i>Nivel: ${escapeHtml(practice.level)}</span>
-        <span><i data-lucide="shield-check" aria-hidden="true"></i>Validacao local</span>
+        <span><i data-lucide="graduation-cap" aria-hidden="true"></i>Nível: ${escapeHtml(practice.level)}</span>
+        <span><i data-lucide="shield-check" aria-hidden="true"></i>Validação local</span>
         <details class="sql-practice-columns">
           <summary><i data-lucide="columns-3" aria-hidden="true"></i>Colunas: ver detalhes</summary>
           <div>${escapeHtml(practice.columns)}</div>
@@ -330,10 +330,10 @@
     }));
 
     return `
-      <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da pratica SQL">
+      <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da prática SQL">
         <section class="mission-learning-card sql-support-card">
           <header class="sql-support-card__header">
-            <strong><i data-lucide="book-open" aria-hidden="true"></i>Apoio teorico</strong>
+            <strong><i data-lucide="book-open" aria-hidden="true"></i>Apoio teórico</strong>
           </header>
           <h3>${escapeHtml(practice.contentTitle)}</h3>
           <p>${escapeHtml(practice.content)}</p>
@@ -351,9 +351,9 @@
             <strong><i data-lucide="bot" aria-hidden="true"></i>Chat com IA</strong>
             <small>Em breve</small>
           </header>
-          <p>IA tutora em breve. Aqui voce podera pedir ajuda sobre o enunciado, erro da query ou explicacao da solucao.</p>
+          <p>IA tutora em breve. Aqui você poderá pedir ajuda sobre o enunciado, erro da query ou explicação da solução.</p>
           <div class="sql-support-chat__composer" aria-label="Chat com IA indisponivel">
-            <input type="text" placeholder="Pergunte algo sobre este exercicio..." disabled>
+            <input type="text" placeholder="Pergunte algo sobre este exercício..." disabled>
             <button type="button" disabled aria-label="Enviar mensagem">
               <i data-lucide="send" aria-hidden="true"></i>
             </button>
@@ -382,7 +382,7 @@
       return `
         <div class="sql-workbench-status is-loading" data-sql-technical-result>
           <strong>Executando consulta...</strong>
-          <p>O resultado sera exibido aqui antes da validacao didatica.</p>
+          <p>O resultado será exibido aqui antes da validação didática.</p>
         </div>
       `;
     }
@@ -410,9 +410,9 @@
         <div class="sql-workbench-status ${resultState}" data-sql-technical-result>
           <strong>${escapeHtml(resultTitle)}</strong>
           ${executionIsEvaluable
-            ? `<p>Consulta executada. Agora valide se o resultado responde ao exercicio.</p>
+            ? `<p>Consulta executada. Agora valide se o resultado responde ao exercício.</p>
               ${renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")}`
-            : "<p>A consulta rodou, mas nao retornou um resultado tabular util para avaliar. Nesta pratica, o resultado precisa trazer uma categoria e uma contagem.</p>"}
+            : "<p>A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta prática, o resultado precisa trazer uma categoria e uma contagem.</p>"}
           ${workbench.execution.truncated
             ? `<p>Exibindo apenas as primeiras ${sqlPocEngine.MAX_RESULT_ROWS} linhas para manter a bancada responsiva.</p>`
             : ""}
@@ -424,7 +424,7 @@
     return `
       <div class="sql-workbench-status is-idle" data-sql-technical-result>
         <strong>Escreva sua consulta e execute</strong>
-        <p>O resultado do PostgreSQL local aparecera aqui apos a execucao.</p>
+        <p>O resultado do PostgreSQL local aparecerá aqui após a execução.</p>
       </div>
     `;
   }
@@ -438,7 +438,7 @@
     }
 
     if (normalizedError.includes("must appear in the group by")) {
-      return "Voce exibiu uma coluna comum junto com uma contagem. Para contar por categoria, agrupe usando GROUP BY categoria.";
+      return "Você exibiu uma coluna comum junto com uma contagem. Para contar por categoria, agrupe usando GROUP BY categoria.";
     }
 
     if (
@@ -449,7 +449,7 @@
     }
 
     if (!/\bfrom\b/.test(normalizedQuery) || normalizedError.includes('column "categoria" does not exist')) {
-      return "Voce escolheu uma coluna, mas ainda nao informou de qual tabela os dados vem. Use FROM pedidos.";
+      return "Você escolheu uma coluna, mas ainda não informou de qual tabela os dados vêm. Use FROM pedidos.";
     }
 
     if (normalizedError.includes("syntax error")) {
@@ -464,26 +464,26 @@
     const normalizedQuery = sqlValidation.normalizeSql(query);
 
     if (!checks.hasCountStar) {
-      return "Sua consulta listou categorias, mas ainda nao contou os pedidos. Use COUNT(*) e agrupe por categoria.";
+      return "Sua consulta listou categorias, mas ainda não contou os pedidos. Use COUNT(*) e agrupe por categoria.";
     }
 
     if (/\bselect\s+categoria\s*,\s*count\s*\(\s*\*\s*\)\s+from\s+pedidos\b/.test(normalizedQuery) && !checks.hasGroupByCategoria) {
-      return "Voce misturou uma coluna comum com uma contagem. Para contar por categoria, use GROUP BY categoria.";
+      return "Você misturou uma coluna comum com uma contagem. Para contar por categoria, use GROUP BY categoria.";
     }
 
     if (!checks.hasWhere || !checks.hasStatusPaid) {
-      return "Voce agrupou por categoria, mas ainda precisa filtrar apenas pedidos pagos antes do agrupamento. Use WHERE status = 'pago' antes do GROUP BY.";
+      return "Você agrupou por categoria, mas ainda precisa filtrar apenas pedidos pagos antes do agrupamento. Use WHERE status = 'pago' antes do GROUP BY.";
     }
 
     if (checks.hasWhere && checks.hasStatusPaid && checks.hasGroupByStatus && !checks.hasGroupByCategoria) {
-      return "Voce filtrou os pedidos pagos, mas agrupou por status. O exercicio pede a contagem de pedidos pagos por categoria.";
+      return "Você filtrou os pedidos pagos, mas agrupou por status. O exercício pede a contagem de pedidos pagos por categoria.";
     }
 
     if (!checks.hasGroupByCategoria) {
       return "A consulta executou, mas ainda precisa organizar a contagem por categoria. Use GROUP BY categoria.";
     }
 
-    return "A consulta executou, mas ainda nao responde exatamente ao exercicio. Revise o recorte, a contagem e o agrupamento.";
+    return "A consulta executou, mas ainda não responde exatamente ao exercício. Revise o recorte, a contagem e o agrupamento.";
   }
 
   function getEmptyFeedbackContent() {
@@ -495,13 +495,13 @@
     if (hasResultReady) {
       return {
         title: "Resultado pronto para validar",
-        message: "Resultado executado. Agora valide para comparar com o objetivo da pratica."
+        message: "Resultado executado. Agora valide para comparar com o objetivo da prática."
       };
     }
 
     return {
       title: "Como receber feedback",
-      message: "Execute sua consulta para ver o resultado. Depois valide se ela responde ao exercicio."
+      message: "Execute sua consulta para ver o resultado. Depois valide se ela responde ao exercício."
     };
   }
 
@@ -541,7 +541,7 @@
     const canExecute = Boolean(query) && workbench.status === "ready";
     const canValidate = sqlPocEngine.canValidateExecution(workbench.execution, workbench.executionQuery, query);
     const isBusy = workbench.status === "loading" || workbench.status === "running";
-    let validationHint = "Execute uma consulta valida antes de validar o exercicio.";
+    let validationHint = "Execute uma consulta válida antes de validar o exercício.";
 
     if (workbench.status === "loading") {
       validationHint = "Aguarde a preparacao do PostgreSQL local.";
@@ -552,7 +552,7 @@
     } else if (workbench.execution && !sqlPocEngine.isEvaluableResult(workbench.execution)) {
       validationHint = "O resultado precisa ter colunas e linhas para ser validado.";
     } else if (canValidate) {
-      validationHint = "Consulta executada. Valide para verificar se ela responde ao exercicio.";
+      validationHint = "Consulta executada. Valide para verificar se ela responde ao exercício.";
     }
 
     return `
@@ -578,7 +578,7 @@
           </button>
           <button class="button button-primary" type="button" data-validate-query ${!canValidate || isBusy ? "disabled" : ""}>
             <i data-lucide="badge-check" aria-hidden="true"></i>
-            <span>Validar exercicio</span>
+            <span>Validar exercício</span>
           </button>
           <button class="button button-secondary" type="button" data-clear-query ${!state.queryAnswer ? "disabled" : ""}>
             <i data-lucide="eraser" aria-hidden="true"></i>
@@ -587,12 +587,12 @@
           <p class="sql-workbench-action-hint ${canValidate ? "is-ready" : ""}">${escapeHtml(validationHint)}</p>
         </div>
         <div class="sql-practice-result-grid">
-          <section class="sql-practice-output-card" aria-label="Resultado da execucao">
-            <h3><i data-lucide="table-properties" aria-hidden="true"></i>Resultado da execucao</h3>
+          <section class="sql-practice-output-card" aria-label="Resultado da execução">
+            <h3><i data-lucide="table-properties" aria-hidden="true"></i>Resultado da execução</h3>
             ${renderTechnicalResult()}
           </section>
-          <section class="sql-practice-output-card" aria-label="Feedback da validacao">
-            <h3><i data-lucide="shield-check" aria-hidden="true"></i>Feedback da validacao</h3>
+          <section class="sql-practice-output-card" aria-label="Feedback da validação">
+            <h3><i data-lucide="shield-check" aria-hidden="true"></i>Feedback da validação</h3>
             ${renderFeedback()}
           </section>
         </div>
@@ -603,7 +603,7 @@
   function renderPracticeNotes(practice) {
     return `
       <div class="mission-local-card__body" id="anotacoes-sql">
-        <p class="sql-practice-utility-note">Salvo apenas neste navegador. Nao altera o progresso oficial.</p>
+        <p class="sql-practice-utility-note">Salvo apenas neste navegador. Não altera o progresso oficial.</p>
           <textarea
             class="mission-local-textarea"
             data-practice-note
@@ -614,7 +614,7 @@
           <div class="mission-local-actions">
             <button class="button button-secondary" type="button" data-save-note>
               <i data-lucide="save" aria-hidden="true"></i>
-              <span>Salvar anotacao</span>
+              <span>Salvar anotação</span>
             </button>
             <button class="button button-secondary" type="button" data-clear-note ${!state.practiceNote ? "disabled" : ""}>
               <i data-lucide="trash-2" aria-hidden="true"></i>
@@ -628,24 +628,32 @@
 
   function renderPracticeFeedbackForm(practice) {
     const feedback = state.practiceFeedback || {};
-    const difficultyOptions = ["Facil", "Media", "Dificil"];
-    const confidenceOptions = ["Baixa", "Media", "Alta"];
-    const renderOptions = (name, values, selectedValue) => values.map((value) => `
+    const difficultyOptions = [
+      { value: "Facil", label: "Fácil" },
+      { value: "Media", label: "Média" },
+      { value: "Dificil", label: "Difícil" }
+    ];
+    const confidenceOptions = [
+      { value: "Baixa", label: "Baixa" },
+      { value: "Media", label: "Média" },
+      { value: "Alta", label: "Alta" }
+    ];
+    const renderOptions = (name, options, selectedValue) => options.map((option) => `
       <label>
-        <input type="radio" name="${name}" value="${escapeHtml(value)}" ${selectedValue === value ? "checked" : ""}>
-        <span>${escapeHtml(value)}</span>
+        <input type="radio" name="${name}" value="${escapeHtml(option.value)}" ${selectedValue === option.value ? "checked" : ""}>
+        <span>${escapeHtml(option.label)}</span>
       </label>
     `).join("");
 
     return `
       <div class="mission-local-card__body" id="feedback-local-sql">
-        <p class="sql-practice-utility-note">Este feedback fica somente neste navegador e nao altera o progresso oficial.</p>
+        <p class="sql-practice-utility-note">Este feedback fica somente neste navegador e não altera o progresso oficial.</p>
           <div class="mission-local-fieldset" data-practice-feedback-group="difficulty">
             <strong>Dificuldade percebida</strong>
             <div>${renderOptions("practiceDifficulty", difficultyOptions, feedback.difficulty)}</div>
           </div>
           <div class="mission-local-fieldset" data-practice-feedback-group="confidence">
-            <strong>Confianca no tema</strong>
+            <strong>Confiança no tema</strong>
             <div>${renderOptions("practiceConfidence", confidenceOptions, feedback.confidence)}</div>
           </div>
           <textarea
@@ -653,9 +661,9 @@
             data-practice-feedback-comment
             rows="3"
             maxlength="500"
-            placeholder="Comentario opcional sobre esta pratica."
+            placeholder="Comentário opcional sobre esta prática."
           >${escapeHtml(feedback.comment || "")}</textarea>
-          <button class="button button-secondary" type="button" data-save-practice-feedback>
+          <button class="button button-secondary sql-practice-feedback-submit" type="button" data-save-practice-feedback>
             <i data-lucide="message-square-check" aria-hidden="true"></i>
             <span>Salvar feedback local</span>
           </button>
@@ -672,7 +680,7 @@
     const utilityContent = {
       hint: {
         icon: "lightbulb",
-        title: "Dica rapida",
+        title: "Dica rápida",
         content: `
           <div class="sql-practice-hint">
             <p>${escapeHtml(practice.hintText)}</p>
@@ -681,12 +689,12 @@
       },
       notes: {
         icon: "sticky-note",
-        title: "Anotacoes pessoais",
+        title: "Anotações pessoais",
         content: renderPracticeNotes(practice)
       },
       feedback: {
         icon: "message-square",
-        title: "Feedback da pratica",
+        title: "Feedback da prática",
         content: renderPracticeFeedbackForm(practice)
       }
     }[state.activeUtility];
@@ -698,7 +706,7 @@
     return `
       <div class="sql-practice-utility-backdrop" data-close-practice-utility>
         <section
-          class="sql-practice-utility"
+          class="sql-practice-utility is-${escapeHtml(state.activeUtility)}"
           role="dialog"
           aria-modal="true"
           aria-label="${escapeHtml(utilityContent.title)}"
@@ -721,14 +729,14 @@
       <main class="sql-practice-workspace" aria-label="Central SQL">
         ${renderWorkspaceHeader(practice)}
         <div class="sql-practice-workspace__scroll">
-          <section class="sql-practice-brief" aria-label="Enunciado da pratica">
+          <section class="sql-practice-brief" aria-label="Enunciado da prática">
             <div>
               <span class="section-kicker">Pratique agora</span>
               <h1>${escapeHtml(practice.prompt)}</h1>
             </div>
             ${renderTags(practice)}
           </section>
-          <section class="sql-practice-app-grid" aria-label="Workspace de execucao SQL">
+          <section class="sql-practice-app-grid" aria-label="Workspace de execução SQL">
             ${renderSupportPanels(practice)}
             ${renderEditorPanel(practice)}
           </section>
@@ -767,7 +775,7 @@
       state.sqlWorkbench.status = "ready";
     } catch (error) {
       state.sqlWorkbench.status = "error-loading";
-      state.sqlWorkbench.error = "Nao foi possivel iniciar o PostgreSQL local. Verifique sua conexao e recarregue a pagina.";
+      state.sqlWorkbench.error = "Não foi possível iniciar o PostgreSQL local. Verifique sua conexão e recarregue a página.";
       console.error("Falha ao iniciar PGlite:", error);
     }
 
@@ -806,7 +814,7 @@
     const query = state.queryAnswer.trim();
 
     if (!workbench.execution || workbench.executionQuery !== query) {
-      workbench.error = "Execute a versao atual da consulta antes de validar o exercicio.";
+      workbench.error = "Execute a versão atual da consulta antes de validar o exercício.";
       renderPage();
       return;
     }
@@ -816,7 +824,7 @@
       ? {
           status: "correct",
           title: "Correto",
-          message: "Correto. Voce filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria."
+          message: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria."
         }
       : {
           status: "partial",
@@ -856,10 +864,10 @@
     if (actionHint) {
       actionHint.classList.remove("is-ready");
       actionHint.textContent = executionIsCurrent
-        ? "Consulta executada. Valide para verificar se ela responde ao exercicio."
+        ? "Consulta executada. Valide para verificar se ela responde ao exercício."
         : workbench.execution
           ? "A consulta foi alterada. Execute novamente antes de validar."
-          : "Execute uma consulta valida antes de validar o exercicio.";
+          : "Execute uma consulta válida antes de validar o exercício.";
     }
 
     if (staleNote) {
@@ -943,8 +951,8 @@
     if (saveButton) {
       state.feedback = {
         status: "partial",
-        title: "Validacao local",
-        message: "Esta pratica ainda nao altera progresso oficial. Ela treina e valida no navegador para preparar a futura missao oficial."
+        title: "Validação local",
+        message: "Esta prática ainda não altera progresso oficial. Ela treina e valida no navegador para preparar a futura missão oficial."
       };
       renderPage();
       return;
@@ -956,8 +964,8 @@
       const noteInput = mount.querySelector("[data-practice-note]");
       state.practiceNote = noteInput ? noteInput.value : state.practiceNote;
       state.noteStatus = writeLocalJson(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug), state.practiceNote)
-        ? "Anotacao salva apenas neste navegador."
-        : "Nao foi possivel salvar a anotacao neste navegador.";
+        ? "Anotação salva apenas neste navegador."
+        : "Não foi possível salvar a anotação neste navegador.";
       renderPage();
       return;
     }
@@ -967,8 +975,8 @@
       const practice = getActivePractice();
       state.practiceNote = "";
       state.noteStatus = removeLocalItem(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug))
-        ? "Anotacao local removida."
-        : "Nao foi possivel remover a anotacao local.";
+        ? "Anotação local removida."
+        : "Não foi possível remover a anotação local.";
       renderPage();
       return;
     }
@@ -982,7 +990,7 @@
       state.practiceFeedback = { difficulty, confidence, comment };
       state.feedbackStatus = writeLocalJson(getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug), state.practiceFeedback)
         ? "Feedback salvo localmente neste navegador."
-        : "Nao foi possivel salvar o feedback neste navegador.";
+        : "Não foi possível salvar o feedback neste navegador.";
       renderPage();
       return;
     }

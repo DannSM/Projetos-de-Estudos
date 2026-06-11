@@ -5188,6 +5188,13 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-template-columns: clamp(18rem, 19vw, 20rem) minmax(0, 1fr);
   min-height: calc(100vh - var(--header-height));
   color: var(--color-text-primary);
+  background:
+    linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.94) 0,
+      rgba(255, 255, 255, 0.94) clamp(18rem, 19vw, 20rem),
+      transparent clamp(18rem, 19vw, 20rem)
+    );
 }
 
 .sql-practice-sidebar {
@@ -5196,8 +5203,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   align-self: start;
-  height: calc(100vh - var(--header-height));
-  min-height: 0;
+  height: calc(100dvh - var(--header-height));
+  min-height: calc(100vh - var(--header-height));
   background: rgba(255, 255, 255, 0.92);
   border-right: 1px solid rgba(148, 163, 184, 0.24);
   box-shadow: 18px 0 40px rgba(15, 23, 42, 0.06);
@@ -5209,9 +5216,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   gap: 0.7rem;
   align-items: center;
   justify-content: space-between;
-  align-content: center;
   min-height: 4.4rem;
-  padding: 0.75rem clamp(1rem, 2vw, 1.25rem);
+  padding: 0 clamp(1rem, 2vw, 1.25rem);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
 }
 
@@ -5335,7 +5341,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   gap: 1rem;
   align-items: center;
   min-height: 4.4rem;
-  padding: 0.68rem clamp(1rem, 2vw, 1.4rem);
+  padding: 0 clamp(1rem, 2vw, 1.4rem);
   background: rgba(255, 255, 255, 0.88);
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   backdrop-filter: blur(14px) saturate(140%);
@@ -5344,7 +5350,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-practice-workspace__title {
   display: flex;
   gap: 0.65rem;
-  align-items: baseline;
+  align-items: center;
   min-width: 0;
 }
 
@@ -5621,6 +5627,20 @@ body.analytics-auth-locked .analytics-hero-copy {
   margin-bottom: 0.72rem;
 }
 
+.sql-support-card > .sql-workbench-table-wrap {
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.28);
+  border-radius: 0.72rem;
+  clip-path: inset(0 round 0.72rem);
+}
+
+.sql-support-card > .sql-workbench-table-wrap .sql-workbench-table {
+  table-layout: fixed;
+}
+
 .sql-support-card > h3 {
   font-size: 0.95rem;
 }
@@ -5743,11 +5763,29 @@ body.analytics-auth-locked .analytics-hero-copy {
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
 }
 
+.sql-practice-utility.is-feedback {
+  gap: 1rem;
+  width: min(100%, 36rem);
+  padding: clamp(1rem, 2vw, 1.35rem);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.3);
+}
+
 .sql-practice-utility > header {
   display: flex;
   gap: 0.75rem;
   align-items: center;
   justify-content: space-between;
+}
+
+.sql-practice-utility.is-feedback > header {
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.sql-practice-utility.is-feedback > header strong {
+  color: #083344;
+  font-size: 1.05rem;
 }
 
 .sql-practice-utility > header strong {
@@ -5787,6 +5825,78 @@ body.analytics-auth-locked .analytics-hero-copy {
   line-height: 1.5;
 }
 
+.sql-practice-utility.is-feedback .mission-local-card__body {
+  gap: 0.9rem;
+  padding-top: 0;
+}
+
+.sql-practice-utility.is-feedback .sql-practice-utility-note {
+  padding: 0.72rem 0.8rem;
+  color: #475569;
+  background: rgba(239, 246, 255, 0.72);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: var(--radius-sm);
+}
+
+.sql-practice-utility.is-feedback .mission-local-fieldset {
+  gap: 0.52rem;
+}
+
+.sql-practice-utility.is-feedback .mission-local-fieldset strong {
+  color: #0f172a;
+  font-size: 0.84rem;
+}
+
+.sql-practice-utility.is-feedback .mission-local-fieldset > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.sql-practice-utility.is-feedback .mission-local-fieldset label {
+  justify-content: center;
+  min-height: 2.55rem;
+  padding: 0.48rem 0.6rem;
+  color: #155e75;
+  background: #f8fafc;
+  border-color: rgba(14, 116, 144, 0.2);
+  cursor: pointer;
+  transition: 160ms ease;
+}
+
+.sql-practice-utility.is-feedback .mission-local-fieldset label:hover,
+.sql-practice-utility.is-feedback .mission-local-fieldset label:has(input:checked) {
+  color: #0f766e;
+  background: rgba(204, 251, 241, 0.78);
+  border-color: rgba(13, 148, 136, 0.5);
+  box-shadow: 0 5px 14px rgba(13, 148, 136, 0.12);
+}
+
+.sql-practice-utility.is-feedback .mission-local-fieldset input {
+  accent-color: #0f766e;
+}
+
+.sql-practice-utility.is-feedback .mission-local-textarea {
+  min-height: 6.5rem;
+  padding: 0.78rem 0.82rem;
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.36);
+}
+
+.sql-practice-utility.is-feedback .mission-local-textarea:focus-visible {
+  border-color: rgba(37, 99, 235, 0.52);
+  outline: 3px solid rgba(37, 99, 235, 0.1);
+}
+
+.sql-practice-utility.is-feedback .sql-practice-feedback-submit {
+  width: 100%;
+  min-height: 2.8rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+}
+
 @media (max-width: 1100px) {
   .sql-practice-ui {
     overflow: auto;
@@ -5802,6 +5912,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .sql-practice-app {
     grid-template-columns: 1fr;
+    background: transparent;
   }
 
   .sql-practice-sidebar {
@@ -5920,5 +6031,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
   .sql-practice-result-grid .sql-workbench-status {
     max-height: 16rem;
+  }
+
+  .sql-practice-utility.is-feedback .mission-local-fieldset > div {
+    grid-template-columns: 1fr;
   }
 }
