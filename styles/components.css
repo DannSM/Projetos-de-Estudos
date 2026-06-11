@@ -5191,8 +5191,8 @@ body.analytics-auth-locked .analytics-hero-copy {
   background:
     linear-gradient(
       to right,
-      rgba(255, 255, 255, 0.94) 0,
-      rgba(255, 255, 255, 0.94) clamp(18rem, 19vw, 20rem),
+      #ffffff 0,
+      #ffffff clamp(18rem, 19vw, 20rem),
       transparent clamp(18rem, 19vw, 20rem)
     );
 }
@@ -5205,7 +5205,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   align-self: start;
   height: calc(100dvh - var(--header-height));
   min-height: calc(100vh - var(--header-height));
-  background: rgba(255, 255, 255, 0.92);
+  background: #ffffff;
   border-right: 1px solid rgba(148, 163, 184, 0.24);
   box-shadow: 18px 0 40px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(14px) saturate(140%);
@@ -5319,7 +5319,9 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: grid;
   gap: 0.5rem;
   padding: 0.85rem;
-  background: transparent;
+  background: inherit;
+  border: 0;
+  box-shadow: none;
 }
 
 .sql-practice-sidebar__footer .button {
