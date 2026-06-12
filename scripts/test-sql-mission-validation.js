@@ -1,4 +1,7 @@
 const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
 const {
   validateWhereJanuarySql,
   validateCountRowsExpression,
@@ -13,6 +16,18 @@ function expectStatus(label, actual, expected) {
 function expectNotCorrect(label, actual) {
   assert.notStrictEqual(actual.status, "correct", `${label}: expected not correct`);
 }
+
+const browserWindow = {};
+const browserSource = fs.readFileSync(
+  path.join(__dirname, "..", "src", "sql-mission-validation.js"),
+  "utf8"
+);
+vm.runInNewContext(browserSource, { window: browserWindow });
+assert.strictEqual(
+  typeof browserWindow.SqlMissionValidation?.validateCountNullsDistinctsSql,
+  "function",
+  "Contrato do navegador deve expor validateCountNullsDistinctsSql"
+);
 
 expectStatus(
   "Missão 1 aceita filtro completo",
