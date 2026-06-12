@@ -704,31 +704,51 @@
     }
 
     const progress = formatPercent(data.learningProgress?.progress_percent) || "0%";
+    const progressValue = clampPercent(data.learningProgress?.progress_percent);
     const title = data.path?.title || data.learningRecommendation?.title || "Trilha recomendada";
     const stepTitle = data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
     const hasPractice = Boolean(getRecommendedPracticeHref(data.step));
 
     return `
-      <ul class="progress-detail-list">
-        <li>
+      <div class="progress-path-card">
+        <div class="progress-path-summary">
           <strong>${escapeHtml(title)}</strong>
-          <span>${escapeHtml(data.path?.description || data.learningRecommendation?.reason || "Recomendação gerada pelo diagnóstico.")}</span>
-        </li>
-        <li>
-          <strong>Próximo passo</strong>
-          <span>${escapeHtml(stepTitle)}</span>
-        </li>
-        <li>
-          <strong>Progresso da trilha</strong>
-          <span>${escapeHtml(progress)}</span>
-        </li>
+          <p>${escapeHtml(data.path?.description || data.learningRecommendation?.reason || "Recomendação gerada pelo diagnóstico.")}</p>
+        </div>
+        <div class="progress-path-progress">
+          <div class="progress-path-progress__heading">
+            <span>Progresso da trilha</span>
+            <strong>${escapeHtml(progress)}</strong>
+          </div>
+          <div
+            class="progress-path-progress__bar"
+            role="progressbar"
+            aria-label="Progresso da trilha"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="${progressValue}"
+          >
+            <span style="width: ${progressValue}%"></span>
+          </div>
+          <small>Avanço registrado nas práticas concluídas.</small>
+        </div>
+        <div class="progress-path-next">
+          <span>Próximo passo</span>
+          <strong>${escapeHtml(stepTitle)}</strong>
+          <small>Continue pela próxima prática da trilha.</small>
+        </div>
         ${hasPractice ? `
-          <li class="progress-detail-list__highlight">
-            <strong>Prática recomendada</strong>
-            <span>Prática SQL com feedback imediato e progresso conectado à trilha.</span>
-          </li>
+          <div class="progress-path-practice">
+            <span class="progress-path-practice__icon" aria-hidden="true">
+              <i data-lucide="square-terminal"></i>
+            </span>
+            <div>
+              <strong>Prática recomendada</strong>
+              <span>Continue no SQL com feedback imediato.</span>
+            </div>
+          </div>
         ` : ""}
-      </ul>
+      </div>
     `;
   }
 
