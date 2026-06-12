@@ -1,0 +1,130 @@
+(function initSqlAiTutor(globalScope) {
+  const MAX_PROMPT_CHARS = 800;
+  const MAX_QUERY_CHARS = 4000;
+  const MAX_RESULT_ROWS = 5;
+  const ENDPOINT = "/api/sql-tutor";
+  const QUICK_ACTIONS = new Set([
+    "hint",
+    "explain_error",
+    "review_query",
+    "how_to_start",
+    "free_question"
+  ]);
+
+  function truncate(value, maxLength) {
+    return String(value || "").trim().slice(0, maxLength);
+  }
+
+  function sanitizeResultPreview(rows) {
+    if (!Array.isArray(rows)) {
+      return [];
+    }
+
+    return rows.slice(0, MAX_RESULT_ROWS).map((row) => {
+      if (!row || typeof row !== "object" || Array.isArray(row)) {
+        return {};
+      }
+
+      return Object.fromEntries(
+        Object.entries(row)
+          .slice(0, 12)
+          .map(([key, value]) => [
+            truncate(key, 80),
+            value === null || ["string", "number", "boolean"].includes(typeof value)
+              ? typeof value === "string" ? truncate(value, 300) : value
+              : truncate(JSON.stringify(value), 300)
+          ])
+      );
+    });
+  }
+
+  function sanitizeSchema(schema) {
+    const columns = Array.isArray(schema?.columns)
+      ? schema.columns.slice(0, 30).map((column) => ({
+          name: truncate(column?.name, 80),
+          type: truncate(column?.type, 80)
+        })).filter((column) => column.name)
+      : [];
+
+    return {
+      table: truncate(schema?.table, 80),
+      columns
+    };
+  }
+
+  function buildPayload(context, quickAction, prompt) {
+    if (!QUICK_ACTIONS.has(quickAction)) {
+      return null;
+    }
+
+    const sanitizedPrompt = truncate(prompt, MAX_PROMPT_CHARS);
+    if (quickAction === "free_question" && !sanitizedPrompt) {
+      return null;
+    }
+
+    return {
+      practiceSlug: truncate(context?.practiceSlug, 120),
+      practiceTitle: truncate(context?.practiceTitle, 160),
+      practicePrompt: truncate(context?.practicePrompt, 1200),
+      prompt: sanitizedPrompt,
+      quickAction,
+      studentQuery: truncate(context?.studentQuery, MAX_QUERY_CHARS),
+      lastResultPreview: sanitizeResultPreview(context?.lastResultPreview),
+      lastError: truncate(context?.lastError, 1200),
+      validationStatus: truncate(context?.validationStatus || "idle", 20),
+      attemptCount: Math.max(0, Math.min(Number(context?.attemptCount) || 0, 100)),
+      schema: sanitizeSchema(context?.schema)
+    };
+  }
+
+  async function requestTutor(payload, fetchImpl = globalScope.fetch?.bind(globalScope)) {
+    if (!payload || typeof fetchImpl !== "function") {
+      return {
+        ok: false,
+        message: "Digite uma pergunta ou escolha uma ação rápida."
+      };
+    }
+
+    try {
+      const response = await fetchImpl(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.status === 404 || response.status === 405) {
+        return {
+          ok: false,
+          unavailable: true,
+          message: "IA tutora disponível apenas no ambiente Cloudflare configurado."
+        };
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        return {
+          ok: false,
+          message: data.message || "Não consegui responder agora. Tente novamente em instantes."
+        };
+      }
+
+      return data;
+    } catch (error) {
+      return {
+        ok: false,
+        unavailable: true,
+        message: "IA tutora disponível apenas no ambiente Cloudflare configurado."
+      };
+    }
+  }
+
+  globalScope.SqlAiTutor = {
+    MAX_PROMPT_CHARS,
+    MAX_QUERY_CHARS,
+    MAX_RESULT_ROWS,
+    QUICK_ACTIONS,
+    buildPayload,
+    requestTutor,
+    sanitizeResultPreview
+  };
+})(typeof window !== "undefined" ? window : globalThis);
