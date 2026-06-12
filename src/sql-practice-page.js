@@ -55,11 +55,69 @@
       slug: "sql-essencial-count-nulos-distintos",
       navTitle: "Etapa 2 - COUNT e Distintos",
       shortTitle: "COUNT, nulos e distintos",
-      status: "soon",
+      status: "active",
       estimatedMinutes: 12,
       level: "SQL Junior",
       topic: "Agregações",
-      note: "em breve"
+      table: "pedidos",
+      columns: "pedido_id, cliente_id, status, cupom, valor",
+      schemaColumns: [
+        { name: "pedido_id", type: "integer", constraints: "primary key" },
+        { name: "cliente_id", type: "integer", constraints: "not null" },
+        { name: "status", type: "text", constraints: "not null" },
+        { name: "cupom", type: "text" },
+        { name: "valor", type: "numeric(10,2)", constraints: "not null" }
+      ],
+      sampleRows: [
+        { pedido_id: 1, cliente_id: 101, status: "pago", cupom: "MELI10", valor: 129.9 },
+        { pedido_id: 2, cliente_id: 102, status: "pago", cupom: null, valor: 89.5 },
+        { pedido_id: 3, cliente_id: 101, status: "pago", cupom: "FRETE", valor: 54 },
+        { pedido_id: 4, cliente_id: 103, status: "pendente", cupom: null, valor: 219 },
+        { pedido_id: 5, cliente_id: 104, status: "pago", cupom: null, valor: 45 },
+        { pedido_id: 6, cliente_id: 105, status: "cancelado", cupom: null, valor: 78.3 },
+        { pedido_id: 7, cliente_id: 102, status: "pago", cupom: "ANIVERSARIO", valor: 36.5 },
+        { pedido_id: 8, cliente_id: 105, status: "pago", cupom: null, valor: 150 }
+      ],
+      datasetConfig: {
+        schemaConfig: {
+          table: "pedidos",
+          columns: [
+            { name: "pedido_id", type: "integer", constraints: "primary key" },
+            { name: "cliente_id", type: "integer", constraints: "not null" },
+            { name: "status", type: "text", constraints: "not null" },
+            { name: "cupom", type: "text" },
+            { name: "valor", type: "numeric(10,2)", constraints: "not null" }
+          ]
+        },
+        seedData: [
+          { pedido_id: 1, cliente_id: 101, status: "pago", cupom: "MELI10", valor: 129.9 },
+          { pedido_id: 2, cliente_id: 102, status: "pago", cupom: null, valor: 89.5 },
+          { pedido_id: 3, cliente_id: 101, status: "pago", cupom: "FRETE", valor: 54 },
+          { pedido_id: 4, cliente_id: 103, status: "pendente", cupom: null, valor: 219 },
+          { pedido_id: 5, cliente_id: 104, status: "pago", cupom: null, valor: 45 },
+          { pedido_id: 6, cliente_id: 105, status: "cancelado", cupom: null, valor: 78.3 },
+          { pedido_id: 7, cliente_id: 102, status: "pago", cupom: "ANIVERSARIO", valor: 36.5 },
+          { pedido_id: 8, cliente_id: 105, status: "pago", cupom: null, valor: 150 }
+        ]
+      },
+      prompt: "Crie uma consulta para resumir os pedidos, retornando o total de pedidos, quantos possuem cupom preenchido, quantos estão sem cupom e quantos clientes distintos realizaram pedidos.",
+      objective: "Compare COUNT(*), COUNT(coluna) e COUNT(DISTINCT coluna) para interpretar linhas, nulos e valores únicos.",
+      why: "Contagens diferentes respondem perguntas diferentes quando existem valores nulos ou clientes repetidos.",
+      contentTitle: "COUNT não conta tudo do mesmo jeito",
+      content: "COUNT(*) conta todas as linhas. COUNT(coluna) conta apenas os registros em que a coluna está preenchida. COUNT(DISTINCT coluna) conta valores únicos.",
+      example: "select\n  count(*) as total_linhas,\n  count(campo) as campo_preenchido,\n  count(distinct outro_campo) as valores_unicos\nfrom tabela;",
+      hintText: "Compare COUNT(*) com COUNT(cupom) para identificar pedidos sem cupom e use COUNT(DISTINCT cliente_id) para contar clientes únicos.",
+      solutionText: "Uma solução possível: select count(*) as total_pedidos, count(cupom) as pedidos_com_cupom, count(*) - count(cupom) as pedidos_sem_cupom, count(distinct cliente_id) as clientes_distintos from pedidos;",
+      placeholder: "select\n  count(*) as total_pedidos,\n  count(cupom) as pedidos_com_cupom,\n  ... as pedidos_sem_cupom,\n  count(distinct cliente_id) as clientes_distintos\nfrom pedidos;",
+      validationConfig: { validator: "count_nulls_distincts" },
+      expectedResult: {
+        metrics: {
+          total_pedidos: 8,
+          pedidos_com_cupom: 3,
+          pedidos_sem_cupom: 5,
+          clientes_distintos: 5
+        }
+      }
     },
     {
       slug: "sql-essencial-filtro-antes-agregacao",
@@ -391,6 +449,7 @@
   }
 
   function renderTechnicalResult() {
+    const practice = getActivePractice();
     const workbench = state.sqlWorkbench;
     const query = state.queryAnswer.trim();
     const executionIsCurrent = workbench.execution && workbench.executionQuery === query;
@@ -439,7 +498,11 @@
           ${executionIsEvaluable
             ? `<p>Consulta executada. Agora valide se o resultado responde ao exercício.</p>
               ${renderDataTable(workbench.execution.columns, workbench.execution.rows, "is-result")}`
-            : "<p>A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta prática, o resultado precisa trazer uma categoria e uma contagem.</p>"}
+            : `<p>${escapeHtml(
+              practice.validationConfig?.validator === "count_nulls_distincts"
+                ? "A consulta rodou, mas não retornou as quatro métricas necessárias para avaliar a prática."
+                : "A consulta rodou, mas não retornou um resultado tabular útil para avaliar. Nesta prática, o resultado precisa trazer uma categoria e uma contagem."
+            )}</p>`}
           ${workbench.execution.truncated
             ? `<p>Exibindo apenas as primeiras ${sqlPocEngine.MAX_RESULT_ROWS} linhas para manter a bancada responsiva.</p>`
             : ""}
@@ -487,6 +550,11 @@
   }
 
   function getResultMismatchGuidance(query) {
+    const practice = getActivePractice();
+    if (practice.validationConfig?.validator === "count_nulls_distincts") {
+      return "A consulta executou, mas ainda não traz todas as métricas esperadas. Revise COUNT(*), COUNT(cupom), pedidos sem cupom e COUNT(DISTINCT cliente_id).";
+    }
+
     const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
     const normalizedQuery = sqlValidation.normalizeSql(query);
 
@@ -867,7 +935,10 @@
       return;
     }
 
-    const validationDetails = sqlValidation.validatePaidOrdersByCategorySql(query);
+    const validator = practice.validationConfig?.validator || "paid_orders_by_category";
+    const validationDetails = validator === "count_nulls_distincts"
+      ? sqlValidation.validateCountNullsDistinctsSql(query)
+      : sqlValidation.validatePaidOrdersByCategorySql(query);
     const isCorrect = sqlPocEngine.validateConfiguredResult(
       workbench.execution,
       query,
@@ -878,7 +949,9 @@
       ? {
           status: "correct",
           title: "Correto",
-          message: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria.",
+          message: validator === "count_nulls_distincts"
+            ? "Correto. Você comparou contagens totais, valores preenchidos, nulos e clientes distintos."
+            : "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria.",
           details: validationDetails.checks
         }
       : {
@@ -1077,8 +1150,10 @@
     if (saveButton) {
       state.feedback = {
         status: "partial",
-        title: "Validação local",
-        message: "Esta prática ainda não altera progresso oficial. Ela treina e valida no navegador para preparar a futura missão oficial."
+        title: "Progresso oficial",
+        message: state.isAuthenticated && getActivePractice().exerciseId
+          ? "Ao validar corretamente e salvar a tentativa, esta prática atualiza o progresso oficial da trilha."
+          : "A validação funciona localmente. Entre na sua conta e use uma prática publicada no Supabase para atualizar o progresso oficial."
       };
       renderPage();
       return;

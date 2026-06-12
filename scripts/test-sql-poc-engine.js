@@ -5,6 +5,7 @@ const {
   createWorkbench,
   isEvaluableResult,
   MAX_RESULT_ROWS,
+  validateCountNullsDistinctsResult,
   validateConfiguredResult,
   validateMissionQueryStructure,
   validateMissionResult
@@ -212,6 +213,86 @@ async function run() {
     }),
     /identificador SQL invalido/i
   );
+
+  const countWorkbench = await createWorkbench(PGlite, {
+    schemaConfig: {
+      table: "pedidos",
+      columns: [
+        { name: "pedido_id", type: "integer", constraints: "primary key" },
+        { name: "cliente_id", type: "integer", constraints: "not null" },
+        { name: "status", type: "text", constraints: "not null" },
+        { name: "cupom", type: "text" },
+        { name: "valor", type: "numeric(10,2)", constraints: "not null" }
+      ]
+    },
+    seedData: [
+      { pedido_id: 1, cliente_id: 101, status: "pago", cupom: "MELI10", valor: 129.9 },
+      { pedido_id: 2, cliente_id: 102, status: "pago", cupom: null, valor: 89.5 },
+      { pedido_id: 3, cliente_id: 101, status: "pago", cupom: "FRETE", valor: 54 },
+      { pedido_id: 4, cliente_id: 103, status: "pendente", cupom: null, valor: 219 },
+      { pedido_id: 5, cliente_id: 104, status: "pago", cupom: null, valor: 45 },
+      { pedido_id: 6, cliente_id: 105, status: "cancelado", cupom: null, valor: 78.3 },
+      { pedido_id: 7, cliente_id: 102, status: "pago", cupom: "ANIVERSARIO", valor: 36.5 },
+      { pedido_id: 8, cliente_id: 105, status: "pago", cupom: null, valor: 150 }
+    ]
+  });
+
+  try {
+    const correctCountQuery = `
+      select
+        count(*) as total_pedidos,
+        count(cupom) as pedidos_com_cupom,
+        count(*) - count(cupom) as pedidos_sem_cupom,
+        count(distinct cliente_id) as clientes_distintos
+      from pedidos
+    `;
+    const correctCountResult = await countWorkbench.execute(correctCountQuery);
+    assert.deepStrictEqual(correctCountResult.rows[0], {
+      total_pedidos: 8,
+      pedidos_com_cupom: 3,
+      pedidos_sem_cupom: 5,
+      clientes_distintos: 5
+    });
+    assert.strictEqual(
+      validateConfiguredResult(
+        correctCountResult,
+        correctCountQuery,
+        { validator: "count_nulls_distincts" },
+        {
+          metrics: {
+            total_pedidos: 8,
+            pedidos_com_cupom: 3,
+            pedidos_sem_cupom: 5,
+            clientes_distintos: 5
+          }
+        }
+      ),
+      true
+    );
+
+    const onlyTotal = await countWorkbench.execute("select count(*) as total_pedidos from pedidos");
+    assert.strictEqual(validateCountNullsDistinctsResult(onlyTotal, onlyTotal.query), false);
+
+    const withoutDistinct = await countWorkbench.execute(
+      "select count(*), count(cupom), count(*) - count(cupom), count(cliente_id) from pedidos"
+    );
+    assert.strictEqual(validateCountNullsDistinctsResult(withoutDistinct, withoutDistinct.query), false);
+
+    const selectAll = await countWorkbench.execute("select * from pedidos");
+    assert.strictEqual(validateCountNullsDistinctsResult(selectAll, selectAll.query), false);
+
+    const sumCase = await countWorkbench.execute(`
+      select
+        count(*) as total,
+        count(cupom) as preenchidos,
+        sum(case when cupom is null then 1 else 0 end) as nulos,
+        count(distinct cliente_id) as clientes
+      from pedidos
+    `);
+    assert.strictEqual(validateCountNullsDistinctsResult(sumCase, sumCase.query), true);
+  } finally {
+    await countWorkbench.close();
+  }
 
   console.log("SQL POC execution tests passed");
 }

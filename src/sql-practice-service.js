@@ -14,6 +14,10 @@
     "sql-essencial-filtros-where": {
       pathSlug: "sql-essencial",
       stepKey: "sql-essencial-01-where"
+    },
+    "sql-essencial-count-nulos-distintos": {
+      pathSlug: "sql-essencial",
+      stepKey: "sql-essencial-02-contagens"
     }
   };
 

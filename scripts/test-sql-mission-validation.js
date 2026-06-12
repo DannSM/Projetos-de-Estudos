@@ -2,7 +2,8 @@ const assert = require("assert");
 const {
   validateWhereJanuarySql,
   validateCountRowsExpression,
-  validatePaidOrdersByCategorySql
+  validatePaidOrdersByCategorySql,
+  validateCountNullsDistinctsSql
 } = require("../src/sql-mission-validation");
 
 function expectStatus(label, actual, expected) {
@@ -70,6 +71,31 @@ expectNotCorrect(
 expectNotCorrect(
   "Missão 3 rejeita texto incompleto",
   validatePaidOrdersByCategorySql("select categoria, count(*) from pedidos where group by categoria")
+);
+
+expectStatus(
+  "Etapa 2 aceita contagens completas",
+  validateCountNullsDistinctsSql(`
+    select
+      count(*) as total_pedidos,
+      count(cupom) as pedidos_com_cupom,
+      count(*) - count(cupom) as pedidos_sem_cupom,
+      count(distinct cliente_id) as clientes_distintos
+    from pedidos
+  `),
+  "correct"
+);
+expectNotCorrect(
+  "Etapa 2 rejeita apenas count total",
+  validateCountNullsDistinctsSql("select count(*) from pedidos")
+);
+expectNotCorrect(
+  "Etapa 2 rejeita consulta sem clientes distintos",
+  validateCountNullsDistinctsSql("select count(*), count(cupom), count(*) - count(cupom) from pedidos")
+);
+expectNotCorrect(
+  "Etapa 2 rejeita select estrela",
+  validateCountNullsDistinctsSql("select * from pedidos")
 );
 
 console.log("SQL mission validation tests passed");

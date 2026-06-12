@@ -141,11 +141,52 @@
     };
   }
 
+  function validateCountNullsDistinctsSql(rawValue) {
+    const value = normalizeSql(rawValue);
+    const startsWithSelect = /^select\b/.test(value);
+    const hasFromPedidos = /\bfrom\s+pedidos\b/.test(value);
+    const hasCountAll = /\bcount\s*\(\s*(?:\*|1|pedido_id)\s*\)/.test(value);
+    const hasCountCoupon = /\bcount\s*\(\s*cupom\s*\)/.test(value);
+    const hasDistinctCustomers = /\bcount\s*\(\s*distinct\s+cliente_id\s*\)/.test(value);
+    const hasNullCount = (
+      /\bcount\s*\(\s*(?:\*|1|pedido_id)\s*\)\s*-\s*count\s*\(\s*cupom\s*\)/.test(value)
+      || /\bsum\s*\(\s*case\s+when\s+cupom\s+is\s+null\s+then\s+1\s+else\s+0\s+end\s*\)/.test(value)
+      || /\bcount\s*\(\s*(?:\*|1|pedido_id)\s*\)\s+filter\s*\(\s*where\s+cupom\s+is\s+null\s*\)/.test(value)
+      || /\bcount\s*\(\s*case\s+when\s+cupom\s+is\s+null\s+then\s+1\s+end\s*\)/.test(value)
+    );
+    const isSelectOnly = startsWithSelect && !hasDangerousSql(value);
+    const checks = {
+      startsWithSelect,
+      hasFromPedidos,
+      hasCountAll,
+      hasCountCoupon,
+      hasNullCount,
+      hasDistinctCustomers,
+      isSelectOnly
+    };
+
+    if (Object.values(checks).every(Boolean)) {
+      return { status: "correct", checks };
+    }
+
+    if (!startsWithSelect || !hasFromPedidos || !isSelectOnly) {
+      return { status: "incorrect", checks };
+    }
+
+    return {
+      status: [hasCountAll, hasCountCoupon, hasNullCount, hasDistinctCustomers].filter(Boolean).length >= 2
+        ? "partial"
+        : "incorrect",
+      checks
+    };
+  }
+
   const api = {
     normalizeSql,
     validateWhereJanuarySql,
     validateCountRowsExpression,
-    validatePaidOrdersByCategorySql
+    validatePaidOrdersByCategorySql,
+    validateCountNullsDistinctsSql
   };
 
   if (typeof module !== "undefined" && module.exports) {

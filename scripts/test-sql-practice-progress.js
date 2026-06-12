@@ -152,7 +152,7 @@ async function run() {
   const practice = { slug: "sql-essencial-filtros-where" };
   const firstResult = await authenticatedService.savePracticeProgress(practice);
   const secondResult = await authenticatedService.savePracticeProgress(practice);
-  const rows = authenticated.tables.user_learning_progress;
+  let rows = authenticated.tables.user_learning_progress;
 
   assert.strictEqual(firstResult.ok, true);
   assert.strictEqual(firstResult.progressPercent, 33.33);
@@ -161,6 +161,21 @@ async function run() {
   assert.strictEqual(rows.find((row) => row.step_id === "step-1").status, "completed");
   assert.strictEqual(rows.find((row) => row.step_id === "step-2").status, "in_progress");
   assert.strictEqual(rows.find((row) => row.step_id === "step-2").progress_percent, 33.33);
+
+  const stepTwoPractice = { slug: "sql-essencial-count-nulos-distintos" };
+  const stepTwoFirstResult = await authenticatedService.savePracticeProgress(stepTwoPractice);
+  const stepTwoSecondResult = await authenticatedService.savePracticeProgress(stepTwoPractice);
+  rows = authenticated.tables.user_learning_progress;
+
+  assert.strictEqual(stepTwoFirstResult.ok, true);
+  assert.strictEqual(stepTwoFirstResult.progressPercent, 66.67);
+  assert.strictEqual(stepTwoFirstResult.completedStep.step_key, "sql-essencial-02-contagens");
+  assert.strictEqual(stepTwoFirstResult.nextStep.step_key, "sql-essencial-03-filtro-mais-agregacao");
+  assert.strictEqual(stepTwoSecondResult.ok, true);
+  assert.strictEqual(rows.length, 3);
+  assert.strictEqual(rows.find((row) => row.step_id === "step-2").status, "completed");
+  assert.strictEqual(rows.find((row) => row.step_id === "step-3").status, "in_progress");
+  assert.strictEqual(rows.find((row) => row.step_id === "step-3").progress_percent, 66.67);
 
   console.log("SQL practice progress tests passed");
 }

@@ -248,11 +248,77 @@
   }
 
   function validateConfiguredResult(result, query, validationConfig, expectedResult) {
-    if (validationConfig?.validator !== "paid_orders_by_category") {
+    if (validationConfig?.validator === "paid_orders_by_category") {
+      const expectedRows = Array.isArray(expectedResult?.rows) ? expectedResult.rows : EXPECTED_RESULT;
+      return validateMissionResult(result, query, expectedRows);
+    }
+
+    if (validationConfig?.validator === "count_nulls_distincts") {
+      return validateCountNullsDistinctsResult(result, query, expectedResult?.metrics);
+    }
+
+    return false;
+  }
+
+  function validateCountNullsDistinctsQueryStructure(query) {
+    const value = stripSqlComments(query)
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/;\s*$/, "")
+      .trim();
+    const hasFromPedidos = /\bfrom\s+(?:(?:"?public"?\.)?"?pedidos"?)(?=\s|$)/.test(value);
+    const hasCountAll = /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value);
+    const hasCountCoupon = /\bcount\s*\(\s*(?:\w+\.)?cupom\s*\)/.test(value);
+    const hasDistinctCustomers = /\bcount\s*\(\s*distinct\s+(?:\w+\.)?cliente_id\s*\)/.test(value);
+    const hasNullCount = (
+      /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)\s*-\s*count\s*\(\s*(?:\w+\.)?cupom\s*\)/.test(value)
+      || /\bsum\s*\(\s*case\s+when\s+(?:\w+\.)?cupom\s+is\s+null\s+then\s+1\s+else\s+0\s+end\s*\)/.test(value)
+      || /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)\s+filter\s*\(\s*where\s+(?:\w+\.)?cupom\s+is\s+null\s*\)/.test(value)
+      || /\bcount\s*\(\s*case\s+when\s+(?:\w+\.)?cupom\s+is\s+null\s+then\s+1\s+end\s*\)/.test(value)
+    );
+    const hasFabricatedRows = /\bvalues\s*\(|\bunion(?:\s+all)?\b/.test(value);
+
+    return {
+      hasCorrectStructure: [
+        hasFromPedidos,
+        hasCountAll,
+        hasCountCoupon,
+        hasNullCount,
+        hasDistinctCustomers,
+        !hasFabricatedRows
+      ].every(Boolean),
+      checks: {
+        hasFromPedidos,
+        hasCountAll,
+        hasCountCoupon,
+        hasNullCount,
+        hasDistinctCustomers,
+        hasFabricatedRows
+      }
+    };
+  }
+
+  function validateCountNullsDistinctsResult(result, query, expectedMetrics) {
+    const rows = Array.isArray(result?.rows) ? result.rows : [];
+    const columns = getColumns({ ...result, rows });
+    const structure = validateCountNullsDistinctsQueryStructure(query);
+    if (rows.length !== 1 || columns.length !== 4 || !structure.hasCorrectStructure) {
       return false;
     }
-    const expectedRows = Array.isArray(expectedResult?.rows) ? expectedResult.rows : EXPECTED_RESULT;
-    return validateMissionResult(result, query, expectedRows);
+
+    const values = columns.map((column) => Number(rows[0][column]));
+    if (values.some((value) => !Number.isFinite(value))) {
+      return false;
+    }
+
+    const metrics = expectedMetrics || {
+      total_pedidos: 8,
+      pedidos_com_cupom: 3,
+      pedidos_sem_cupom: 5,
+      clientes_distintos: 5
+    };
+    const expectedValues = Object.values(metrics).map(Number).sort((left, right) => left - right);
+    return JSON.stringify(values.sort((left, right) => left - right)) === JSON.stringify(expectedValues);
   }
 
   function isEvaluableResult(result) {
@@ -312,6 +378,8 @@
     canValidateExecution,
     isEvaluableResult,
     normalizeMissionResult,
+    validateCountNullsDistinctsQueryStructure,
+    validateCountNullsDistinctsResult,
     validateConfiguredResult,
     validateMissionQueryStructure,
     validateMissionResult
