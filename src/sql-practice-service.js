@@ -4,7 +4,17 @@
     queryRuns: "sql_query_runs",
     attempts: "user_practice_attempts",
     notes: "user_practice_notes",
-    feedback: "user_activity_feedback"
+    feedback: "user_activity_feedback",
+    paths: "learning_paths",
+    steps: "learning_path_steps",
+    learningProgress: "user_learning_progress"
+  };
+
+  const PRACTICE_PROGRESS_MAPPINGS = {
+    "sql-essencial-filtros-where": {
+      pathSlug: "sql-essencial",
+      stepKey: "sql-essencial-01-where"
+    }
   };
 
   function getClient() {
@@ -206,6 +216,147 @@
     }
   }
 
+  function getProgressPercent(completedCount, totalCount) {
+    if (!totalCount) return 0;
+    return Math.round((completedCount / totalCount) * 10000) / 100;
+  }
+
+  async function savePracticeProgress(practice) {
+    const client = getClient();
+    const user = await getAuthenticatedUser();
+    const mapping = PRACTICE_PROGRESS_MAPPINGS[practice?.slug];
+
+    if (!client || !user) {
+      return { ok: false, skipped: true, authenticated: false, reason: "user_not_authenticated" };
+    }
+
+    if (!mapping) {
+      return { ok: false, skipped: true, authenticated: true, reason: "practice_not_mapped" };
+    }
+
+    try {
+      const { data: path, error: pathError } = await client
+        .from(TABLES.paths)
+        .select("id,slug,title")
+        .eq("slug", mapping.pathSlug)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (pathError) return { ok: false, authenticated: true, error: pathError };
+      if (!path?.id) {
+        return { ok: false, authenticated: true, reason: "path_not_found" };
+      }
+
+      const { data: steps, error: stepsError } = await client
+        .from(TABLES.steps)
+        .select("id,path_id,step_key,display_order,status")
+        .eq("path_id", path.id)
+        .eq("status", "active")
+        .order("display_order", { ascending: true });
+
+      if (stepsError) return { ok: false, authenticated: true, error: stepsError };
+
+      const activeSteps = Array.isArray(steps) ? steps : [];
+      const completedStep = activeSteps.find((step) => step.step_key === mapping.stepKey);
+      if (!completedStep) {
+        return { ok: false, authenticated: true, reason: "step_not_found" };
+      }
+
+      const { data: existingRows, error: progressError } = await client
+        .from(TABLES.learningProgress)
+        .select("id,step_id,status,progress_percent,started_at,completed_at,metadata")
+        .eq("user_id", user.id)
+        .eq("path_id", path.id);
+
+      if (progressError) return { ok: false, authenticated: true, error: progressError };
+
+      const progressRows = Array.isArray(existingRows) ? existingRows : [];
+      const existingByStepId = new Map(progressRows.map((row) => [row.step_id, row]));
+      const activeStepIds = new Set(activeSteps.map((step) => step.id));
+      const completedStepIds = new Set(
+        progressRows
+          .filter((row) => row.status === "completed" && activeStepIds.has(row.step_id))
+          .map((row) => row.step_id)
+      );
+      completedStepIds.add(completedStep.id);
+
+      const now = new Date().toISOString();
+      const progressPercent = getProgressPercent(completedStepIds.size, activeSteps.length);
+      const completedRow = existingByStepId.get(completedStep.id);
+      const completedPayload = {
+        user_id: user.id,
+        path_id: path.id,
+        step_id: completedStep.id,
+        status: "completed",
+        progress_percent: progressPercent,
+        started_at: completedRow?.started_at || now,
+        completed_at: completedRow?.completed_at || now,
+        last_activity_at: now,
+        metadata: {
+          ...(completedRow?.metadata || {}),
+          source: "sql_practice_completion",
+          practice_slug: practice.slug,
+          completed_step_key: mapping.stepKey
+        },
+        updated_at: now
+      };
+
+      if (completedRow?.id) {
+        const { error } = await client
+          .from(TABLES.learningProgress)
+          .update(completedPayload)
+          .eq("id", completedRow.id);
+        if (error) return { ok: false, authenticated: true, error };
+      } else {
+        const { error } = await client.from(TABLES.learningProgress).insert(completedPayload);
+        if (error) return { ok: false, authenticated: true, error };
+      }
+
+      const nextStep = activeSteps.find((step) => !completedStepIds.has(step.id)) || null;
+      if (nextStep) {
+        const nextRow = existingByStepId.get(nextStep.id);
+        const nextPayload = {
+          user_id: user.id,
+          path_id: path.id,
+          step_id: nextStep.id,
+          status: nextRow?.status === "completed" ? "completed" : "in_progress",
+          progress_percent: progressPercent,
+          started_at: nextRow?.started_at || now,
+          last_activity_at: now,
+          metadata: {
+            ...(nextRow?.metadata || {}),
+            source: "sql_practice_completion",
+            previous_practice_slug: practice.slug
+          },
+          updated_at: now
+        };
+
+        if (nextRow?.id) {
+          const { error } = await client
+            .from(TABLES.learningProgress)
+            .update(nextPayload)
+            .eq("id", nextRow.id);
+          if (error) return { ok: false, authenticated: true, error };
+        } else {
+          const { error } = await client.from(TABLES.learningProgress).insert(nextPayload);
+          if (error) return { ok: false, authenticated: true, error };
+        }
+      }
+
+      return {
+        ok: true,
+        authenticated: true,
+        path,
+        completedStep,
+        nextStep,
+        progressPercent
+      };
+    } catch (error) {
+      console.warn("[Central SQL] Falha ao atualizar progresso da trilha.", error);
+      return { ok: false, authenticated: true, error };
+    }
+  }
+
   async function saveNote(practice, noteText) {
     const client = getClient();
     const user = await getAuthenticatedUser();
@@ -262,7 +413,9 @@
     loadUserState,
     saveQueryRun,
     saveAttempt,
+    savePracticeProgress,
     saveNote,
-    saveFeedback
+    saveFeedback,
+    getProgressPercent
   };
 })(window);

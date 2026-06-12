@@ -908,6 +908,16 @@
         state.persistenceStatus = "A validação local foi concluída, mas a tentativa não pôde ser salva.";
         renderPage();
       }
+
+      if (isCorrect && saveResult.ok) {
+        const progressResult = await sqlPracticeService.savePracticeProgress(practice);
+        if (progressResult.ok) {
+          state.persistenceStatus = "Progresso da trilha atualizado.";
+          renderPage();
+        } else if (progressResult.authenticated && !progressResult.skipped) {
+          console.warn("[Central SQL] A prática foi validada, mas o progresso da trilha não foi atualizado.", progressResult.error || progressResult.reason);
+        }
+      }
     }
   }
 

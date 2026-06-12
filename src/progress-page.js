@@ -294,7 +294,9 @@
         cta: isRecommendedPractice ? "Abrir Práticas SQL" : "Ver trilhas",
         isRecommendedPractice,
         pathTitle: path?.title || "",
-        note: isRecommendedPractice ? "Piloto local, sem marcar conclusão real." : ""
+        note: isRecommendedPractice && learningProgress
+          ? `${formatPercent(learningProgress.progress_percent) || "0%"} da trilha concluída.`
+          : ""
       };
     }
 
@@ -717,13 +719,13 @@
           <span>${escapeHtml(stepTitle)}</span>
         </li>
         <li>
-          <strong>Progresso inicial</strong>
+          <strong>Progresso da trilha</strong>
           <span>${escapeHtml(progress)}</span>
         </li>
         ${hasPractice ? `
           <li class="progress-detail-list__highlight">
             <strong>Prática recomendada</strong>
-            <span>Piloto SQL com feedback imediato disponível no card superior.</span>
+            <span>Prática SQL com feedback imediato e progresso conectado à trilha.</span>
           </li>
         ` : ""}
       </ul>
