@@ -5756,19 +5756,19 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-support-chat__messages {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 0.48rem;
-  margin: 0.7rem clamp(0.85rem, 1.5vw, 1rem) 0;
-  padding: 0.15rem 0.32rem 0.2rem 0.1rem;
+  margin: 0;
+  padding: 0.1rem 0.25rem 0.15rem 0;
   overflow: visible;
 }
 
 .sql-support-chat__messages.is-empty {
-  margin-top: 0.62rem;
+  margin-top: 0;
 }
 
 .sql-support-chat__messages.has-conversation {
-  max-height: clamp(14rem, 34vh, 20rem);
+  max-height: min(18rem, 40vh);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
@@ -5808,6 +5808,12 @@ body.analytics-auth-locked .analytics-hero-copy {
   line-height: 1.45;
 }
 
+.sql-support-chat__message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .sql-support-chat__message strong {
   display: block;
   margin-bottom: 0.2rem;
@@ -5817,18 +5823,20 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__message {
   flex: 0 0 auto;
+  display: block;
+  width: fit-content;
   height: auto;
-  max-width: 92%;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: normal;
+  min-height: 0;
+  max-width: 86%;
+  overflow: visible;
+  white-space: normal;
   border: 1px solid transparent;
   box-shadow: 0 5px 14px rgba(8, 47, 73, 0.04);
 }
 
 .sql-support-chat__message.is-assistant {
   align-self: flex-start;
-  margin-right: 0.85rem;
+  margin-right: auto;
   color: #19445a;
   background: linear-gradient(145deg, rgba(236, 254, 255, 0.98), rgba(236, 253, 245, 0.96));
   border-color: rgba(20, 184, 166, 0.18);
@@ -5836,7 +5844,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__message.is-student {
   align-self: flex-end;
-  margin-left: 1.4rem;
+  max-width: 76%;
+  margin-left: auto;
   color: #274060;
   background: linear-gradient(145deg, #eff6ff, #f8fafc);
   border-color: rgba(59, 130, 246, 0.16);
@@ -5973,14 +5982,15 @@ body.analytics-auth-locked .analytics-hero-copy {
   flex: 0 0 auto;
   display: flex;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  padding: 0.9rem clamp(0.9rem, 1.5vw, 1.1rem) 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.65rem clamp(0.9rem, 1.5vw, 1.1rem);
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .sql-support-panel__header h2 {
-  margin: 0.16rem 0 0;
+  margin: 0;
   color: #0f172a;
   font-size: 1rem;
 }
@@ -6146,34 +6156,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   background: transparent;
   border: 0;
   box-shadow: none;
-}
-
-.sql-support-chat__intro {
-  display: flex;
-  gap: 0.45rem 0.8rem;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.7rem;
-}
-
-.sql-support-chat__intro strong {
-  display: inline-flex;
-  gap: 0.4rem;
-  align-items: center;
-  color: #0f172a;
-  font-size: 0.82rem;
-}
-
-.sql-support-chat__intro .lucide {
-  width: 1rem;
-  height: 1rem;
-  color: #0ea5e9;
-}
-
-.sql-support-chat__intro small {
-  color: #64748b;
-  font-size: 0.68rem;
-  text-align: right;
 }
 
 .sql-support-panel .sql-support-chat__messages,
@@ -6636,11 +6618,10 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-support-chat__messages.has-conversation {
-    max-height: min(21rem, 48vh);
+    max-height: min(18rem, 40vh);
   }
 
   .sql-support-panel__header,
-  .sql-support-chat__intro,
   .sql-support-data__heading {
     align-items: flex-start;
   }

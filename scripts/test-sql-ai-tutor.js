@@ -160,8 +160,10 @@ async function run() {
   assert.match(pageSource, /data-support-tab/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
   assert.match(pageSource, /Tutora IA/);
-  assert.match(pageSource, /data-lucide="sparkles"/);
-  assert.match(pageSource, />Pensando\.\.\.</);
+  assert.match(pageSource, /\{ id: "tutor", label: "Tutora IA", icon: "sparkles" \}/);
+  assert.match(pageSource, />Pensando</);
+  assert.doesNotMatch(pageSource, />Pensando\.\.\.</);
+  assert.doesNotMatch(pageSource, /sql-support-chat__intro/);
   assert.match(pageSource, /data-ai-tutor-input/);
   assert.match(pageSource, /data-query-answer/);
   assert.match(pageSource, /data-validate-query/);
@@ -170,10 +172,12 @@ async function run() {
   assert.match(cssSource, /\.sql-support-chat__messages/);
   assert.match(cssSource, /flex-direction: column/);
   assert.match(cssSource, /\.sql-support-chat__messages\.is-empty/);
-  assert.match(cssSource, /max-height: clamp\(14rem, 34vh, 20rem\)/);
+  assert.match(cssSource, /max-height: min\(18rem, 40vh\)/);
   const conversationRule = cssSource.match(/\.sql-support-chat__messages\.has-conversation\s*\{[^}]*\}/)?.[0] || "";
   assert.doesNotMatch(conversationRule, /(?:^|[;\r\n])\s*height\s*:/);
   assert.doesNotMatch(cssSource, /\.sql-support-chat__message\.is-assistant\s*\{[^}]*overflow-y:/);
+  assert.match(cssSource, /width: fit-content/);
+  assert.match(cssSource, /max-width: 76%/);
   assert.match(cssSource, /white-space: pre-wrap/);
   assert.match(cssSource, /overflow-wrap: anywhere/);
   assert.match(cssSource, /word-break: normal/);

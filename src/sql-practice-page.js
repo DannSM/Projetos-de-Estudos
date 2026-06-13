@@ -455,10 +455,7 @@
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da prática SQL">
         <section class="mission-learning-card sql-support-panel">
           <header class="sql-support-panel__header">
-            <div>
-              <span class="section-kicker">Painel de apoio</span>
-              <h2>Apoio da prática</h2>
-            </div>
+            <h2>Apoio da prática</h2>
             <small>${sampleRows.length} registros</small>
           </header>
           <div class="sql-support-tabs" role="tablist" aria-label="Conteúdo de apoio da prática">
@@ -523,10 +520,6 @@
               aria-labelledby="sql-support-tab-tutor"
               ${state.activeSupportTab === "tutor" ? "" : "hidden"}
             >
-              <div class="sql-support-chat__intro">
-                <strong><i data-lucide="sparkles" aria-hidden="true"></i>Tutora IA</strong>
-                <small>Orientação sem entregar a resposta pronta</small>
-              </div>
               <div
                 class="sql-support-chat__messages ${state.aiTutor.messages.length || state.aiTutor.status === "loading" || state.aiTutor.error ? "has-conversation" : "is-empty"}"
                 data-ai-tutor-messages
@@ -548,7 +541,7 @@
                 ${state.aiTutor.status === "loading"
                   ? `
                     <div class="sql-support-chat__loading">
-                      <span>Pensando...</span>
+                      <span>Pensando</span>
                       <span class="sql-support-chat__typing" aria-hidden="true"><i></i><i></i><i></i></span>
                     </div>
                   `

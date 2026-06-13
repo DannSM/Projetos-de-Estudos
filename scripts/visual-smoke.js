@@ -167,6 +167,20 @@ async function validatePage(browser, pageConfig, viewport) {
       errors.push(`console.error: ${message.text()}`);
     }
   });
+  await page.route("**/api/sql-tutor", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        answer: "Comece comparando COUNT(*) com COUNT(cupom). Depois observe como os valores nulos afetam cada contagem.",
+        provider: "visual-smoke",
+        model: "mock",
+        durationMs: 420
+      })
+    });
+  });
 
   try {
     const response = await page.goto(`${baseUrl}${pageConfig.path}`, {
@@ -218,6 +232,7 @@ async function validatePage(browser, pageConfig, viewport) {
           const tabList = document.querySelector(".sql-support-tabs");
           const tabs = [...document.querySelectorAll(".sql-support-tab")];
           const body = document.querySelector(".sql-support-panel__body");
+          const header = document.querySelector(".sql-support-panel__header");
           const app = document.querySelector(".sql-practice-app");
           const sidebar = document.querySelector(".sql-practice-sidebar");
           const footer = document.querySelector(".sql-practice-sidebar__footer");
@@ -225,6 +240,7 @@ async function validatePage(browser, pageConfig, viewport) {
           const tabHeights = tabs.map((element) => rect(element).height);
           const tabListRect = rect(tabList);
           const bodyRect = rect(body);
+          const headerRect = rect(header);
           const appRect = rect(app);
           const sidebarRect = rect(sidebar);
 
@@ -232,6 +248,8 @@ async function validatePage(browser, pageConfig, viewport) {
             tabListHeight: tabListRect?.height,
             tabHeights,
             tabBodyGap: bodyRect && tabListRect ? bodyRect.top - tabListRect.bottom : null,
+            headerHeight: headerRect?.height,
+            headerKickerCount: header?.querySelectorAll(".section-kicker").length,
             appBottom: appRect?.bottom,
             sidebarBottom: sidebarRect?.bottom,
             sidebarBackground: sidebar ? getComputedStyle(sidebar).backgroundColor : null,
@@ -251,6 +269,11 @@ async function validatePage(browser, pageConfig, viewport) {
         if (layout.tabBodyGap === null || layout.tabBodyGap > 1) {
           throw new Error(`espaco inesperado entre abas e conteudo: ${layout.tabBodyGap}px`);
         }
+        if (layout.headerHeight > 60 || layout.headerKickerCount !== 0) {
+          throw new Error(
+            `cabecalho do apoio nao esta compacto: height=${layout.headerHeight}, kickers=${layout.headerKickerCount}`
+          );
+        }
         if (viewport.width > 1100) {
           if (Math.abs(layout.appBottom - layout.sidebarBottom) > 1) {
             throw new Error(
@@ -262,6 +285,76 @@ async function validatePage(browser, pageConfig, viewport) {
               `rodape da sidebar com fundo divergente: ${layout.footerBackground} != ${layout.sidebarBackground}`
             );
           }
+        }
+
+        if (supportTab.id === "tutor") {
+          if (await page.locator(".sql-support-chat__intro").count()) {
+            throw new Error("cabecalho duplicado ainda existe dentro da aba Tutora IA");
+          }
+
+          await page.locator("[data-ai-quick-action]").first().click();
+          const loading = page.locator(".sql-support-chat__loading");
+          await loading.waitFor({ state: "visible", timeout: timeoutMs });
+          const loadingText = (await loading.textContent()).trim();
+          if (loadingText !== "Pensando") {
+            throw new Error(`loading redundante ou inesperado: "${loadingText}"`);
+          }
+
+          const loadingScreenshotPath = path.join(
+            outputDir,
+            `${pageConfig.name}-tutora-ia-loading-${viewport.name}.png`
+          );
+          await page.screenshot({ path: loadingScreenshotPath, fullPage: true });
+
+          await loading.waitFor({ state: "hidden", timeout: timeoutMs });
+          await page.locator(".sql-support-chat__message.is-assistant").waitFor({
+            state: "visible",
+            timeout: timeoutMs
+          });
+
+          const chatLayout = await page.evaluate(() => {
+            const history = document.querySelector(".sql-support-chat__messages");
+            const messages = [...document.querySelectorAll(".sql-support-chat__message")];
+            const getMetrics = (element) => {
+              const styles = getComputedStyle(element);
+              return {
+                height: element.getBoundingClientRect().height,
+                clientHeight: element.clientHeight,
+                scrollHeight: element.scrollHeight,
+                overflowY: styles.overflowY
+              };
+            };
+
+            return {
+              history: getMetrics(history),
+              messages: messages.map(getMetrics),
+              studentHeight: document.querySelector(".sql-support-chat__message.is-student")
+                ?.getBoundingClientRect().height,
+              assistantHeight: document.querySelector(".sql-support-chat__message.is-assistant")
+                ?.getBoundingClientRect().height
+            };
+          });
+
+          if (chatLayout.studentHeight > 72 || chatLayout.assistantHeight > 150) {
+            throw new Error(
+              `baloes com altura artificial: estudante=${chatLayout.studentHeight}, tutora=${chatLayout.assistantHeight}`
+            );
+          }
+          if (chatLayout.messages.some((message) => message.scrollHeight > message.clientHeight + 1)) {
+            throw new Error("um balao da conversa criou scrollbar propria");
+          }
+          if (chatLayout.history.scrollHeight > chatLayout.history.clientHeight + 1) {
+            throw new Error("historico curto criou scroll interno desnecessario");
+          }
+
+          const conversationScreenshotPath = path.join(
+            outputDir,
+            `${pageConfig.name}-tutora-ia-conversa-${viewport.name}.png`
+          );
+          await page.screenshot({ path: conversationScreenshotPath, fullPage: true });
+          console.log(
+            `OK ${pageConfig.name} / tutora-ia-conversa / ${viewport.name} -> ${conversationScreenshotPath}`
+          );
         }
 
         const supportScreenshotPath = path.join(
