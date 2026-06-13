@@ -479,10 +479,14 @@
         </section>
         <section class="mission-learning-card sql-support-card sql-support-chat">
           <header class="sql-support-card__header">
-            <strong><i data-lucide="bot" aria-hidden="true"></i>Chat com IA</strong>
+            <strong><i data-lucide="sparkles" aria-hidden="true"></i>Chat com IA</strong>
             <small>Tutora IA</small>
           </header>
-          <div class="sql-support-chat__messages" data-ai-tutor-messages aria-live="polite">
+          <div
+            class="sql-support-chat__messages ${state.aiTutor.messages.length || state.aiTutor.status === "loading" || state.aiTutor.error ? "has-conversation" : "is-empty"}"
+            data-ai-tutor-messages
+            aria-live="polite"
+          >
             ${state.aiTutor.messages.length
               ? state.aiTutor.messages.map((message) => `
                   <div class="sql-support-chat__message is-${escapeHtml(message.role)}">
@@ -492,11 +496,17 @@
                 `).join("")
               : `
                 <div class="sql-support-chat__welcome">
-                  <p>Peça uma dica, revise seu raciocínio ou entenda um erro sem sair da prática.</p>
+                  <i data-lucide="message-circle-question" aria-hidden="true"></i>
+                  <p>Tire dúvidas sobre esta prática sem receber a resposta pronta.</p>
                 </div>
               `}
             ${state.aiTutor.status === "loading"
-              ? `<div class="sql-support-chat__loading"><span aria-hidden="true"></span>Tutora IA está preparando uma dica...</div>`
+              ? `
+                <div class="sql-support-chat__loading">
+                  <span>Pensando</span>
+                  <span class="sql-support-chat__typing" aria-hidden="true"><i></i><i></i><i></i></span>
+                </div>
+              `
               : ""}
             ${state.aiTutor.error
               ? `<p class="sql-support-chat__error" role="alert">${escapeHtml(state.aiTutor.error)}</p>`

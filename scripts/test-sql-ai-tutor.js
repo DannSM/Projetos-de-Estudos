@@ -125,8 +125,9 @@ async function run() {
   assert.match(promptMessages, /Mensagem que deve permanecer no limite/);
   assert.match(promptMessages, /Não recomende WHERE, GROUP BY, JOIN, DISTINCT/);
   assert.match(promptMessages, /Nunca diga o aluno/);
-  assert.match(promptMessages, /50 a 90 palavras/);
-  assert.match(promptMessages, /posso te guiar sem tirar o aprendizado/);
+  assert.match(promptMessages, /Converse em português do Brasil/);
+  assert.match(promptMessages, /Não comece repetidamente com Vamos começar/);
+  assert.match(promptMessages, /ofereça ajuda por partes/);
   assert.doesNotMatch(promptMessages, /pedidos pagos por categoria/);
 
   const pageSource = fs.readFileSync(
@@ -151,14 +152,19 @@ async function run() {
   assert.match(pageSource, /data-toggle-practice-schema/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
   assert.match(pageSource, /Tutora IA/);
+  assert.match(pageSource, /data-lucide="sparkles"/);
+  assert.match(pageSource, />Pensando</);
   assert.match(pageSource, /data-ai-tutor-input/);
   assert.match(pageSource, /data-query-answer/);
   assert.match(pageSource, /data-validate-query/);
   assert.match(htmlSource, /src\/sql-ai-tutor\.js/);
   assert.match(cssSource, /@media \(max-width: 620px\)/);
   assert.match(cssSource, /\.sql-support-chat__messages/);
-  assert.match(cssSource, /grid-auto-rows: max-content/);
-  assert.match(cssSource, /align-content: start/);
+  assert.match(cssSource, /flex-direction: column/);
+  assert.match(cssSource, /\.sql-support-chat__messages\.is-empty/);
+  assert.match(cssSource, /white-space: pre-wrap/);
+  assert.match(cssSource, /overflow-wrap: anywhere/);
+  assert.match(cssSource, /sql-ai-tutor-dot/);
   assert.match(cssSource, /font-size: 0\.78rem/);
   assert.match(cssSource, /\.sql-support-schema\.is-collapsed/);
   assert.doesNotMatch(pageSource, /Chat com IA[\s\S]{0,200}<small>Em breve<\/small>/);
