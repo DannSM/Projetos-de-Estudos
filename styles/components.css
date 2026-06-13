@@ -5355,11 +5355,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   min-width: 0;
 }
 
-.sql-practice-workspace__title > .section-kicker {
-  position: relative;
-  top: 0.08rem;
-}
-
 .sql-practice-workspace__header h2 {
   margin: 0;
   color: #083344;
@@ -6142,17 +6137,19 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-data__heading {
-  display: grid;
-  gap: 0.48rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
   margin-bottom: 0.7rem;
 }
 
-.sql-support-data__title-row {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 0;
+.sql-support-data__heading .section-kicker {
+  margin-bottom: 0;
+}
+
+.sql-support-data__heading h3 {
+  line-height: 1.2;
 }
 
 .sql-support-data > .sql-workbench-table-wrap {
@@ -6557,10 +6554,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   .sql-practice-workspace__title {
     display: grid;
     gap: 0.18rem;
-  }
-
-  .sql-practice-workspace__title > .section-kicker {
-    top: 0;
   }
 
   .sql-practice-workspace__header h2 {

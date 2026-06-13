@@ -375,7 +375,6 @@
     return `
       <header class="sql-practice-workspace__header">
         <div class="sql-practice-workspace__title">
-          <span class="section-kicker">Prática ativa</span>
           <h2>${escapeHtml(practice.shortTitle)}</h2>
         </div>
         <div class="sql-practice-workspace__tools" aria-label="Ações da prática">
@@ -506,10 +505,7 @@
             >
               <div class="sql-support-data__heading">
                 <span class="section-kicker">Schema da prática</span>
-                <div class="sql-support-data__title-row">
-                  <h3>${escapeHtml(practice.table)}</h3>
-                  <small>${sampleRows.length} registros</small>
-                </div>
+                <h3>${escapeHtml(practice.table)}</h3>
               </div>
               ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
             </section>
