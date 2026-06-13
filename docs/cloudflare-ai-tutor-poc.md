@@ -51,6 +51,12 @@ faturável.
   "lastError": "",
   "validationStatus": "idle",
   "attemptCount": 0,
+  "recentMessages": [
+    {
+      "role": "student",
+      "content": "Qual coluna devo usar?"
+    }
+  ],
   "schema": {
     "table": "pedidos",
     "columns": []
@@ -67,6 +73,11 @@ mensagem mais recente e permite recolher o schema durante a sessão para ampliar
 a conversa. O nome exibido no balão do aluno usa o primeiro nome presente nos
 metadados da sessão; quando indisponível, usa `Você`.
 
+Até seis mensagens recentes, limitadas e sem identidade do usuário, são
+enviadas para manter continuidade entre perguntas. As ações rápidas também
+consideram a última intenção detectada, como pedido de query pronta, dúvida de
+coluna ou revisão.
+
 ## Testes
 
 ```powershell
@@ -77,14 +88,20 @@ No servidor estático, `/api/sql-tutor` não existe e o card informa que a IA
 depende do ambiente Cloudflare configurado. Com Wrangler e binding ativo, o
 endpoint pode ser testado com uma requisição `POST`.
 
-## Limitações
+## Publicação e limitações
 
-O domínio atual é publicado via GitHub Pages. Cloudflare DNS ou proxy, sozinho,
-não executa Pages Functions. A IA real exige publicar esta versão também no
-Cloudflare Pages, migrar a publicação ou rotear `/api/sql-tutor` para um Worker.
+O projeto `trilha-de-dados` está publicado no Cloudflare Pages, com domínio
+personalizado `trilhadedados.com.br` e suporte a Pages Functions. O binding
+Workers AI deve estar configurado no ambiente correspondente:
 
-Não há streaming, histórico longo, autenticação obrigatória, rate limit,
-persistência de logs nem proteção por Turnstile neste ciclo.
+- Preview, para testar branches.
+- Production, antes do merge e da publicação na `main`.
+
+Em servidor local estático, `/api/sql-tutor` pode não existir. Nesse caso, o
+card mantém a Central SQL funcional e exibe o fallback controlado.
+
+Não há streaming, histórico persistido, autenticação obrigatória, rate limit
+avançado, logs persistidos nem proteção por Turnstile neste ciclo.
 
 ## Próximos passos
 

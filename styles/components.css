@@ -5740,6 +5740,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__messages {
   display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 0.48rem;
   height: clamp(15rem, 31vh, 20rem);
   margin: 0.7rem clamp(0.85rem, 1.5vw, 1rem) 0;
@@ -5762,6 +5764,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-chat__welcome {
+  align-self: start;
   color: #475569;
   background: linear-gradient(145deg, #f8fafc, #f1f5f9);
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -5790,7 +5793,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__message.is-assistant {
   justify-self: start;
+  max-height: 13rem;
   margin-right: 0.85rem;
+  overflow-y: auto;
   color: #1e3a5f;
   background: linear-gradient(145deg, #eff6ff, #ecfeff);
   border-color: rgba(14, 165, 233, 0.12);
@@ -5834,6 +5839,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-chat__loading {
+  align-self: start;
+  justify-self: start;
   display: inline-flex;
   width: fit-content;
   gap: 0.42rem;

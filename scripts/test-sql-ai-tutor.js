@@ -37,6 +37,15 @@ async function run() {
     lastError: "erro",
     validationStatus: "error",
     attemptCount: 2,
+    recentMessages: [
+      { role: "student", content: "Oi" },
+      { role: "assistant", content: "Olá! Vamos olhar o objetivo." },
+      { role: "student", content: "Qual coluna devo usar?" },
+      { role: "assistant", content: "Confira as colunas ligadas à métrica." },
+      { role: "student", content: "Certo, vou tentar." },
+      { role: "assistant", content: "Comece pelo primeiro cálculo." },
+      { role: "student", content: "Mensagem que deve permanecer no limite." }
+    ],
     schema: {
       table: "pedidos",
       columns: [{ name: "pedido_id", type: "integer" }]
@@ -48,6 +57,8 @@ async function run() {
   assert.ok(payload);
   assert.strictEqual(payload.studentQuery.length, tutor.MAX_QUERY_CHARS);
   assert.strictEqual(payload.lastResultPreview.length, tutor.MAX_RESULT_ROWS);
+  assert.strictEqual(payload.recentMessages.length, tutor.MAX_HISTORY_MESSAGES);
+  assert.strictEqual(payload.recentMessages[0].content, "Olá! Vamos olhar o objetivo.");
   assert.strictEqual("email" in payload, false);
   assert.strictEqual("accessToken" in payload, false);
   assert.strictEqual(tutor.buildPayload({}, "free_question", ""), null);
@@ -93,7 +104,7 @@ async function run() {
       AI: {
         async run(model, input) {
           modelCall = { model, input };
-          return { response: "Comece identificando o que cada COUNT precisa medir." };
+          return { response: Array.from({ length: 140 }, () => "orientação").join(" ") };
         }
       }
     }
@@ -102,14 +113,20 @@ async function run() {
   assert.strictEqual(endpointResponse.status, 200);
   assert.strictEqual(endpointBody.ok, true);
   assert.strictEqual(endpointBody.provider, "cloudflare-workers-ai");
+  assert.ok(endpointBody.answer.split(/\s+/).length <= 120);
+  assert.match(endpointBody.answer, /…$/);
   assert.strictEqual(modelCall.model, "@cf/meta/llama-3.1-8b-instruct-fp8");
   assert.ok(Array.isArray(modelCall.input.messages));
   assert.strictEqual(JSON.stringify(modelCall.input).includes("nao-enviar@example.com"), false);
   assert.strictEqual(JSON.stringify(modelCall.input).includes("segredo"), false);
   const promptMessages = JSON.stringify(modelCall.input.messages);
   assert.match(promptMessages, /Comparar formas de contagem/);
-  assert.match(promptMessages, /status e tentativas recebidos/);
+  assert.match(promptMessages, /histórico recente recebidos/);
+  assert.match(promptMessages, /Mensagem que deve permanecer no limite/);
   assert.match(promptMessages, /Não recomende WHERE, GROUP BY, JOIN, DISTINCT/);
+  assert.match(promptMessages, /Nunca diga o aluno/);
+  assert.match(promptMessages, /50 a 90 palavras/);
+  assert.match(promptMessages, /posso te guiar sem tirar o aprendizado/);
   assert.doesNotMatch(promptMessages, /pedidos pagos por categoria/);
 
   const pageSource = fs.readFileSync(
@@ -126,6 +143,11 @@ async function run() {
   );
   assert.match(pageSource, /what_to_observe/);
   assert.match(pageSource, /learning_summary/);
+  assert.match(pageSource, /detectAiStudentIntention/);
+  assert.match(pageSource, /ready_query/);
+  assert.match(pageSource, /assistantSuggestedAttempt/);
+  assert.match(pageSource, /Me guie por partes/);
+  assert.match(pageSource, /O resultado faz sentido/);
   assert.match(pageSource, /data-toggle-practice-schema/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
   assert.match(pageSource, /Tutora IA/);
@@ -135,6 +157,8 @@ async function run() {
   assert.match(htmlSource, /src\/sql-ai-tutor\.js/);
   assert.match(cssSource, /@media \(max-width: 620px\)/);
   assert.match(cssSource, /\.sql-support-chat__messages/);
+  assert.match(cssSource, /grid-auto-rows: max-content/);
+  assert.match(cssSource, /align-content: start/);
   assert.match(cssSource, /font-size: 0\.78rem/);
   assert.match(cssSource, /\.sql-support-schema\.is-collapsed/);
   assert.doesNotMatch(pageSource, /Chat com IA[\s\S]{0,200}<small>Em breve<\/small>/);

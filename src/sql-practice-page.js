@@ -544,33 +544,103 @@
 
   function getAiQuickActions(practice) {
     const status = getAiValidationStatus(practice);
-    const actionsByStatus = {
-      idle: [
-        { action: "how_to_start", label: "Como começo?" },
-        { action: "hint", label: "Me dê uma dica" },
-        { action: "what_to_observe", label: "O que observar?" }
-      ],
-      error: [
-        { action: "explain_error", label: "Explique meu erro" },
-        { action: "how_to_fix", label: "Como corrigir?" },
-        { action: "hint", label: "Me dê uma dica" }
-      ],
-      executed: [
-        { action: "review_query", label: "Revise minha query" },
-        { action: "what_is_missing", label: "O que falta?" },
-        { action: "validate_reasoning", label: "Validar raciocínio" }
-      ],
-      incorrect: [
+    const query = state.queryAnswer.trim();
+    const lastStudentMessage = [...state.aiTutor.messages]
+      .reverse()
+      .find((message) => message.role === "student")?.content || "";
+    const lastAssistantMessage = [...state.aiTutor.messages]
+      .reverse()
+      .find((message) => message.role === "assistant")?.content || "";
+    const intention = detectAiStudentIntention(lastStudentMessage);
+    const assistantSuggestedAttempt = /tente|escreva|comece|primeiro trecho|execute/i.test(
+      normalizeAiIntentText(lastAssistantMessage)
+    );
+
+    if (status === "correct") {
+      return [
+        { action: "learning_summary", label: "Resumo do que aprendi" },
+        { action: "next_concept", label: "Próximo conceito" },
+        { action: "next_practice", label: "Próxima prática" }
+      ];
+    }
+    if (status === "incorrect") {
+      return [
         { action: "what_is_missing", label: "O que está faltando?" },
         { action: "another_hint", label: "Me dê outra dica" },
-        { action: "review_reasoning", label: "Revise meu raciocínio" }
-      ],
-      correct: [
-        { action: "learning_summary", label: "Resumo do que aprendi" },
-        { action: "next_concept", label: "Próximo conceito" }
-      ]
-    };
-    return actionsByStatus[status] || actionsByStatus.idle;
+        { action: "compare_objective", label: "Comparar com objetivo" }
+      ];
+    }
+    if (status === "error") {
+      return [
+        { action: "explain_error", label: "Explique meu erro" },
+        { action: "how_to_fix", label: "Como corrigir?" },
+        { action: "where_is_problem", label: "Onde está o problema?" }
+      ];
+    }
+    if (status === "executed") {
+      return [
+        { action: "result_sense", label: "O resultado faz sentido?" },
+        { action: "what_to_validate", label: "O que falta validar?" },
+        { action: "review_query", label: "Revise minha query" }
+      ];
+    }
+    if (intention === "ready_query") {
+      return [
+        { action: "build_in_parts", label: "Me guie por partes" },
+        { action: "first_snippet", label: "Primeiro trecho" },
+        { action: "review_attempt", label: "Revisar tentativa" }
+      ];
+    }
+    if (query) {
+      return [
+        { action: "review_query", label: "Revise minha query" },
+        { action: "what_is_missing", label: "O que falta?" },
+        { action: "can_execute", label: "Posso executar?" }
+      ];
+    }
+    if (state.aiTutor.messages.length) {
+      if (assistantSuggestedAttempt) {
+        return [
+          { action: "review_attempt", label: "Revisar tentativa" },
+          { action: "column_to_use", label: "Qual coluna usar?" },
+          { action: "build_in_parts", label: "Montar por partes" }
+        ];
+      }
+      return [
+        { action: "column_to_use", label: "Qual coluna usar?" },
+        { action: "function_to_use", label: "Qual função usar?" },
+        { action: "build_in_parts", label: "Montar por partes" }
+      ];
+    }
+    return [
+      { action: "how_to_start", label: "Como começo?" },
+      { action: "hint", label: "Me dê uma dica" },
+      { action: "what_to_observe", label: "O que observar?" }
+    ];
+  }
+
+  function normalizeAiIntentText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
+  function detectAiStudentIntention(message) {
+    const normalized = normalizeAiIntentText(message);
+    if (/(query|consulta).*(pronta|completa)|me (passe|passa|manda|de) a (query|consulta)|resposta pronta/.test(normalized)) {
+      return "ready_query";
+    }
+    if (/qual coluna|coluna devo|coloco primeiro|campo devo/.test(normalized)) {
+      return "column";
+    }
+    if (/qual funcao|funcao devo/.test(normalized)) {
+      return "function";
+    }
+    if (/revise|revisa|esta certa|esta correto/.test(normalized)) {
+      return "review";
+    }
+    return "general";
   }
 
   function formatAiDuration(durationMs) {
@@ -593,6 +663,7 @@
       lastError: state.sqlWorkbench.error,
       validationStatus: getAiValidationStatus(practice),
       attemptCount: getAttemptCount(practice),
+      recentMessages: state.aiTutor.messages,
       schema: {
         table: practice.table,
         columns: getPracticeSchemaColumns(practice)
@@ -613,7 +684,18 @@
       another_hint: "Me dê outra dica",
       review_reasoning: "Revise meu raciocínio",
       learning_summary: "Resumo do que aprendi",
-      next_concept: "Próximo conceito"
+      next_concept: "Próximo conceito",
+      column_to_use: "Qual coluna usar?",
+      function_to_use: "Qual função usar?",
+      build_in_parts: "Montar por partes",
+      first_snippet: "Primeiro trecho",
+      review_attempt: "Revisar tentativa",
+      can_execute: "Posso executar?",
+      result_sense: "O resultado faz sentido?",
+      what_to_validate: "O que falta validar?",
+      where_is_problem: "Onde está o problema?",
+      compare_objective: "Comparar com objetivo",
+      next_practice: "Próxima prática"
     }[quickAction] || "";
   }
 

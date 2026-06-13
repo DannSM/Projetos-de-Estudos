@@ -2,6 +2,7 @@
   const MAX_PROMPT_CHARS = 800;
   const MAX_QUERY_CHARS = 4000;
   const MAX_RESULT_ROWS = 5;
+  const MAX_HISTORY_MESSAGES = 6;
   const ENDPOINT = "/api/sql-tutor";
   const QUICK_ACTIONS = new Set([
     "hint",
@@ -16,6 +17,17 @@
     "review_reasoning",
     "learning_summary",
     "next_concept",
+    "column_to_use",
+    "function_to_use",
+    "build_in_parts",
+    "first_snippet",
+    "review_attempt",
+    "can_execute",
+    "result_sense",
+    "what_to_validate",
+    "where_is_problem",
+    "compare_objective",
+    "next_practice",
     "free_question"
   ]);
 
@@ -60,6 +72,17 @@
     };
   }
 
+  function sanitizeRecentMessages(messages) {
+    if (!Array.isArray(messages)) {
+      return [];
+    }
+
+    return messages.slice(-MAX_HISTORY_MESSAGES).map((message) => ({
+      role: message?.role === "assistant" ? "assistant" : "student",
+      content: truncate(message?.content, 500)
+    })).filter((message) => message.content);
+  }
+
   function buildPayload(context, quickAction, prompt) {
     if (!QUICK_ACTIONS.has(quickAction)) {
       return null;
@@ -82,6 +105,7 @@
       lastError: truncate(context?.lastError, 1200),
       validationStatus: truncate(context?.validationStatus || "idle", 20),
       attemptCount: Math.max(0, Math.min(Number(context?.attemptCount) || 0, 100)),
+      recentMessages: sanitizeRecentMessages(context?.recentMessages),
       schema: sanitizeSchema(context?.schema)
     };
   }
@@ -131,6 +155,7 @@
     MAX_PROMPT_CHARS,
     MAX_QUERY_CHARS,
     MAX_RESULT_ROWS,
+    MAX_HISTORY_MESSAGES,
     QUICK_ACTIONS,
     buildPayload,
     requestTutor,
