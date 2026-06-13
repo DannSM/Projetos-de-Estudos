@@ -505,11 +505,11 @@
               ${state.activeSupportTab === "data" ? "" : "hidden"}
             >
               <div class="sql-support-data__heading">
-                <div>
-                  <span class="section-kicker">Schema da prática</span>
+                <span class="section-kicker">Schema da prática</span>
+                <div class="sql-support-data__title-row">
                   <h3>${escapeHtml(practice.table)}</h3>
+                  <small>${sampleRows.length} registros</small>
                 </div>
-                <small>${sampleRows.length} registros</small>
               </div>
               ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
             </section>
@@ -1177,7 +1177,6 @@
         <div class="sql-practice-workspace__scroll">
           <section class="sql-practice-brief" aria-label="Enunciado da prática">
             <div>
-              <span class="section-kicker">Pratique agora</span>
               <h1>${escapeHtml(practice.prompt)}</h1>
             </div>
             ${renderTags(practice)}

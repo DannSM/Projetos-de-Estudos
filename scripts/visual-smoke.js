@@ -28,6 +28,7 @@ const pages = [
     name: "central-sql-count-nulos-distintos",
     path: "/praticas-sql.html?pratica=sql-essencial-count-nulos-distintos",
     waitFor: ".sql-practice-workspace",
+    finalEvidence: true,
     supportTabs: [
       { name: "conceito", id: "concept" },
       { name: "dados", id: "data" },
@@ -213,10 +214,53 @@ async function validatePage(browser, pageConfig, viewport) {
       );
     }
 
+    if (pageConfig.finalEvidence) {
+      const finalLayout = await page.evaluate(() => {
+        const brief = document.querySelector(".sql-practice-brief");
+        const tags = document.querySelector(".sql-practice-tags");
+        const title = document.querySelector(".sql-practice-workspace__title h2");
+        const activeKicker = document.querySelector(".sql-practice-workspace__title .section-kicker");
+        const rect = (element) => element?.getBoundingClientRect();
+        const titleRect = rect(title);
+        const kickerRect = rect(activeKicker);
+
+        return {
+          briefKickers: brief?.querySelectorAll(".section-kicker").length,
+          tagColumns: getComputedStyle(tags).gridTemplateColumns.split(" ").filter(Boolean).length,
+          titleCenter: titleRect ? titleRect.top + titleRect.height / 2 : null,
+          kickerCenter: kickerRect ? kickerRect.top + kickerRect.height / 2 : null
+        };
+      });
+
+      if (finalLayout.briefKickers !== 0) {
+        throw new Error("o chip interno do enunciado ainda esta presente");
+      }
+      if (finalLayout.tagColumns !== 2) {
+        throw new Error(`metadados do enunciado nao formam grade 2x2: ${finalLayout.tagColumns} coluna(s)`);
+      }
+      if (
+        viewport.width > 620
+        && Math.abs(finalLayout.titleCenter - finalLayout.kickerCenter) > 4
+      ) {
+        throw new Error(
+          `chip Pratica ativa desalinhado: titleCenter=${finalLayout.titleCenter}, kickerCenter=${finalLayout.kickerCenter}`
+        );
+      }
+    }
+
     await page.screenshot({ path: screenshotPath, fullPage: true });
     const screenshot = await fs.promises.stat(screenshotPath);
     if (!screenshot.isFile() || screenshot.size === 0) {
       throw new Error("screenshot nao foi gerado");
+    }
+
+    if (pageConfig.finalEvidence) {
+      const finalScreenshotPath = path.join(
+        outputDir,
+        `${pageConfig.name}-final-${viewport.name}.png`
+      );
+      await page.screenshot({ path: finalScreenshotPath, fullPage: true });
+      console.log(`OK ${pageConfig.name} / final / ${viewport.name} -> ${finalScreenshotPath}`);
     }
 
     if (pageConfig.supportTabs) {
@@ -352,9 +396,41 @@ async function validatePage(browser, pageConfig, viewport) {
             `${pageConfig.name}-tutora-ia-conversa-${viewport.name}.png`
           );
           await page.screenshot({ path: conversationScreenshotPath, fullPage: true });
+          const tutorFinalScreenshotPath = path.join(
+            outputDir,
+            `${pageConfig.name}-tutora-final-${viewport.name}.png`
+          );
+          await page.screenshot({ path: tutorFinalScreenshotPath, fullPage: true });
           console.log(
             `OK ${pageConfig.name} / tutora-ia-conversa / ${viewport.name} -> ${conversationScreenshotPath}`
           );
+        }
+
+        if (supportTab.id === "data") {
+          const dataLayout = await page.evaluate(() => {
+            const row = document.querySelector(".sql-support-data__title-row");
+            const title = row?.querySelector("h3");
+            const count = row?.querySelector("small");
+            const titleRect = title?.getBoundingClientRect();
+            const countRect = count?.getBoundingClientRect();
+            return {
+              rowExists: Boolean(row),
+              titleCenter: titleRect ? titleRect.top + titleRect.height / 2 : null,
+              countCenter: countRect ? countRect.top + countRect.height / 2 : null
+            };
+          });
+          if (
+            !dataLayout.rowExists
+            || Math.abs(dataLayout.titleCenter - dataLayout.countCenter) > 3
+          ) {
+            throw new Error("titulo e contador do schema nao estao alinhados na mesma linha");
+          }
+
+          const dataFinalScreenshotPath = path.join(
+            outputDir,
+            `${pageConfig.name}-dados-final-${viewport.name}.png`
+          );
+          await page.screenshot({ path: dataFinalScreenshotPath, fullPage: true });
         }
 
         const supportScreenshotPath = path.join(
