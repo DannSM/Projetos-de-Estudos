@@ -154,11 +154,14 @@ async function run() {
   assert.match(pageSource, /Me guie por partes/);
   assert.match(pageSource, /O resultado faz sentido/);
   assert.match(pageSource, /count\(\*\) as total,\\n  count\(campo\) as preenchidos/);
-  assert.match(pageSource, /data-toggle-practice-schema/);
+  assert.match(pageSource, /role="tablist"/);
+  assert.match(pageSource, /role="tabpanel"/);
+  assert.match(pageSource, /aria-selected=/);
+  assert.match(pageSource, /data-support-tab/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
   assert.match(pageSource, /Tutora IA/);
   assert.match(pageSource, /data-lucide="sparkles"/);
-  assert.match(pageSource, />Pensando</);
+  assert.match(pageSource, />Pensando\.\.\.</);
   assert.match(pageSource, /data-ai-tutor-input/);
   assert.match(pageSource, /data-query-answer/);
   assert.match(pageSource, /data-validate-query/);
@@ -176,7 +179,9 @@ async function run() {
   assert.match(cssSource, /word-break: normal/);
   assert.match(cssSource, /sql-ai-tutor-dot/);
   assert.match(cssSource, /font-size: 0\.78rem/);
-  assert.match(cssSource, /\.sql-support-schema\.is-collapsed/);
+  assert.match(cssSource, /grid-template-columns: minmax\(22\.5rem, 0\.8fr\) minmax\(35rem, 1\.2fr\)/);
+  assert.match(cssSource, /\.sql-support-tab\.is-active/);
+  assert.match(cssSource, /\.sql-support-tabpanel\[hidden\]/);
   assert.doesNotMatch(pageSource, /Chat com IA[\s\S]{0,200}<small>Em breve<\/small>/);
 
   console.log("SQL AI tutor tests passed");

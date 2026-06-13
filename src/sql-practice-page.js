@@ -179,7 +179,7 @@
     sourceStatus: "Carregando dados da prática...",
     isAuthenticated: false,
     studentName: "Você",
-    schemaCollapsed: Boolean(globalScope.matchMedia?.("(max-width: 620px)")?.matches),
+    activeSupportTab: "concept",
     lastQueryRunId: null,
     persistenceStatus: "",
     aiTutor: {
@@ -445,108 +445,155 @@
       tipo: column.type
     }));
     const sampleRows = getPracticeSampleRows(practice);
+    const supportTabs = [
+      { id: "concept", label: "Conceito", icon: "book-open" },
+      { id: "data", label: "Dados", icon: "table-2" },
+      { id: "tutor", label: "Tutora IA", icon: "sparkles" }
+    ];
 
     return `
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da prática SQL">
-        <section class="mission-learning-card sql-support-card">
-          <header class="sql-support-card__header">
-            <strong><i data-lucide="book-open" aria-hidden="true"></i>Apoio teórico</strong>
-          </header>
-          <h3>${escapeHtml(practice.contentTitle)}</h3>
-          <p>${escapeHtml(practice.content)}</p>
-          <code class="code-block">${escapeHtml(practice.example)}</code>
-        </section>
-        <section class="mission-learning-card sql-support-card sql-support-schema ${state.schemaCollapsed ? "is-collapsed" : ""}">
-          <header class="sql-support-card__header">
-            <strong><i data-lucide="table-2" aria-hidden="true"></i>Schema da prática</strong>
-            <div class="sql-support-card__header-actions">
-              <small>${sampleRows.length} registros</small>
-              <button
-                type="button"
-                class="sql-support-card__toggle"
-                data-toggle-practice-schema
-                aria-expanded="${state.schemaCollapsed ? "false" : "true"}"
-                aria-label="${state.schemaCollapsed ? "Expandir" : "Recolher"} schema da prática"
-                title="${state.schemaCollapsed ? "Expandir schema" : "Recolher schema"}"
-              >
-                <i data-lucide="${state.schemaCollapsed ? "chevron-down" : "chevron-up"}" aria-hidden="true"></i>
-              </button>
+        <section class="mission-learning-card sql-support-panel">
+          <header class="sql-support-panel__header">
+            <div>
+              <span class="section-kicker">Painel de apoio</span>
+              <h2>Apoio da prática</h2>
             </div>
+            <small>${sampleRows.length} registros</small>
           </header>
-          <div class="sql-support-schema__content" ${state.schemaCollapsed ? "hidden" : ""}>
-            ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+          <div class="sql-support-tabs" role="tablist" aria-label="Conteúdo de apoio da prática">
+            ${supportTabs.map((tab) => {
+              const isActive = state.activeSupportTab === tab.id;
+              return `
+                <button
+                  type="button"
+                  class="sql-support-tab ${isActive ? "is-active" : ""}"
+                  id="sql-support-tab-${tab.id}"
+                  role="tab"
+                  aria-selected="${isActive ? "true" : "false"}"
+                  aria-controls="sql-support-panel-${tab.id}"
+                  tabindex="${isActive ? "0" : "-1"}"
+                  data-support-tab="${tab.id}"
+                >
+                  <i data-lucide="${tab.icon}" aria-hidden="true"></i>
+                  <span>${tab.label}</span>
+                </button>
+              `;
+            }).join("")}
           </div>
-        </section>
-        <section class="mission-learning-card sql-support-card sql-support-chat">
-          <header class="sql-support-card__header">
-            <strong><i data-lucide="sparkles" aria-hidden="true"></i>Chat com IA</strong>
-            <small>Tutora IA</small>
-          </header>
-          <div
-            class="sql-support-chat__messages ${state.aiTutor.messages.length || state.aiTutor.status === "loading" || state.aiTutor.error ? "has-conversation" : "is-empty"}"
-            data-ai-tutor-messages
-            aria-live="polite"
-          >
-            ${state.aiTutor.messages.length
-              ? state.aiTutor.messages.map((message) => `
-                  <div class="sql-support-chat__message is-${escapeHtml(message.role)}">
-                    <strong>${message.role === "assistant" ? "Tutora IA" : escapeHtml(state.studentName)}</strong>
-                    <p>${escapeHtml(message.content).replace(/\n/g, "<br>")}</p>
-                  </div>
-                `).join("")
-              : `
-                <div class="sql-support-chat__welcome">
-                  <i data-lucide="message-circle-question" aria-hidden="true"></i>
-                  <p>Tire dúvidas sobre esta prática sem receber a resposta pronta.</p>
-                </div>
-              `}
-            ${state.aiTutor.status === "loading"
-              ? `
-                <div class="sql-support-chat__loading">
-                  <span>Pensando</span>
-                  <span class="sql-support-chat__typing" aria-hidden="true"><i></i><i></i><i></i></span>
-                </div>
-              `
-              : ""}
-            ${state.aiTutor.error
-              ? `<p class="sql-support-chat__error" role="alert">${escapeHtml(state.aiTutor.error)}</p>`
-              : ""}
-          </div>
-          <div class="sql-support-chat__quick-actions" aria-label="Ações rápidas da tutora">
-            ${getAiQuickActions(practice).map((action) => `
-              <button
-                type="button"
-                data-ai-quick-action="${escapeHtml(action.action)}"
-                ${state.aiTutor.status === "loading" ? "disabled" : ""}
-              >${escapeHtml(action.label)}</button>
-            `).join("")}
-          </div>
-          <div class="sql-support-chat__composer" aria-label="Pergunta para a tutora SQL">
-            <input
-              type="text"
-              maxlength="${sqlAiTutor.MAX_PROMPT_CHARS}"
-              value="${escapeHtml(state.aiTutor.draft)}"
-              placeholder="Pergunte algo sobre este exercício..."
-              data-ai-tutor-input
-              ${state.aiTutor.status === "loading" ? "disabled" : ""}
+          <div class="sql-support-panel__body">
+            <section
+              class="sql-support-tabpanel sql-support-concept"
+              id="sql-support-panel-concept"
+              role="tabpanel"
+              aria-labelledby="sql-support-tab-concept"
+              ${state.activeSupportTab === "concept" ? "" : "hidden"}
             >
-            <button
-              type="button"
-              data-ai-tutor-send
-              ${!state.aiTutor.draft.trim() || state.aiTutor.status === "loading" ? "disabled" : ""}
-              aria-label="Enviar mensagem"
+              <h3>${escapeHtml(practice.contentTitle)}</h3>
+              <p>${escapeHtml(practice.content)}</p>
+              <code class="code-block">${escapeHtml(practice.example)}</code>
+              <div class="sql-support-tip">
+                <i data-lucide="lightbulb" aria-hidden="true"></i>
+                <div>
+                  <strong>Dica</strong>
+                  <p>${escapeHtml(practice.hintText)}</p>
+                </div>
+              </div>
+            </section>
+            <section
+              class="sql-support-tabpanel sql-support-data"
+              id="sql-support-panel-data"
+              role="tabpanel"
+              aria-labelledby="sql-support-tab-data"
+              ${state.activeSupportTab === "data" ? "" : "hidden"}
             >
-              <i data-lucide="send" aria-hidden="true"></i>
-            </button>
+              <div class="sql-support-data__heading">
+                <div>
+                  <span class="section-kicker">Schema da prática</span>
+                  <h3>${escapeHtml(practice.table)}</h3>
+                </div>
+                <small>${sampleRows.length} registros</small>
+              </div>
+              ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+            </section>
+            <section
+              class="sql-support-tabpanel sql-support-chat"
+              id="sql-support-panel-tutor"
+              role="tabpanel"
+              aria-labelledby="sql-support-tab-tutor"
+              ${state.activeSupportTab === "tutor" ? "" : "hidden"}
+            >
+              <div class="sql-support-chat__intro">
+                <strong><i data-lucide="sparkles" aria-hidden="true"></i>Tutora IA</strong>
+                <small>Orientação sem entregar a resposta pronta</small>
+              </div>
+              <div
+                class="sql-support-chat__messages ${state.aiTutor.messages.length || state.aiTutor.status === "loading" || state.aiTutor.error ? "has-conversation" : "is-empty"}"
+                data-ai-tutor-messages
+                aria-live="polite"
+              >
+                ${state.aiTutor.messages.length
+                  ? state.aiTutor.messages.map((message) => `
+                      <div class="sql-support-chat__message is-${escapeHtml(message.role)}">
+                        <strong>${message.role === "assistant" ? "Tutora IA" : escapeHtml(state.studentName)}</strong>
+                        <p>${escapeHtml(message.content).replace(/\n/g, "<br>")}</p>
+                      </div>
+                    `).join("")
+                  : `
+                    <div class="sql-support-chat__welcome">
+                      <i data-lucide="message-circle-question" aria-hidden="true"></i>
+                      <p>Tire dúvidas sobre esta prática sem receber a resposta pronta.</p>
+                    </div>
+                  `}
+                ${state.aiTutor.status === "loading"
+                  ? `
+                    <div class="sql-support-chat__loading">
+                      <span>Pensando...</span>
+                      <span class="sql-support-chat__typing" aria-hidden="true"><i></i><i></i><i></i></span>
+                    </div>
+                  `
+                  : ""}
+                ${state.aiTutor.error
+                  ? `<p class="sql-support-chat__error" role="alert">${escapeHtml(state.aiTutor.error)}</p>`
+                  : ""}
+              </div>
+              <div class="sql-support-chat__quick-actions" aria-label="Ações rápidas da tutora">
+                ${getAiQuickActions(practice).map((action) => `
+                  <button
+                    type="button"
+                    data-ai-quick-action="${escapeHtml(action.action)}"
+                    ${state.aiTutor.status === "loading" ? "disabled" : ""}
+                  >${escapeHtml(action.label)}</button>
+                `).join("")}
+              </div>
+              <div class="sql-support-chat__composer" aria-label="Pergunta para a tutora SQL">
+                <input
+                  type="text"
+                  maxlength="${sqlAiTutor.MAX_PROMPT_CHARS}"
+                  value="${escapeHtml(state.aiTutor.draft)}"
+                  placeholder="Pergunte algo sobre este exercício..."
+                  data-ai-tutor-input
+                  ${state.aiTutor.status === "loading" ? "disabled" : ""}
+                >
+                <button
+                  type="button"
+                  data-ai-tutor-send
+                  ${!state.aiTutor.draft.trim() || state.aiTutor.status === "loading" ? "disabled" : ""}
+                  aria-label="Enviar mensagem"
+                >
+                  <i data-lucide="send" aria-hidden="true"></i>
+                </button>
+              </div>
+              ${state.aiTutor.metadata
+                ? `
+                  <small
+                    class="sql-support-chat__meta"
+                    title="${escapeHtml(`${state.aiTutor.metadata.provider} · ${state.aiTutor.metadata.model}`)}"
+                  >IA Cloudflare <span aria-hidden="true">•</span> ${escapeHtml(formatAiDuration(state.aiTutor.metadata.durationMs))}</small>
+                `
+                : ""}
+            </section>
           </div>
-          ${state.aiTutor.metadata
-            ? `
-              <small
-                class="sql-support-chat__meta"
-                title="${escapeHtml(`${state.aiTutor.metadata.provider} · ${state.aiTutor.metadata.model}`)}"
-              >IA Cloudflare <span aria-hidden="true">•</span> ${escapeHtml(formatAiDuration(state.aiTutor.metadata.durationMs))}</small>
-            `
-            : ""}
         </section>
       </aside>
     `;
@@ -1364,6 +1411,7 @@
     state.sqlWorkbench.executionQuery = "";
     state.lastQueryRunId = null;
     state.activeUtility = "";
+    state.activeSupportTab = "concept";
     state.aiTutor = {
       draft: "",
       status: "idle",
@@ -1451,9 +1499,9 @@
       return;
     }
 
-    const schemaToggleButton = event.target.closest("[data-toggle-practice-schema]");
-    if (schemaToggleButton) {
-      state.schemaCollapsed = !state.schemaCollapsed;
+    const supportTabButton = event.target.closest("[data-support-tab]");
+    if (supportTabButton) {
+      state.activeSupportTab = supportTabButton.dataset.supportTab;
       renderPage();
       return;
     }
@@ -1600,6 +1648,21 @@
       if (state.aiTutor.draft.trim() && state.aiTutor.status !== "loading") {
         void sendAiTutorMessage("free_question", state.aiTutor.draft);
       }
+      return;
+    }
+
+    if (event.target.matches("[data-support-tab]") && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const tabs = [...mount.querySelectorAll("[data-support-tab]")];
+      const currentIndex = tabs.indexOf(event.target);
+      const nextIndex = event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? tabs.length - 1
+          : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+      state.activeSupportTab = tabs[nextIndex].dataset.supportTab;
+      renderPage();
+      mount.querySelector(`[data-support-tab="${state.activeSupportTab}"]`)?.focus();
       return;
     }
 
