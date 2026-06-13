@@ -530,8 +530,17 @@
                     `).join("")
                   : `
                     <div class="sql-support-chat__welcome">
-                      <i data-lucide="message-circle-question" aria-hidden="true"></i>
-                      <p>Tire dúvidas sobre esta prática sem receber a resposta pronta.</p>
+                      <div class="sql-support-chat__welcome-icon" aria-hidden="true">
+                        <i data-lucide="sparkles"></i>
+                      </div>
+                      <div class="sql-support-chat__welcome-identity">
+                        <strong>MapIA <span aria-hidden="true">·</span> Tutora SQL</strong>
+                        <small>Responde só sobre esta questão</small>
+                      </div>
+                      <div class="sql-support-chat__welcome-copy">
+                        <h3>Pergunte qualquer coisa sobre este exercício</h3>
+                        <p>A IA orienta o raciocínio, sem entregar a resposta pronta.</p>
+                      </div>
                     </div>
                   `}
                 ${state.aiTutor.status === "loading"
@@ -659,9 +668,10 @@
       ];
     }
     return [
-      { action: "how_to_start", label: "Como começo?" },
-      { action: "hint", label: "Me dê uma dica" },
-      { action: "what_to_observe", label: "O que observar?" }
+      { action: "how_to_start", label: "Por onde devo começar?" },
+      { action: "what_to_observe", label: "Não entendi o enunciado" },
+      { action: "function_to_use", label: "Que comandos SQL preciso usar?" },
+      { action: "hint", label: "Me dê uma dica, sem entregar a resposta" }
     ];
   }
 
@@ -745,7 +755,7 @@
     }[quickAction] || "";
   }
 
-  async function sendAiTutorMessage(quickAction, prompt = "") {
+  async function sendAiTutorMessage(quickAction, prompt = "", actionLabel = "") {
     if (state.aiTutor.status === "loading") {
       return;
     }
@@ -764,7 +774,7 @@
 
     state.aiTutor.messages.push({
       role: "student",
-      content: prompt.trim() || getAiActionLabel(quickAction)
+      content: prompt.trim() || actionLabel.trim() || getAiActionLabel(quickAction)
     });
     state.aiTutor.draft = "";
     state.aiTutor.status = "loading";
@@ -1496,7 +1506,11 @@
 
     const aiQuickActionButton = event.target.closest("[data-ai-quick-action]");
     if (aiQuickActionButton && !aiQuickActionButton.disabled) {
-      void sendAiTutorMessage(aiQuickActionButton.dataset.aiQuickAction);
+      void sendAiTutorMessage(
+        aiQuickActionButton.dataset.aiQuickAction,
+        "",
+        aiQuickActionButton.textContent
+      );
       return;
     }
 

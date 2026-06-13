@@ -330,6 +330,54 @@ async function validatePage(browser, pageConfig, viewport) {
             throw new Error("cabecalho duplicado ainda existe dentro da aba Tutora IA");
           }
 
+          const initialTutorLayout = await page.evaluate(() => {
+            const welcome = document.querySelector(".sql-support-chat__welcome");
+            const messages = document.querySelector(".sql-support-chat__messages");
+            const actions = [...document.querySelectorAll("[data-ai-quick-action]")]
+              .map((button) => button.textContent.trim());
+            const welcomeRect = welcome?.getBoundingClientRect();
+            const messagesRect = messages?.getBoundingClientRect();
+
+            return {
+              title: welcome?.querySelector("strong")?.textContent.trim(),
+              subtitle: welcome?.querySelector("small")?.textContent.trim(),
+              heading: welcome?.querySelector("h3")?.textContent.trim(),
+              description: welcome?.querySelector("p")?.textContent.trim(),
+              actions,
+              centered: welcomeRect && messagesRect
+                ? Math.abs(
+                  (welcomeRect.left + welcomeRect.width / 2)
+                  - (messagesRect.left + messagesRect.width / 2)
+                ) <= 2
+                : false
+            };
+          });
+          const expectedInitialActions = [
+            "Por onde devo começar?",
+            "Não entendi o enunciado",
+            "Que comandos SQL preciso usar?",
+            "Me dê uma dica, sem entregar a resposta"
+          ];
+          if (
+            initialTutorLayout.title !== "MapIA · Tutora SQL"
+            || initialTutorLayout.subtitle !== "Responde só sobre esta questão"
+            || initialTutorLayout.heading !== "Pergunte qualquer coisa sobre este exercício"
+            || initialTutorLayout.description
+              !== "A IA orienta o raciocínio, sem entregar a resposta pronta."
+            || JSON.stringify(initialTutorLayout.actions) !== JSON.stringify(expectedInitialActions)
+            || !initialTutorLayout.centered
+          ) {
+            throw new Error(
+              `estado inicial da MapIA invalido: ${JSON.stringify(initialTutorLayout)}`
+            );
+          }
+
+          const initialTutorScreenshotPath = path.join(
+            outputDir,
+            `${pageConfig.name}-mapia-inicial-${viewport.name}.png`
+          );
+          await page.screenshot({ path: initialTutorScreenshotPath, fullPage: true });
+
           await page.locator("[data-ai-quick-action]").first().click();
           const loading = page.locator(".sql-support-chat__loading");
           await loading.waitFor({ state: "visible", timeout: timeoutMs });
@@ -387,7 +435,7 @@ async function validatePage(browser, pageConfig, viewport) {
 
           const conversationScreenshotPath = path.join(
             outputDir,
-            `${pageConfig.name}-tutora-ia-conversa-${viewport.name}.png`
+            `${pageConfig.name}-mapia-conversa-${viewport.name}.png`
           );
           await page.screenshot({ path: conversationScreenshotPath, fullPage: true });
           const tutorFinalScreenshotPath = path.join(
