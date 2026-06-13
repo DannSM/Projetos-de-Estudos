@@ -113,7 +113,7 @@ async function run() {
   assert.strictEqual(endpointResponse.status, 200);
   assert.strictEqual(endpointBody.ok, true);
   assert.strictEqual(endpointBody.provider, "cloudflare-workers-ai");
-  assert.ok(endpointBody.answer.split(/\s+/).length <= 120);
+  assert.ok(endpointBody.answer.split(/\s+/).length <= 90);
   assert.match(endpointBody.answer, /…$/);
   assert.strictEqual(modelCall.model, "@cf/meta/llama-3.1-8b-instruct-fp8");
   assert.ok(Array.isArray(modelCall.input.messages));
@@ -128,6 +128,10 @@ async function run() {
   assert.match(promptMessages, /Converse em português do Brasil/);
   assert.match(promptMessages, /Não comece repetidamente com Vamos começar/);
   assert.match(promptMessages, /ofereça ajuda por partes/);
+  assert.match(promptMessages, /COUNT\(coluna\) conta somente valores não nulos/);
+  assert.match(promptMessages, /Nunca diga que COUNT\(coluna\) conta nulos/);
+  assert.match(promptMessages, /no máximo uma orientação prática por resposta/);
+  assert.match(promptMessages, /COUNT\(\*\) - COUNT\(coluna\)/);
   assert.doesNotMatch(promptMessages, /pedidos pagos por categoria/);
 
   const pageSource = fs.readFileSync(
@@ -149,6 +153,7 @@ async function run() {
   assert.match(pageSource, /assistantSuggestedAttempt/);
   assert.match(pageSource, /Me guie por partes/);
   assert.match(pageSource, /O resultado faz sentido/);
+  assert.match(pageSource, /count\(\*\) as total,\\n  count\(campo\) as preenchidos/);
   assert.match(pageSource, /data-toggle-practice-schema/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
   assert.match(pageSource, /Tutora IA/);
@@ -162,8 +167,13 @@ async function run() {
   assert.match(cssSource, /\.sql-support-chat__messages/);
   assert.match(cssSource, /flex-direction: column/);
   assert.match(cssSource, /\.sql-support-chat__messages\.is-empty/);
+  assert.match(cssSource, /max-height: clamp\(14rem, 34vh, 20rem\)/);
+  const conversationRule = cssSource.match(/\.sql-support-chat__messages\.has-conversation\s*\{[^}]*\}/)?.[0] || "";
+  assert.doesNotMatch(conversationRule, /(?:^|[;\r\n])\s*height\s*:/);
+  assert.doesNotMatch(cssSource, /\.sql-support-chat__message\.is-assistant\s*\{[^}]*overflow-y:/);
   assert.match(cssSource, /white-space: pre-wrap/);
   assert.match(cssSource, /overflow-wrap: anywhere/);
+  assert.match(cssSource, /word-break: normal/);
   assert.match(cssSource, /sql-ai-tutor-dot/);
   assert.match(cssSource, /font-size: 0\.78rem/);
   assert.match(cssSource, /\.sql-support-schema\.is-collapsed/);

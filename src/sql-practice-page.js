@@ -106,7 +106,7 @@
       why: "Contagens diferentes respondem perguntas diferentes quando existem valores nulos ou clientes repetidos.",
       contentTitle: "COUNT não conta tudo do mesmo jeito",
       content: "COUNT(*) conta todas as linhas. COUNT(coluna) conta apenas os registros em que a coluna está preenchida. COUNT(DISTINCT coluna) conta valores únicos.",
-      example: "select\n  count(*) as total_linhas,\n  count(campo) as campo_preenchido,\n  count(distinct outro_campo) as valores_unicos\nfrom tabela;",
+      example: "select\n  count(*) as total,\n  count(campo) as preenchidos,\n  count(distinct campo) as unicos\nfrom tabela;",
       hintText: "Compare COUNT(*) com COUNT(cupom) para identificar pedidos sem cupom e use COUNT(DISTINCT cliente_id) para contar clientes únicos.",
       solutionText: "Uma solução possível: select count(*) as total_pedidos, count(cupom) as pedidos_com_cupom, count(*) - count(cupom) as pedidos_sem_cupom, count(distinct cliente_id) as clientes_distintos from pedidos;",
       placeholder: "select\n  count(*) as total_pedidos,\n  count(cupom) as pedidos_com_cupom,\n  ... as pedidos_sem_cupom,\n  count(distinct cliente_id) as clientes_distintos\nfrom pedidos;",
@@ -575,9 +575,9 @@
     }
     if (status === "incorrect") {
       return [
-        { action: "what_is_missing", label: "O que está faltando?" },
-        { action: "another_hint", label: "Me dê outra dica" },
-        { action: "compare_objective", label: "Comparar com objetivo" }
+        { action: "compare_objective", label: "Comparar com objetivo" },
+        { action: "what_to_validate", label: "O que falta validar?" },
+        { action: "review_query", label: "Revise minha query" }
       ];
     }
     if (status === "error") {
@@ -589,7 +589,7 @@
     }
     if (status === "executed") {
       return [
-        { action: "result_sense", label: "O resultado faz sentido?" },
+        { action: "compare_objective", label: "Comparar com objetivo" },
         { action: "what_to_validate", label: "O que falta validar?" },
         { action: "review_query", label: "Revise minha query" }
       ];
