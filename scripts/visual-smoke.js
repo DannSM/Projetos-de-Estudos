@@ -27,7 +27,12 @@ const pages = [
   {
     name: "central-sql-count-nulos-distintos",
     path: "/praticas-sql.html?pratica=sql-essencial-count-nulos-distintos",
-    waitFor: ".sql-practice-workspace"
+    waitFor: ".sql-practice-workspace",
+    supportTabs: [
+      { name: "conceito", id: "concept" },
+      { name: "dados", id: "data" },
+      { name: "tutora-ia", id: "tutor" }
+    ]
   },
   {
     name: "redirect-legado-missao",
@@ -198,6 +203,80 @@ async function validatePage(browser, pageConfig, viewport) {
     const screenshot = await fs.promises.stat(screenshotPath);
     if (!screenshot.isFile() || screenshot.size === 0) {
       throw new Error("screenshot nao foi gerado");
+    }
+
+    if (pageConfig.supportTabs) {
+      for (const supportTab of pageConfig.supportTabs) {
+        const tab = page.locator(`[data-support-tab="${supportTab.id}"]`);
+        await tab.click();
+        await page.locator(`#sql-support-panel-${supportTab.id}`).waitFor({
+          state: "visible",
+          timeout: timeoutMs
+        });
+
+        const layout = await page.evaluate(() => {
+          const tabList = document.querySelector(".sql-support-tabs");
+          const tabs = [...document.querySelectorAll(".sql-support-tab")];
+          const body = document.querySelector(".sql-support-panel__body");
+          const app = document.querySelector(".sql-practice-app");
+          const sidebar = document.querySelector(".sql-practice-sidebar");
+          const footer = document.querySelector(".sql-practice-sidebar__footer");
+          const rect = (element) => element?.getBoundingClientRect();
+          const tabHeights = tabs.map((element) => rect(element).height);
+          const tabListRect = rect(tabList);
+          const bodyRect = rect(body);
+          const appRect = rect(app);
+          const sidebarRect = rect(sidebar);
+
+          return {
+            tabListHeight: tabListRect?.height,
+            tabHeights,
+            tabBodyGap: bodyRect && tabListRect ? bodyRect.top - tabListRect.bottom : null,
+            appBottom: appRect?.bottom,
+            sidebarBottom: sidebarRect?.bottom,
+            sidebarBackground: sidebar ? getComputedStyle(sidebar).backgroundColor : null,
+            footerBackground: footer ? getComputedStyle(footer).backgroundColor : null
+          };
+        });
+
+        if (layout.tabListHeight < 44 || layout.tabListHeight > 56) {
+          throw new Error(`altura da barra de abas fora do esperado: ${layout.tabListHeight}px`);
+        }
+        if (layout.tabHeights.some((height) => height < 34 || height > 42)) {
+          throw new Error(`altura de aba fora do esperado: ${layout.tabHeights.join(", ")}px`);
+        }
+        if (new Set(layout.tabHeights.map((height) => Math.round(height))).size !== 1) {
+          throw new Error(`abas com alturas diferentes: ${layout.tabHeights.join(", ")}px`);
+        }
+        if (layout.tabBodyGap === null || layout.tabBodyGap > 1) {
+          throw new Error(`espaco inesperado entre abas e conteudo: ${layout.tabBodyGap}px`);
+        }
+        if (viewport.width > 1100) {
+          if (Math.abs(layout.appBottom - layout.sidebarBottom) > 1) {
+            throw new Error(
+              `sidebar nao acompanha a pagina: appBottom=${layout.appBottom}, sidebarBottom=${layout.sidebarBottom}`
+            );
+          }
+          if (layout.sidebarBackground !== layout.footerBackground) {
+            throw new Error(
+              `rodape da sidebar com fundo divergente: ${layout.footerBackground} != ${layout.sidebarBackground}`
+            );
+          }
+        }
+
+        const supportScreenshotPath = path.join(
+          outputDir,
+          `${pageConfig.name}-${supportTab.name}-${viewport.name}.png`
+        );
+        await page.screenshot({ path: supportScreenshotPath, fullPage: true });
+        const supportScreenshot = await fs.promises.stat(supportScreenshotPath);
+        if (!supportScreenshot.isFile() || supportScreenshot.size === 0) {
+          throw new Error(`screenshot da aba ${supportTab.name} nao foi gerado`);
+        }
+        console.log(
+          `OK ${pageConfig.name} / ${supportTab.name} / ${viewport.name} -> ${supportScreenshotPath}`
+        );
+      }
     }
 
     if (errors.length > 0) {
