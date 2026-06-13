@@ -3,3 +3,7 @@ dist/
 build/
 node_modules/
 .codex/
+artifacts/visual/
+playwright-report/
+test-results/
+debug.log
