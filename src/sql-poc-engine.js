@@ -61,19 +61,18 @@
     return `'${String(value).replace(/'/g, "''")}'`;
   }
 
-  function buildSetupSql(datasetConfig) {
-    const schema = datasetConfig?.schemaConfig;
-    const rows = datasetConfig?.seedData;
-    if (!schema || !Array.isArray(schema.columns) || !Array.isArray(rows)) {
-      return SETUP_SQL;
-    }
+  function hasSafeColumnConstraints(value) {
+    return /^(?:(?:primary key|not null)(?:\s+|$))*(?:references\s+[a-z_][a-z0-9_]*\s*\(\s*[a-z_][a-z0-9_]*\s*\))?$/i
+      .test(value);
+  }
 
-    const table = assertSafeIdentifier(schema.table);
+  function buildTableSetupSql(schema, rows) {
+    const table = assertSafeIdentifier(schema.table || schema.name);
     const columns = schema.columns.map((column) => {
       const name = assertSafeIdentifier(column.name);
       const type = String(column.type || "").trim();
       const constraints = String(column.constraints || "").trim();
-      if (!/^[a-z0-9_(),\s]+$/i.test(type) || !/^[a-z0-9_\s]*$/i.test(constraints)) {
+      if (!/^[a-z0-9_(),\s]+$/i.test(type) || !hasSafeColumnConstraints(constraints)) {
         throw new Error("O schema do dataset possui uma definicao invalida.");
       }
       return `${name} ${type}${constraints ? ` ${constraints}` : ""}`;
@@ -85,6 +84,31 @@
       create table ${table} (${columns.join(", ")});
       ${values.length ? `insert into ${table} (${columnNames.join(", ")}) values ${values.join(", ")};` : ""}
     `;
+  }
+
+  function buildSetupSql(datasetConfig) {
+    const schema = datasetConfig?.schemaConfig;
+    const seedData = datasetConfig?.seedData;
+    if (!schema || !Array.isArray(seedData)) {
+      return SETUP_SQL;
+    }
+
+    if (Array.isArray(schema.tables) && schema.tables.length) {
+      return schema.tables.map((tableSchema) => {
+        const tableName = tableSchema.table || tableSchema.name;
+        const tableSeed = seedData.find((entry) => entry?.table === tableName);
+        if (!Array.isArray(tableSchema.columns) || !Array.isArray(tableSeed?.rows)) {
+          throw new Error("O dataset com multiplas tabelas possui uma definicao invalida.");
+        }
+        return buildTableSetupSql(tableSchema, tableSeed.rows);
+      }).join("\n");
+    }
+
+    if (!Array.isArray(schema.columns)) {
+      return SETUP_SQL;
+    }
+
+    return buildTableSetupSql(schema, seedData);
   }
 
   function stripSqlComments(value) {
@@ -257,7 +281,112 @@
       return validateCountNullsDistinctsResult(result, query, expectedResult?.metrics);
     }
 
+    if (validationConfig?.validator === "paid_orders_summary") {
+      return validatePaidOrdersSummaryResult(result, query, expectedResult?.rows);
+    }
+
+    if (validationConfig?.validator === "orders_by_category_summary") {
+      return validateOrdersByCategorySummaryResult(result, query, expectedResult?.rows);
+    }
+
+    if (validationConfig?.validator === "paid_orders_with_customers") {
+      return validatePaidOrdersWithCustomersResult(result, query, expectedResult?.rows);
+    }
+
     return false;
+  }
+
+  function normalizeSqlForValidation(query) {
+    return stripSqlComments(query)
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/;\s*$/, "")
+      .trim();
+  }
+
+  function hasFabricatedRows(value) {
+    return /\bvalues\s*\(|\bunion(?:\s+all)?\b/.test(value);
+  }
+
+  function normalizeComparableRows(result) {
+    const rows = Array.isArray(result?.rows) ? result.rows : [];
+    const columns = getColumns({ ...result, rows });
+    return rows.map((row) => columns.map((column) => {
+      const value = row[column];
+      const numericValue = Number(value);
+      return value !== null && value !== "" && Number.isFinite(numericValue)
+        ? numericValue
+        : String(value);
+    }));
+  }
+
+  function compareRowsIgnoringOrder(actualRows, expectedRows) {
+    const canonicalize = (rows) => rows
+      .map((row) => [...row].sort((left, right) => String(left).localeCompare(String(right), "pt-BR")))
+      .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right), "pt-BR"));
+    return JSON.stringify(canonicalize(actualRows)) === JSON.stringify(canonicalize(expectedRows));
+  }
+
+  function validatePaidOrdersSummaryResult(result, query, expectedRows) {
+    const value = normalizeSqlForValidation(query);
+    const rows = normalizeComparableRows(result);
+    const hasCorrectStructure = [
+      /\bfrom\s+(?:(?:"?public"?\.)?"?pedidos"?)(?=\s|$)/.test(value),
+      /\bwhere\b[\s\S]*\b(?:\w+\.)?status\s*=\s*'pago'/.test(value),
+      /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value),
+      /\bsum\s*\(\s*(?:\w+\.)?valor\s*\)/.test(value),
+      !hasFabricatedRows(value)
+    ].every(Boolean);
+    return rows.length === 1
+      && rows[0].length === 2
+      && hasCorrectStructure
+      && compareRowsIgnoringOrder(rows, expectedRows || [[5, 517.7]]);
+  }
+
+  function validateOrdersByCategorySummaryResult(result, query, expectedRows) {
+    const value = normalizeSqlForValidation(query);
+    const rows = normalizeComparableRows(result);
+    const hasCorrectStructure = [
+      /\bfrom\s+(?:(?:"?public"?\.)?"?pedidos"?)(?=\s|$)/.test(value),
+      /\b(?:\w+\.)?categoria\b/.test(value),
+      /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value),
+      /\bsum\s*\(\s*(?:\w+\.)?valor\s*\)/.test(value),
+      /\bgroup\s+by\s+(?:\w+\.)?categoria\b/.test(value),
+      !hasFabricatedRows(value)
+    ].every(Boolean);
+    return rows.length === 3
+      && rows.every((row) => row.length === 3)
+      && hasCorrectStructure
+      && compareRowsIgnoringOrder(rows, expectedRows || [
+        ["casa", 1, 78.3],
+        ["eletrônicos", 3, 438.4],
+        ["livros", 3, 135.5]
+      ]);
+  }
+
+  function validatePaidOrdersWithCustomersResult(result, query, expectedRows) {
+    const value = normalizeSqlForValidation(query);
+    const rows = normalizeComparableRows(result);
+    const hasCorrectStructure = [
+      /\bpedidos\b/.test(value),
+      /\bclientes\b/.test(value),
+      /\bjoin\b/.test(value),
+      /\bon\s+(?:\w+\.)?cliente_id\s*=\s*(?:\w+\.)?cliente_id\b/.test(value),
+      /\bwhere\b[\s\S]*\b(?:\w+\.)?status\s*=\s*'pago'/.test(value),
+      /\b(?:\w+\.)?pedido_id\b/.test(value),
+      /\b(?:\w+\.)?nome\b/.test(value),
+      /\b(?:\w+\.)?valor\b/.test(value),
+      !hasFabricatedRows(value)
+    ].every(Boolean);
+    return rows.length === 4
+      && rows.every((row) => row.length === 3)
+      && hasCorrectStructure
+      && compareRowsIgnoringOrder(rows, expectedRows || [
+        [101, "Ana", 120],
+        [103, "Bruno", 250],
+        [104, "Carla", 90],
+        [106, "Bruno", 150]
+      ]);
   }
 
   function validateCountNullsDistinctsQueryStructure(query) {
@@ -380,6 +509,9 @@
     normalizeMissionResult,
     validateCountNullsDistinctsQueryStructure,
     validateCountNullsDistinctsResult,
+    validatePaidOrdersSummaryResult,
+    validateOrdersByCategorySummaryResult,
+    validatePaidOrdersWithCustomersResult,
     validateConfiguredResult,
     validateMissionQueryStructure,
     validateMissionResult

@@ -8,7 +8,10 @@ const {
   validateCountNullsDistinctsResult,
   validateConfiguredResult,
   validateMissionQueryStructure,
-  validateMissionResult
+  validateMissionResult,
+  validatePaidOrdersSummaryResult,
+  validateOrdersByCategorySummaryResult,
+  validatePaidOrdersWithCustomersResult
 } = require("../src/sql-poc-engine");
 
 async function run() {
@@ -213,6 +216,18 @@ async function run() {
     }),
     /identificador SQL invalido/i
   );
+  await assert.rejects(
+    () => createWorkbench(PGlite, {
+      schemaConfig: {
+        table: "pedidos",
+        columns: [
+          { name: "id", type: "integer", constraints: "not null, campo_extra text" }
+        ]
+      },
+      seedData: []
+    }),
+    /definicao invalida/i
+  );
 
   const countWorkbench = await createWorkbench(PGlite, {
     schemaConfig: {
@@ -292,6 +307,175 @@ async function run() {
     assert.strictEqual(validateCountNullsDistinctsResult(sumCase, sumCase.query), true);
   } finally {
     await countWorkbench.close();
+  }
+
+  const aggregationWorkbench = await createWorkbench(PGlite, {
+    schemaConfig: {
+      table: "pedidos",
+      columns: [
+        { name: "pedido_id", type: "integer", constraints: "primary key" },
+        { name: "status", type: "text", constraints: "not null" },
+        { name: "categoria", type: "text", constraints: "not null" },
+        { name: "valor", type: "numeric(10,2)", constraints: "not null" }
+      ]
+    },
+    seedData: [
+      { pedido_id: 1, status: "pago", categoria: "eletrônicos", valor: 129.9 },
+      { pedido_id: 2, status: "pendente", categoria: "eletrônicos", valor: 89.5 },
+      { pedido_id: 3, status: "pago", categoria: "livros", valor: 54 },
+      { pedido_id: 4, status: "pago", categoria: "eletrônicos", valor: 219 },
+      { pedido_id: 5, status: "cancelado", categoria: "livros", valor: 45 },
+      { pedido_id: 6, status: "pago", categoria: "casa", valor: 78.3 },
+      { pedido_id: 7, status: "pago", categoria: "livros", valor: 36.5 }
+    ]
+  });
+
+  try {
+    const summaryQuery = `
+      select count(*) as total_pedidos_pagos, sum(valor) as valor_total_vendido
+      from pedidos
+      where status = 'pago'
+    `;
+    const summaryResult = await aggregationWorkbench.execute(summaryQuery);
+    assert.deepStrictEqual(summaryResult.rows[0], {
+      total_pedidos_pagos: 5,
+      valor_total_vendido: "517.70"
+    });
+    assert.strictEqual(
+      validatePaidOrdersSummaryResult(summaryResult, summaryQuery, [[5, 517.7]]),
+      true
+    );
+    assert.strictEqual(
+      validateConfiguredResult(
+        summaryResult,
+        summaryQuery,
+        { validator: "paid_orders_summary" },
+        { rows: [[5, 517.7]] }
+      ),
+      true
+    );
+
+    const groupQuery = `
+      select categoria, count(*) as total_pedidos, sum(valor) as valor_total
+      from pedidos
+      group by categoria
+    `;
+    const groupResult = await aggregationWorkbench.execute(groupQuery);
+    assert.strictEqual(
+      validateOrdersByCategorySummaryResult(groupResult, groupQuery, [
+        ["casa", 1, 78.3],
+        ["eletrônicos", 3, 438.4],
+        ["livros", 3, 135.5]
+      ]),
+      true
+    );
+    assert.strictEqual(
+      validateConfiguredResult(
+        groupResult,
+        groupQuery,
+        { validator: "orders_by_category_summary" },
+        {
+          rows: [
+            ["casa", 1, 78.3],
+            ["eletrônicos", 3, 438.4],
+            ["livros", 3, 135.5]
+          ]
+        }
+      ),
+      true
+    );
+  } finally {
+    await aggregationWorkbench.close();
+  }
+
+  const joinWorkbench = await createWorkbench(PGlite, {
+    schemaConfig: {
+      tables: [
+        {
+          table: "clientes",
+          columns: [
+            { name: "cliente_id", type: "integer", constraints: "primary key" },
+            { name: "nome", type: "text", constraints: "not null" },
+            { name: "cidade", type: "text", constraints: "not null" }
+          ]
+        },
+        {
+          table: "pedidos",
+          columns: [
+            { name: "pedido_id", type: "integer", constraints: "primary key" },
+            {
+              name: "cliente_id",
+              type: "integer",
+              constraints: "not null references clientes(cliente_id)"
+            },
+            { name: "status", type: "text", constraints: "not null" },
+            { name: "valor", type: "numeric(10,2)", constraints: "not null" }
+          ]
+        }
+      ]
+    },
+    seedData: [
+      {
+        table: "clientes",
+        rows: [
+          { cliente_id: 1, nome: "Ana", cidade: "São Paulo" },
+          { cliente_id: 2, nome: "Bruno", cidade: "Belo Horizonte" },
+          { cliente_id: 3, nome: "Carla", cidade: "Recife" },
+          { cliente_id: 4, nome: "Diego", cidade: "Curitiba" }
+        ]
+      },
+      {
+        table: "pedidos",
+        rows: [
+          { pedido_id: 101, cliente_id: 1, status: "pago", valor: 120 },
+          { pedido_id: 102, cliente_id: 1, status: "pendente", valor: 80 },
+          { pedido_id: 103, cliente_id: 2, status: "pago", valor: 250 },
+          { pedido_id: 104, cliente_id: 3, status: "pago", valor: 90 },
+          { pedido_id: 105, cliente_id: 4, status: "cancelado", valor: 60 },
+          { pedido_id: 106, cliente_id: 2, status: "pago", valor: 150 }
+        ]
+      }
+    ]
+  });
+
+  try {
+    const joinQuery = `
+      select p.pedido_id, c.nome, p.valor
+      from pedidos p
+      join clientes c on c.cliente_id = p.cliente_id
+      where p.status = 'pago'
+    `;
+    const joinResult = await joinWorkbench.execute(joinQuery);
+    const expectedJoinRows = [
+      [101, "Ana", 120],
+      [103, "Bruno", 250],
+      [104, "Carla", 90],
+      [106, "Bruno", 150]
+    ];
+    assert.strictEqual(
+      validatePaidOrdersWithCustomersResult(joinResult, joinQuery, expectedJoinRows),
+      true
+    );
+    assert.strictEqual(
+      validateConfiguredResult(
+        joinResult,
+        joinQuery,
+        { validator: "paid_orders_with_customers" },
+        { rows: expectedJoinRows }
+      ),
+      true
+    );
+    const joinWithoutFilter = await joinWorkbench.execute(`
+      select p.pedido_id, c.nome, p.valor
+      from pedidos p
+      join clientes c on c.cliente_id = p.cliente_id
+    `);
+    assert.strictEqual(
+      validatePaidOrdersWithCustomersResult(joinWithoutFilter, joinWithoutFilter.query, expectedJoinRows),
+      false
+    );
+  } finally {
+    await joinWorkbench.close();
   }
 
   console.log("SQL POC execution tests passed");

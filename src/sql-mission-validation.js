@@ -181,12 +181,127 @@
     };
   }
 
+  function validatePaidOrdersSummarySql(rawValue) {
+    const value = normalizeSql(rawValue);
+    const startsWithSelect = /^select\b/.test(value);
+    const hasFromPedidos = /\bfrom\s+(?:(?:public\.)?pedidos)\b/.test(value);
+    const hasStatusPaid = /\b(?:\w+\.)?status\s*=\s*'pago'(?=\s|$|;)/.test(value);
+    const hasCount = /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value);
+    const hasSumValue = /\bsum\s*\(\s*(?:\w+\.)?valor\s*\)/.test(value);
+    const isSelectOnly = startsWithSelect && !hasDangerousSql(value);
+    const checks = {
+      startsWithSelect,
+      hasFromPedidos,
+      hasStatusPaid,
+      hasCount,
+      hasSumValue,
+      isSelectOnly
+    };
+
+    if (Object.values(checks).every(Boolean)) {
+      return { status: "correct", checks };
+    }
+
+    return {
+      status: startsWithSelect && hasFromPedidos && isSelectOnly
+        && [hasStatusPaid, hasCount, hasSumValue].filter(Boolean).length >= 2
+        ? "partial"
+        : "incorrect",
+      checks
+    };
+  }
+
+  function validateOrdersByCategorySummarySql(rawValue) {
+    const value = normalizeSql(rawValue);
+    const startsWithSelect = /^select\b/.test(value);
+    const hasFromPedidos = /\bfrom\s+(?:(?:public\.)?pedidos)\b/.test(value);
+    const hasCategoria = /\b(?:\w+\.)?categoria\b/.test(value);
+    const hasCount = /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value);
+    const hasSumValue = /\bsum\s*\(\s*(?:\w+\.)?valor\s*\)/.test(value);
+    const hasGroupByCategoria = /\bgroup\s+by\s+(?:\w+\.)?categoria\b/.test(value);
+    const isSelectOnly = startsWithSelect && !hasDangerousSql(value);
+    const checks = {
+      startsWithSelect,
+      hasFromPedidos,
+      hasCategoria,
+      hasCount,
+      hasSumValue,
+      hasGroupByCategoria,
+      isSelectOnly
+    };
+
+    if (Object.values(checks).every(Boolean)) {
+      return { status: "correct", checks };
+    }
+
+    return {
+      status: startsWithSelect && hasFromPedidos && isSelectOnly
+        && [hasCategoria, hasCount, hasSumValue, hasGroupByCategoria].filter(Boolean).length >= 3
+        ? "partial"
+        : "incorrect",
+      checks
+    };
+  }
+
+  function validatePaidOrdersWithCustomersSql(rawValue) {
+    const value = normalizeSql(rawValue);
+    const startsWithSelect = /^select\b/.test(value);
+    const hasPedidos = /\bpedidos\b/.test(value);
+    const hasClientes = /\bclientes\b/.test(value);
+    const hasJoin = /\bjoin\b/.test(value);
+    const hasCustomerJoin = /\bon\s+(?:\w+\.)?cliente_id\s*=\s*(?:\w+\.)?cliente_id\b/.test(value);
+    const hasStatusPaid = /\b(?:\w+\.)?status\s*=\s*'pago'(?=\s|$|;)/.test(value);
+    const hasPedidoId = /\b(?:\w+\.)?pedido_id\b/.test(value);
+    const hasNome = /\b(?:\w+\.)?nome\b/.test(value);
+    const hasValor = /\b(?:\w+\.)?valor\b/.test(value);
+    const isSelectOnly = startsWithSelect && !hasDangerousSql(value);
+    const checks = {
+      startsWithSelect,
+      hasPedidos,
+      hasClientes,
+      hasJoin,
+      hasCustomerJoin,
+      hasStatusPaid,
+      hasPedidoId,
+      hasNome,
+      hasValor,
+      isSelectOnly
+    };
+
+    if (Object.values(checks).every(Boolean)) {
+      return { status: "correct", checks };
+    }
+
+    return {
+      status: startsWithSelect && hasPedidos && hasClientes && isSelectOnly
+        && [hasJoin, hasCustomerJoin, hasStatusPaid, hasPedidoId, hasNome, hasValor].filter(Boolean).length >= 4
+        ? "partial"
+        : "incorrect",
+      checks
+    };
+  }
+
+  function validateConfiguredSql(rawValue, validator) {
+    const validators = {
+      count_nulls_distincts: validateCountNullsDistinctsSql,
+      orders_by_category_summary: validateOrdersByCategorySummarySql,
+      paid_orders_by_category: validatePaidOrdersByCategorySql,
+      paid_orders_summary: validatePaidOrdersSummarySql,
+      paid_orders_with_customers: validatePaidOrdersWithCustomersSql
+    };
+    return (validators[validator] || validatePaidOrdersByCategorySql)(rawValue);
+  }
+
   const api = {
     normalizeSql,
     validateWhereJanuarySql,
     validateCountRowsExpression,
     validatePaidOrdersByCategorySql,
-    validateCountNullsDistinctsSql
+    validateCountNullsDistinctsSql,
+    validatePaidOrdersSummarySql,
+    validateOrdersByCategorySummarySql,
+    validatePaidOrdersWithCustomersSql,
+    validateConfiguredSql
   };
 
   if (typeof module !== "undefined" && module.exports) {

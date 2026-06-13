@@ -58,16 +58,45 @@
   function normalizePractice(row) {
     const support = row.theoretical_support || {};
     const schema = row.schema_config || {};
-    const columns = Array.isArray(schema.columns) ? schema.columns : [];
+    const datasetTables = Array.isArray(schema.tables) && schema.tables.length
+      ? schema.tables.map((tableSchema) => {
+          const tableName = tableSchema.table || tableSchema.name || "";
+          const seedEntry = Array.isArray(row.seed_data)
+            ? row.seed_data.find((entry) => entry?.table === tableName)
+            : null;
+          const sampleEntry = Array.isArray(row.sample_rows)
+            ? row.sample_rows.find((entry) => entry?.table === tableName)
+            : null;
+          return {
+            table: tableName,
+            columns: Array.isArray(tableSchema.columns) ? tableSchema.columns : [],
+            seedData: Array.isArray(seedEntry?.rows) ? seedEntry.rows : [],
+            sampleRows: Array.isArray(sampleEntry?.rows) ? sampleEntry.rows : []
+          };
+        })
+      : [{
+          table: schema.table || "",
+          columns: Array.isArray(schema.columns) ? schema.columns : [],
+          seedData: Array.isArray(row.seed_data) ? row.seed_data : [],
+          sampleRows: Array.isArray(row.sample_rows) ? row.sample_rows : []
+        }];
+    const tableNames = datasetTables.map((table) => table.table).filter(Boolean);
+    const columns = datasetTables.flatMap((table) =>
+      table.columns.map((column) =>
+        datasetTables.length > 1 ? `${table.table}.${column.name}` : column.name
+      )
+    );
 
     return {
       ...normalizeCatalogActivity(row),
       exerciseId: row.exercise_id,
       datasetId: row.dataset_id,
-      table: schema.table || "",
-      columns: columns.map((column) => column.name).join(", "),
-      schemaColumns: columns,
-      sampleRows: Array.isArray(row.sample_rows) ? row.sample_rows : [],
+      table: tableNames.join(", "),
+      tables: tableNames,
+      columns: columns.join(", "),
+      schemaColumns: datasetTables[0]?.columns || [],
+      sampleRows: datasetTables[0]?.sampleRows || [],
+      datasetTables,
       datasetConfig: {
         schemaConfig: schema,
         seedData: Array.isArray(row.seed_data) ? row.seed_data : []

@@ -9,6 +9,7 @@ const host = "127.0.0.1";
 const port = Number(process.env.VISUAL_PORT || 4173);
 const baseUrl = process.env.VISUAL_BASE_URL || `http://${host}:${port}`;
 const timeoutMs = Number(process.env.VISUAL_TIMEOUT_MS || 20000);
+const validateSqlSteps35 = process.env.VISUAL_SQL_STEPS_3_5 === "1";
 
 const pages = [
   { name: "home", path: "/index.html", waitFor: "#home" },
@@ -42,6 +43,59 @@ const pages = [
     expectedPath: "/praticas-sql.html"
   }
 ];
+
+if (validateSqlSteps35) {
+  pages.push(
+    {
+      name: "central-sql-etapa-3-filtro-agregacao",
+      path: "/praticas-sql.html?pratica=sql-essencial-filtro-antes-agregacao",
+      waitFor: ".sql-practice-workspace",
+      practiceEvidence: {
+        title: "Filtro antes da agregação",
+        tableText: "Tabela: pedidos",
+        conceptTitle: "WHERE filtra antes do resumo",
+        schemaTitle: "pedidos"
+      },
+      supportTabs: [
+        { name: "conceito", id: "concept" },
+        { name: "dados", id: "data" },
+        { name: "tutora-ia", id: "tutor" }
+      ]
+    },
+    {
+      name: "central-sql-etapa-4-group-by",
+      path: "/praticas-sql.html?pratica=sql-essencial-group-by",
+      waitFor: ".sql-practice-workspace",
+      practiceEvidence: {
+        title: "Agrupamentos com GROUP BY",
+        tableText: "Tabela: pedidos",
+        conceptTitle: "GROUP BY cria um resumo por grupo",
+        schemaTitle: "pedidos"
+      },
+      supportTabs: [
+        { name: "conceito", id: "concept" },
+        { name: "dados", id: "data" },
+        { name: "tutora-ia", id: "tutor" }
+      ]
+    },
+    {
+      name: "central-sql-etapa-5-join",
+      path: "/praticas-sql.html?pratica=sql-essencial-join",
+      waitFor: ".sql-practice-workspace",
+      practiceEvidence: {
+        title: "Relacionando tabelas com JOIN",
+        tableText: "Tabelas: clientes, pedidos",
+        conceptTitle: "JOIN conecta informações de tabelas diferentes",
+        schemaTitle: "clientes + pedidos"
+      },
+      supportTabs: [
+        { name: "conceito", id: "concept" },
+        { name: "dados", id: "data" },
+        { name: "tutora-ia", id: "tutor" }
+      ]
+    }
+  );
+}
 
 const viewports = [
   { name: "desktop", width: 1440, height: 900 },
@@ -201,6 +255,28 @@ async function validatePage(browser, pageConfig, viewport) {
 
     if (pageConfig.expectedPath && new URL(page.url()).pathname !== pageConfig.expectedPath) {
       throw new Error(`redirect terminou em ${page.url()}, esperado ${pageConfig.expectedPath}`);
+    }
+
+    if (pageConfig.practiceEvidence) {
+      const practiceEvidence = await page.evaluate(() => ({
+        title: document.querySelector(".sql-practice-workspace__title h2")?.textContent.trim(),
+        prompt: document.querySelector(".sql-practice-brief h3")?.textContent.trim(),
+        tags: document.querySelector(".sql-practice-tags")?.textContent.replace(/\s+/g, " ").trim(),
+        conceptTitle: document.querySelector(".sql-support-concept h3")?.textContent.trim(),
+        hint: document.querySelector(".sql-support-tip p")?.textContent.trim(),
+        source: document.querySelector(".sql-practice-source")?.textContent.trim()
+      }));
+      const expected = pageConfig.practiceEvidence;
+      if (
+        practiceEvidence.title !== expected.title
+        || !practiceEvidence.prompt
+        || !practiceEvidence.tags?.includes(expected.tableText)
+        || practiceEvidence.conceptTitle !== expected.conceptTitle
+        || !practiceEvidence.hint
+        || practiceEvidence.source !== "Dados Supabase"
+      ) {
+        throw new Error(`conteudo oficial incompleto: ${JSON.stringify(practiceEvidence)}`);
+      }
     }
 
     const dimensions = await page.evaluate(() => ({
@@ -449,6 +525,7 @@ async function validatePage(browser, pageConfig, viewport) {
         }
 
         if (supportTab.id === "data") {
+          const expectedSchemaTitle = pageConfig.practiceEvidence?.schemaTitle || "pedidos";
           const dataLayout = await page.evaluate(() => {
             const row = document.querySelector(".sql-support-data__heading");
             const label = row?.querySelector(".section-kicker");
@@ -469,7 +546,7 @@ async function validatePage(browser, pageConfig, viewport) {
             !dataLayout.rowExists
             || dataLayout.countExists
             || dataLayout.labelText !== "Schema da prática"
-            || dataLayout.titleText !== "pedidos"
+            || dataLayout.titleText !== expectedSchemaTitle
             || Math.abs(dataLayout.labelCenter - dataLayout.titleCenter) > 3
           ) {
             throw new Error(

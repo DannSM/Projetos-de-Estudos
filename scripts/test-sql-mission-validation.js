@@ -6,7 +6,11 @@ const {
   validateWhereJanuarySql,
   validateCountRowsExpression,
   validatePaidOrdersByCategorySql,
-  validateCountNullsDistinctsSql
+  validateCountNullsDistinctsSql,
+  validatePaidOrdersSummarySql,
+  validateOrdersByCategorySummarySql,
+  validatePaidOrdersWithCustomersSql,
+  validateConfiguredSql
 } = require("../src/sql-mission-validation");
 
 function expectStatus(label, actual, expected) {
@@ -111,6 +115,55 @@ expectNotCorrect(
 expectNotCorrect(
   "Etapa 2 rejeita select estrela",
   validateCountNullsDistinctsSql("select * from pedidos")
+);
+
+expectStatus(
+  "Etapa 3 aceita filtro antes das agregacoes",
+  validatePaidOrdersSummarySql(
+    "select count(*) as total, sum(valor) as valor_total from pedidos where status = 'pago'"
+  ),
+  "correct"
+);
+expectNotCorrect(
+  "Etapa 3 rejeita resumo sem filtro",
+  validatePaidOrdersSummarySql("select count(*), sum(valor) from pedidos")
+);
+
+expectStatus(
+  "Etapa 4 aceita resumo por categoria",
+  validateOrdersByCategorySummarySql(
+    "select categoria, count(*) as total, sum(valor) as valor_total from pedidos group by categoria"
+  ),
+  "correct"
+);
+expectNotCorrect(
+  "Etapa 4 rejeita resumo sem group by",
+  validateOrdersByCategorySummarySql("select categoria, count(*), sum(valor) from pedidos")
+);
+
+expectStatus(
+  "Etapa 5 aceita join de pedidos e clientes",
+  validatePaidOrdersWithCustomersSql(`
+    select p.pedido_id, c.nome, p.valor
+    from pedidos p
+    join clientes c on c.cliente_id = p.cliente_id
+    where p.status = 'pago'
+  `),
+  "correct"
+);
+expectNotCorrect(
+  "Etapa 5 rejeita join sem filtro de pagos",
+  validatePaidOrdersWithCustomersSql(
+    "select p.pedido_id, c.nome, p.valor from pedidos p join clientes c on c.cliente_id = p.cliente_id"
+  )
+);
+expectStatus(
+  "Dispatcher usa o validator configurado",
+  validateConfiguredSql(
+    "select count(*), sum(valor) from pedidos where status = 'pago'",
+    "paid_orders_summary"
+  ),
+  "correct"
 );
 
 console.log("SQL mission validation tests passed");

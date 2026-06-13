@@ -20,6 +20,13 @@
 
   const PRACTICE_NOTE_STORAGE_PREFIX = "dsm:sql-practice-note";
   const PRACTICE_FEEDBACK_STORAGE_PREFIX = "dsm:sql-practice-feedback";
+  const PRACTICE_VALIDATOR_BY_SLUG = {
+    "sql-essencial-filtros-where": "paid_orders_by_category",
+    "sql-essencial-count-nulos-distintos": "count_nulls_distincts",
+    "sql-essencial-filtro-antes-agregacao": "paid_orders_summary",
+    "sql-essencial-group-by": "orders_by_category_summary",
+    "sql-essencial-join": "paid_orders_with_customers"
+  };
 
   let practices = [
     {
@@ -277,6 +284,22 @@
       : sqlPocEngine.PEDIDOS_SAMPLE;
   }
 
+  function getPracticeDatasetTables(practice) {
+    if (Array.isArray(practice.datasetTables) && practice.datasetTables.length) {
+      return practice.datasetTables;
+    }
+    return [{
+      table: practice.table,
+      columns: getPracticeSchemaColumns(practice),
+      sampleRows: getPracticeSampleRows(practice)
+    }];
+  }
+
+  function getPracticeRecordCount(practice) {
+    return getPracticeDatasetTables(practice)
+      .reduce((total, table) => total + (Array.isArray(table.sampleRows) ? table.sampleRows.length : 0), 0);
+  }
+
   function getAttemptCount(practice) {
     return state.attempts[practice.slug]?.attemptCount || 0;
   }
@@ -401,9 +424,13 @@
   }
 
   function renderTags(practice) {
+    const tableNames = Array.isArray(practice.tables) && practice.tables.length
+      ? practice.tables
+      : String(practice.table || "").split(",").map((item) => item.trim()).filter(Boolean);
+    const tableLabel = tableNames.length > 1 ? "Tabelas" : "Tabela";
     return `
       <div class="mission-context-list sql-practice-tags" aria-label="Contexto da prática">
-        <span><i data-lucide="table-2" aria-hidden="true"></i>Tabela: ${escapeHtml(practice.table)}</span>
+        <span><i data-lucide="table-2" aria-hidden="true"></i>${tableLabel}: ${escapeHtml(tableNames.join(", "))}</span>
         <span><i data-lucide="graduation-cap" aria-hidden="true"></i>Nível: ${escapeHtml(practice.level)}</span>
         <span><i data-lucide="shield-check" aria-hidden="true"></i>Validação local</span>
         <details class="sql-practice-columns">
@@ -439,11 +466,7 @@
 
   function renderSupportPanels(practice) {
     const schemaColumns = ["coluna", "tipo"];
-    const schemaRows = getPracticeSchemaColumns(practice).map((column) => ({
-      coluna: column.name,
-      tipo: column.type
-    }));
-    const sampleRows = getPracticeSampleRows(practice);
+    const datasetTables = getPracticeDatasetTables(practice);
     const supportTabs = [
       { id: "concept", label: "Conceito", icon: "book-open" },
       { id: "data", label: "Dados", icon: "table-2" },
@@ -455,7 +478,7 @@
         <section class="mission-learning-card sql-support-panel">
           <header class="sql-support-panel__header">
             <h2>Apoio da prática</h2>
-            <small>${sampleRows.length} registros</small>
+            <small>${getPracticeRecordCount(practice)} registros</small>
           </header>
           <div class="sql-support-tabs" role="tablist" aria-label="Conteúdo de apoio da prática">
             ${supportTabs.map((tab) => {
@@ -505,9 +528,16 @@
             >
               <div class="sql-support-data__heading">
                 <span class="section-kicker">Schema da prática</span>
-                <h3>${escapeHtml(practice.table)}</h3>
+                <h3>${escapeHtml(datasetTables.map((table) => table.table).join(" + "))}</h3>
               </div>
-              ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+              ${datasetTables.map((table) => `
+                ${datasetTables.length > 1 ? `<h4>${escapeHtml(table.table)}</h4>` : ""}
+                ${renderDataTable(
+                  schemaColumns,
+                  table.columns.map((column) => ({ coluna: column.name, tipo: column.type })),
+                  "is-compact"
+                )}
+              `).join("")}
             </section>
             <section
               class="sql-support-tabpanel sql-support-chat"
@@ -722,7 +752,11 @@
       recentMessages: state.aiTutor.messages,
       schema: {
         table: practice.table,
-        columns: getPracticeSchemaColumns(practice)
+        columns: getPracticeSchemaColumns(practice),
+        tables: getPracticeDatasetTables(practice).map((table) => ({
+          table: table.table,
+          columns: table.columns
+        }))
       }
     };
   }
@@ -904,6 +938,18 @@
     const practice = getActivePractice();
     if (practice.validationConfig?.validator === "count_nulls_distincts") {
       return "A consulta executou, mas ainda não traz todas as métricas esperadas. Revise COUNT(*), COUNT(cupom), pedidos sem cupom e COUNT(DISTINCT cliente_id).";
+    }
+
+    if (practice.validationConfig?.validator === "paid_orders_summary") {
+      return "A consulta precisa filtrar os pedidos pagos antes de calcular COUNT(*) e SUM(valor).";
+    }
+
+    if (practice.validationConfig?.validator === "orders_by_category_summary") {
+      return "A consulta precisa retornar categoria, quantidade e valor total, agrupando por categoria.";
+    }
+
+    if (practice.validationConfig?.validator === "paid_orders_with_customers") {
+      return "Relacione pedidos e clientes por cliente_id, filtre os pedidos pagos e retorne pedido_id, nome e valor.";
     }
 
     const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
@@ -1301,9 +1347,7 @@
     }
 
     const validator = practice.validationConfig?.validator || "paid_orders_by_category";
-    const validationDetails = validator === "count_nulls_distincts"
-      ? sqlValidation.validateCountNullsDistinctsSql(query)
-      : sqlValidation.validatePaidOrdersByCategorySql(query);
+    const validationDetails = sqlValidation.validateConfiguredSql(query, validator);
     const isCorrect = sqlPocEngine.validateConfiguredResult(
       workbench.execution,
       query,
@@ -1314,9 +1358,13 @@
       ? {
           status: "correct",
           title: "Correto",
-          message: validator === "count_nulls_distincts"
-            ? "Correto. Você comparou contagens totais, valores preenchidos, nulos e clientes distintos."
-            : "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria.",
+          message: {
+            count_nulls_distincts: "Correto. Você comparou contagens totais, valores preenchidos, nulos e clientes distintos.",
+            orders_by_category_summary: "Correto. Você resumiu quantidade e valor total por categoria.",
+            paid_orders_by_category: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria.",
+            paid_orders_summary: "Correto. Você filtrou os pedidos pagos antes de calcular as métricas.",
+            paid_orders_with_customers: "Correto. Você relacionou pedidos e clientes e manteve apenas os pedidos pagos."
+          }[validator] || "Correto. A consulta respondeu ao exercício.",
           details: validationDetails.checks
         }
       : {
@@ -1689,11 +1737,14 @@
       const loadResult = await sqlPracticeService.loadPractice(slug);
       if (loadResult.ok) {
         const localPractice = practices.find((item) => item.slug === loadResult.practice.slug) || {};
+        const validator = PRACTICE_VALIDATOR_BY_SLUG[loadResult.practice.slug];
         const mergedPractice = {
           ...localPractice,
           ...loadResult.practice,
           solutionText: localPractice.solutionText || "",
-          validationConfig: localPractice.validationConfig || { validator: "paid_orders_by_category" },
+          validationConfig: validator
+            ? { validator }
+            : localPractice.validationConfig || { validator: "paid_orders_by_category" },
           expectedResult: localPractice.expectedResult
         };
         practices = (loadResult.catalog || []).map((item) =>
