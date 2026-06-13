@@ -178,6 +178,8 @@
     dataSource: "loading",
     sourceStatus: "Carregando dados da prática...",
     isAuthenticated: false,
+    studentName: "Você",
+    schemaCollapsed: Boolean(globalScope.matchMedia?.("(max-width: 620px)")?.matches),
     lastQueryRunId: null,
     persistenceStatus: "",
     aiTutor: {
@@ -185,7 +187,8 @@
       status: "idle",
       messages: [],
       error: "",
-      metadata: null
+      metadata: null,
+      shouldScroll: false
     }
   };
 
@@ -244,6 +247,18 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function getFirstName(value) {
+    const normalized = String(value || "").trim();
+    return normalized ? normalized.split(/\s+/)[0].slice(0, 40) : "";
+  }
+
+  function resolveStudentName(user) {
+    const metadataName = getFirstName(
+      user?.user_metadata?.display_name || user?.user_metadata?.name
+    );
+    return metadataName || "Você";
   }
 
   function getActivePractice() {
@@ -441,23 +456,37 @@
           <p>${escapeHtml(practice.content)}</p>
           <code class="code-block">${escapeHtml(practice.example)}</code>
         </section>
-        <section class="mission-learning-card sql-support-card">
+        <section class="mission-learning-card sql-support-card sql-support-schema ${state.schemaCollapsed ? "is-collapsed" : ""}">
           <header class="sql-support-card__header">
             <strong><i data-lucide="table-2" aria-hidden="true"></i>Schema da prática</strong>
-            <small>${sampleRows.length} registros</small>
+            <div class="sql-support-card__header-actions">
+              <small>${sampleRows.length} registros</small>
+              <button
+                type="button"
+                class="sql-support-card__toggle"
+                data-toggle-practice-schema
+                aria-expanded="${state.schemaCollapsed ? "false" : "true"}"
+                aria-label="${state.schemaCollapsed ? "Expandir" : "Recolher"} schema da prática"
+                title="${state.schemaCollapsed ? "Expandir schema" : "Recolher schema"}"
+              >
+                <i data-lucide="${state.schemaCollapsed ? "chevron-down" : "chevron-up"}" aria-hidden="true"></i>
+              </button>
+            </div>
           </header>
-          ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+          <div class="sql-support-schema__content" ${state.schemaCollapsed ? "hidden" : ""}>
+            ${renderDataTable(schemaColumns, schemaRows, "is-compact")}
+          </div>
         </section>
         <section class="mission-learning-card sql-support-card sql-support-chat">
           <header class="sql-support-card__header">
             <strong><i data-lucide="bot" aria-hidden="true"></i>Chat com IA</strong>
-            <small>Tutora SQL</small>
+            <small>Tutora IA</small>
           </header>
           <div class="sql-support-chat__messages" data-ai-tutor-messages aria-live="polite">
             ${state.aiTutor.messages.length
               ? state.aiTutor.messages.map((message) => `
                   <div class="sql-support-chat__message is-${escapeHtml(message.role)}">
-                    <strong>${message.role === "assistant" ? "Tutora" : "Você"}</strong>
+                    <strong>${message.role === "assistant" ? "Tutora IA" : escapeHtml(state.studentName)}</strong>
                     <p>${escapeHtml(message.content).replace(/\n/g, "<br>")}</p>
                   </div>
                 `).join("")
@@ -467,17 +496,20 @@
                 </div>
               `}
             ${state.aiTutor.status === "loading"
-              ? `<div class="sql-support-chat__loading"><span aria-hidden="true"></span>Preparando uma dica...</div>`
+              ? `<div class="sql-support-chat__loading"><span aria-hidden="true"></span>Tutora IA está preparando uma dica...</div>`
               : ""}
             ${state.aiTutor.error
               ? `<p class="sql-support-chat__error" role="alert">${escapeHtml(state.aiTutor.error)}</p>`
               : ""}
           </div>
           <div class="sql-support-chat__quick-actions" aria-label="Ações rápidas da tutora">
-            <button type="button" data-ai-quick-action="how_to_start" ${state.aiTutor.status === "loading" ? "disabled" : ""}>Como começo?</button>
-            <button type="button" data-ai-quick-action="hint" ${state.aiTutor.status === "loading" ? "disabled" : ""}>Me dê uma dica</button>
-            <button type="button" data-ai-quick-action="explain_error" ${state.aiTutor.status === "loading" ? "disabled" : ""}>Explique meu erro</button>
-            <button type="button" data-ai-quick-action="review_query" ${state.aiTutor.status === "loading" ? "disabled" : ""}>Revise minha query</button>
+            ${getAiQuickActions(practice).map((action) => `
+              <button
+                type="button"
+                data-ai-quick-action="${escapeHtml(action.action)}"
+                ${state.aiTutor.status === "loading" ? "disabled" : ""}
+              >${escapeHtml(action.label)}</button>
+            `).join("")}
           </div>
           <div class="sql-support-chat__composer" aria-label="Pergunta para a tutora SQL">
             <input
@@ -498,11 +530,55 @@
             </button>
           </div>
           ${state.aiTutor.metadata
-            ? `<small class="sql-support-chat__meta">${escapeHtml(state.aiTutor.metadata)}</small>`
+            ? `
+              <small
+                class="sql-support-chat__meta"
+                title="${escapeHtml(`${state.aiTutor.metadata.provider} · ${state.aiTutor.metadata.model}`)}"
+              >IA Cloudflare <span aria-hidden="true">•</span> ${escapeHtml(formatAiDuration(state.aiTutor.metadata.durationMs))}</small>
+            `
             : ""}
         </section>
       </aside>
     `;
+  }
+
+  function getAiQuickActions(practice) {
+    const status = getAiValidationStatus(practice);
+    const actionsByStatus = {
+      idle: [
+        { action: "how_to_start", label: "Como começo?" },
+        { action: "hint", label: "Me dê uma dica" },
+        { action: "what_to_observe", label: "O que observar?" }
+      ],
+      error: [
+        { action: "explain_error", label: "Explique meu erro" },
+        { action: "how_to_fix", label: "Como corrigir?" },
+        { action: "hint", label: "Me dê uma dica" }
+      ],
+      executed: [
+        { action: "review_query", label: "Revise minha query" },
+        { action: "what_is_missing", label: "O que falta?" },
+        { action: "validate_reasoning", label: "Validar raciocínio" }
+      ],
+      incorrect: [
+        { action: "what_is_missing", label: "O que está faltando?" },
+        { action: "another_hint", label: "Me dê outra dica" },
+        { action: "review_reasoning", label: "Revise meu raciocínio" }
+      ],
+      correct: [
+        { action: "learning_summary", label: "Resumo do que aprendi" },
+        { action: "next_concept", label: "Próximo conceito" }
+      ]
+    };
+    return actionsByStatus[status] || actionsByStatus.idle;
+  }
+
+  function formatAiDuration(durationMs) {
+    const milliseconds = Number(durationMs);
+    if (!Number.isFinite(milliseconds)) {
+      return "";
+    }
+    return `${(milliseconds / 1000).toFixed(1).replace(".", ",")}s`;
   }
 
   function getAiTutorContext(practice) {
@@ -511,6 +587,7 @@
       practiceSlug: practice.slug,
       practiceTitle: practice.shortTitle,
       practicePrompt: practice.prompt,
+      practiceObjective: practice.objective,
       studentQuery: state.queryAnswer,
       lastResultPreview: Array.isArray(execution?.rows) ? execution.rows : [],
       lastError: state.sqlWorkbench.error,
@@ -528,7 +605,15 @@
       how_to_start: "Como começo?",
       hint: "Me dê uma dica",
       explain_error: "Explique meu erro",
-      review_query: "Revise minha query"
+      review_query: "Revise minha query",
+      what_to_observe: "O que observar?",
+      how_to_fix: "Como corrigir?",
+      what_is_missing: "O que está faltando?",
+      validate_reasoning: "Validar raciocínio",
+      another_hint: "Me dê outra dica",
+      review_reasoning: "Revise meu raciocínio",
+      learning_summary: "Resumo do que aprendi",
+      next_concept: "Próximo conceito"
     }[quickAction] || "";
   }
 
@@ -544,6 +629,7 @@
     );
     if (!payload) {
       state.aiTutor.error = "Digite uma pergunta ou escolha uma ação rápida.";
+      state.aiTutor.shouldScroll = true;
       renderPage();
       return;
     }
@@ -556,16 +642,22 @@
     state.aiTutor.status = "loading";
     state.aiTutor.error = "";
     state.aiTutor.metadata = null;
+    state.aiTutor.shouldScroll = true;
     renderPage();
 
     const result = await sqlAiTutor.requestTutor(payload);
     state.aiTutor.status = "idle";
     if (result.ok) {
       state.aiTutor.messages.push({ role: "assistant", content: result.answer });
-      state.aiTutor.metadata = `${result.model} · ${result.durationMs} ms`;
+      state.aiTutor.metadata = {
+        provider: result.provider,
+        model: result.model,
+        durationMs: result.durationMs
+      };
     } else {
       state.aiTutor.error = result.message;
     }
+    state.aiTutor.shouldScroll = true;
     renderPage();
   }
 
@@ -982,6 +1074,21 @@
       globalScope.lucide.createIcons();
     }
 
+    if (state.aiTutor.shouldScroll) {
+      const scrollToLatestMessage = () => {
+        const messages = mount.querySelector("[data-ai-tutor-messages]");
+        if (messages) {
+          messages.scrollTop = messages.scrollHeight;
+        }
+        state.aiTutor.shouldScroll = false;
+      };
+      if (typeof globalScope.requestAnimationFrame === "function") {
+        globalScope.requestAnimationFrame(scrollToLatestMessage);
+      } else {
+        globalScope.setTimeout(scrollToLatestMessage, 0);
+      }
+    }
+
     void ensureSqlWorkbench();
   }
 
@@ -1170,7 +1277,8 @@
       status: "idle",
       messages: [],
       error: "",
-      metadata: null
+      metadata: null,
+      shouldScroll: false
     };
     loadLocalPracticeDrafts(practice);
   }
@@ -1247,6 +1355,13 @@
     const openUtilityButton = event.target.closest("[data-open-practice-utility]");
     if (openUtilityButton) {
       state.activeUtility = openUtilityButton.dataset.openPracticeUtility;
+      renderPage();
+      return;
+    }
+
+    const schemaToggleButton = event.target.closest("[data-toggle-practice-schema]");
+    if (schemaToggleButton) {
+      state.schemaCollapsed = !state.schemaCollapsed;
       renderPage();
       return;
     }
@@ -1441,6 +1556,7 @@
         const userState = await sqlPracticeService.loadUserState(mergedPractice);
         state.isAuthenticated = Boolean(userState.authenticated);
         if (userState.ok && userState.authenticated) {
+          state.studentName = resolveStudentName(userState.user);
           if (userState.hasNote) {
             state.practiceNote = userState.note || "";
           }

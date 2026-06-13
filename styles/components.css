@@ -5632,6 +5632,34 @@ body.analytics-auth-locked .analytics-hero-copy {
   font-size: 0.72rem;
 }
 
+.sql-support-card__header-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.sql-support-card__toggle {
+  display: grid;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  place-items: center;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.sql-support-card__toggle:hover {
+  background: #dbeafe;
+}
+
+.sql-support-card__toggle .lucide {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
 .sql-support-card__header .lucide {
   width: 1rem;
   height: 1rem;
@@ -5672,6 +5700,25 @@ body.analytics-auth-locked .analytics-hero-copy {
   table-layout: fixed;
 }
 
+.sql-support-schema__content > .sql-workbench-table-wrap {
+  width: auto;
+  min-width: 0;
+  margin: 0.56rem clamp(0.85rem, 1.5vw, 1rem) 0.72rem;
+  overflow: hidden;
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.28);
+  border-radius: 0.72rem;
+  clip-path: inset(0 round 0.72rem);
+}
+
+.sql-support-schema__content > .sql-workbench-table-wrap .sql-workbench-table {
+  table-layout: fixed;
+}
+
+.sql-support-schema.is-collapsed .sql-support-card__header {
+  border-bottom: 0;
+}
+
 .sql-support-card > h3 {
   font-size: 0.95rem;
 }
@@ -5687,16 +5734,25 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat {
   padding-bottom: 0.8rem;
+  border-color: rgba(37, 99, 235, 0.18);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .sql-support-chat__messages {
   display: grid;
   gap: 0.48rem;
-  max-height: 12rem;
+  height: clamp(15rem, 31vh, 20rem);
   margin: 0.7rem clamp(0.85rem, 1.5vw, 1rem) 0;
-  padding-right: 0.2rem;
+  padding: 0.1rem 0.28rem 0.15rem 0.1rem;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+}
+
+.sql-support-schema.is-collapsed + .sql-support-chat .sql-support-chat__messages {
+  height: clamp(18rem, 40vh, 25rem);
 }
 
 .sql-support-chat__welcome,
@@ -5707,8 +5763,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__welcome {
   color: #475569;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+  border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .sql-support-chat__welcome p,
@@ -5726,15 +5782,26 @@ body.analytics-auth-locked .analytics-hero-copy {
   text-transform: uppercase;
 }
 
+.sql-support-chat__message {
+  max-width: 94%;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+}
+
 .sql-support-chat__message.is-assistant {
-  color: #1e3a8a;
-  background: #eff6ff;
+  justify-self: start;
+  margin-right: 0.85rem;
+  color: #1e3a5f;
+  background: linear-gradient(145deg, #eff6ff, #ecfeff);
+  border-color: rgba(14, 165, 233, 0.12);
 }
 
 .sql-support-chat__message.is-student {
+  justify-self: end;
   margin-left: 1.4rem;
   color: #334155;
-  background: #f1f5f9;
+  background: linear-gradient(145deg, #f8fafc, #eef2f7);
+  border-color: rgba(100, 116, 139, 0.14);
 }
 
 .sql-support-chat__quick-actions {
@@ -5753,6 +5820,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .sql-support-chat__quick-actions button:hover:not(:disabled) {
@@ -5767,9 +5835,14 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__loading {
   display: inline-flex;
+  width: fit-content;
   gap: 0.42rem;
   align-items: center;
+  padding: 0.45rem 0.6rem;
   color: #64748b;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
   font-size: 0.72rem;
 }
 
@@ -5784,9 +5857,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__error {
   padding: 0.55rem 0.62rem;
-  color: #9f1239;
-  background: #fff1f2;
-  border: 1px solid #fecdd3;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
   border-radius: 0.62rem;
 }
 
@@ -5799,11 +5872,15 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-chat__composer input {
   min-width: 0;
-  padding: 0.65rem 0.72rem;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.65rem;
   color: #0f172a;
   background: #f8fafc;
   border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .sql-support-chat__composer button {
@@ -5820,7 +5897,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   display: block;
   margin: 0.45rem clamp(0.85rem, 1.5vw, 1rem) 0;
   color: #94a3b8;
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   text-align: right;
 }
 
@@ -6266,7 +6343,20 @@ body.analytics-auth-locked .analytics-hero-copy {
   }
 
   .sql-support-chat__messages {
-    max-height: 14rem;
+    height: 18rem;
+  }
+
+  .sql-support-schema.is-collapsed + .sql-support-chat .sql-support-chat__messages {
+    height: 21rem;
+  }
+
+  .sql-support-chat__quick-actions {
+    gap: 0.4rem;
+  }
+
+  .sql-support-chat__quick-actions button {
+    flex: 1 1 auto;
+    min-height: 2rem;
   }
 
   .sql-practice-utility-backdrop {

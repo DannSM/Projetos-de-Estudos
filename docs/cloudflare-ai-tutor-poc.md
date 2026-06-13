@@ -13,7 +13,7 @@ A Pages Function valida e limita o payload, monta um prompt pedagógico e chama
 o binding `env.AI`. Nenhuma chave é enviada ao navegador e nenhum dado é
 gravado no Supabase.
 
-O modelo padrão é `@cf/meta/llama-3.1-8b-instruct`. Ele pode ser trocado pela
+O modelo padrão é `@cf/meta/llama-3.1-8b-instruct-fp8`. Ele pode ser trocado pela
 variável de ambiente `SQL_TUTOR_AI_MODEL`.
 
 ## Configuração no Cloudflare Pages
@@ -43,6 +43,7 @@ faturável.
   "practiceSlug": "sql-essencial-count-nulos-distintos",
   "practiceTitle": "COUNT, nulos e distintos",
   "practicePrompt": "Enunciado atual",
+  "practiceObjective": "Objetivo pedagógico atual",
   "prompt": "Dúvida do aluno",
   "quickAction": "hint",
   "studentQuery": "SELECT ...",
@@ -60,6 +61,11 @@ faturável.
 Limites do MVP: pergunta com 800 caracteres, query com 4.000 caracteres e
 prévia com 5 linhas. E-mail, token e identidade do usuário não fazem parte do
 contrato.
+
+O card usa ações rápidas adaptadas ao estado da prática, mantém o foco na
+mensagem mais recente e permite recolher o schema durante a sessão para ampliar
+a conversa. O nome exibido no balão do aluno usa o primeiro nome presente nos
+metadados da sessão; quando indisponível, usa `Você`.
 
 ## Testes
 

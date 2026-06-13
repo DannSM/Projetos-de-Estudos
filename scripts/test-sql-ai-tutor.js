@@ -28,6 +28,7 @@ async function run() {
     practiceSlug: "sql-etapa-2",
     practiceTitle: "COUNT",
     practicePrompt: "x".repeat(1400),
+    practiceObjective: "Comparar formas de contagem sem depender de uma etapa fixa.",
     studentQuery: "q".repeat(5000),
     lastResultPreview: Array.from({ length: 10 }, (_, index) => ({
       total: index,
@@ -101,10 +102,15 @@ async function run() {
   assert.strictEqual(endpointResponse.status, 200);
   assert.strictEqual(endpointBody.ok, true);
   assert.strictEqual(endpointBody.provider, "cloudflare-workers-ai");
-  assert.match(modelCall.model, /^@cf\//);
+  assert.strictEqual(modelCall.model, "@cf/meta/llama-3.1-8b-instruct-fp8");
   assert.ok(Array.isArray(modelCall.input.messages));
   assert.strictEqual(JSON.stringify(modelCall.input).includes("nao-enviar@example.com"), false);
   assert.strictEqual(JSON.stringify(modelCall.input).includes("segredo"), false);
+  const promptMessages = JSON.stringify(modelCall.input.messages);
+  assert.match(promptMessages, /Comparar formas de contagem/);
+  assert.match(promptMessages, /status e tentativas recebidos/);
+  assert.match(promptMessages, /Não recomende WHERE, GROUP BY, JOIN, DISTINCT/);
+  assert.doesNotMatch(promptMessages, /pedidos pagos por categoria/);
 
   const pageSource = fs.readFileSync(
     path.join(__dirname, "..", "src", "sql-practice-page.js"),
@@ -118,14 +124,19 @@ async function run() {
     path.join(__dirname, "..", "styles", "components.css"),
     "utf8"
   );
-  assert.match(pageSource, /data-ai-quick-action="how_to_start"/);
-  assert.match(pageSource, /data-ai-quick-action="review_query"/);
+  assert.match(pageSource, /what_to_observe/);
+  assert.match(pageSource, /learning_summary/);
+  assert.match(pageSource, /data-toggle-practice-schema/);
+  assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
+  assert.match(pageSource, /Tutora IA/);
   assert.match(pageSource, /data-ai-tutor-input/);
   assert.match(pageSource, /data-query-answer/);
   assert.match(pageSource, /data-validate-query/);
   assert.match(htmlSource, /src\/sql-ai-tutor\.js/);
   assert.match(cssSource, /@media \(max-width: 620px\)/);
   assert.match(cssSource, /\.sql-support-chat__messages/);
+  assert.match(cssSource, /font-size: 0\.78rem/);
+  assert.match(cssSource, /\.sql-support-schema\.is-collapsed/);
   assert.doesNotMatch(pageSource, /Chat com IA[\s\S]{0,200}<small>Em breve<\/small>/);
 
   console.log("SQL AI tutor tests passed");

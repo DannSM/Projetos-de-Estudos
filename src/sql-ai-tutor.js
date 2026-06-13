@@ -8,6 +8,14 @@
     "explain_error",
     "review_query",
     "how_to_start",
+    "what_to_observe",
+    "how_to_fix",
+    "what_is_missing",
+    "validate_reasoning",
+    "another_hint",
+    "review_reasoning",
+    "learning_summary",
+    "next_concept",
     "free_question"
   ]);
 
@@ -66,6 +74,7 @@
       practiceSlug: truncate(context?.practiceSlug, 120),
       practiceTitle: truncate(context?.practiceTitle, 160),
       practicePrompt: truncate(context?.practicePrompt, 1200),
+      practiceObjective: truncate(context?.practiceObjective, 800),
       prompt: sanitizedPrompt,
       quickAction,
       studentQuery: truncate(context?.studentQuery, MAX_QUERY_CHARS),
