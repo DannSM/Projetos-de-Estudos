@@ -473,6 +473,9 @@
     const schemaColumns = ["coluna", "tipo"];
     const datasetTables = getPracticeDatasetTables(practice);
     const conceptExample = getConceptExample(practice);
+    const hasAiConversation = Boolean(
+      state.aiTutor.messages.length || state.aiTutor.status === "loading" || state.aiTutor.error
+    );
     const supportTabs = [
       { id: "concept", label: "Conceito", icon: "book-open" },
       { id: "data", label: "Dados", icon: "table-2" },
@@ -481,7 +484,7 @@
 
     return `
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da prática SQL">
-        <section class="mission-learning-card sql-support-panel">
+        <section class="mission-learning-card sql-support-panel ${hasAiConversation && state.activeSupportTab === "tutor" ? "has-ai-conversation" : "is-ai-empty"}">
           <header class="sql-support-panel__header">
             <h2>Apoio da prática</h2>
             <small>${getPracticeRecordCount(practice)} registros</small>
@@ -553,14 +556,14 @@
               ${state.activeSupportTab === "tutor" ? "" : "hidden"}
             >
               <div
-                class="sql-support-chat__messages ${state.aiTutor.messages.length || state.aiTutor.status === "loading" || state.aiTutor.error ? "has-conversation" : "is-empty"}"
+                class="sql-support-chat__messages ${hasAiConversation ? "has-conversation" : "is-empty"}"
                 data-ai-tutor-messages
                 aria-live="polite"
               >
                 ${state.aiTutor.messages.length
                   ? state.aiTutor.messages.map((message) => `
                       <div class="sql-support-chat__message is-${escapeHtml(message.role)}">
-                        <strong>${message.role === "assistant" ? "Tutora IA" : escapeHtml(state.studentName)}</strong>
+                        <strong>${message.role === "assistant" ? "MapIA" : escapeHtml(state.studentName)}</strong>
                         <p>${escapeHtml(message.content).replace(/\n/g, "<br>")}</p>
                       </div>
                     `).join("")

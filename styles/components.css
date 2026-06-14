@@ -6248,7 +6248,18 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-panel .sql-support-chat__messages.has-conversation {
-  max-height: none;
+  flex: 0 1 auto;
+  max-height: min(18rem, 40vh);
+}
+
+.sql-support-panel.has-ai-conversation {
+  height: auto;
+  align-self: start;
+}
+
+.sql-support-panel.has-ai-conversation .sql-support-panel__body,
+.sql-support-panel.has-ai-conversation .sql-support-chat {
+  height: auto;
 }
 
 .sql-support-panel .sql-support-chat__messages,
