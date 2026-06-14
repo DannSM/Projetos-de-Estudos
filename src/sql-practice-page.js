@@ -484,7 +484,7 @@
 
     return `
       <aside class="sql-practice-support" id="apoio-sql" aria-label="Apoio da prática SQL">
-        <section class="mission-learning-card sql-support-panel ${hasAiConversation && state.activeSupportTab === "tutor" ? "has-ai-conversation" : "is-ai-empty"}">
+        <section class="mission-learning-card sql-support-panel">
           <header class="sql-support-panel__header">
             <h2>Apoio da prática</h2>
             <small>${getPracticeRecordCount(practice)} registros</small>
