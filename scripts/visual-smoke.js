@@ -260,7 +260,7 @@ async function validatePage(browser, pageConfig, viewport) {
     if (pageConfig.practiceEvidence) {
       const practiceEvidence = await page.evaluate(() => ({
         title: document.querySelector(".sql-practice-workspace__title h2")?.textContent.trim(),
-        prompt: document.querySelector(".sql-practice-brief h3")?.textContent.trim(),
+        prompt: document.querySelector(".sql-practice-brief h1")?.textContent.trim(),
         tags: document.querySelector(".sql-practice-tags")?.textContent.replace(/\s+/g, " ").trim(),
         conceptTitle: document.querySelector(".sql-support-concept h3")?.textContent.trim(),
         hint: document.querySelector(".sql-support-tip p")?.textContent.trim(),

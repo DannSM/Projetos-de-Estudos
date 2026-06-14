@@ -95,10 +95,13 @@ function createAuthenticatedWindow() {
       { id: "path-sql", slug: "sql-essencial", title: "SQL Essencial", status: "active" }
     ],
     learning_path_steps: [
-      { id: "step-1", path_id: "path-sql", step_key: "sql-essencial-01-where", display_order: 1, status: "active" },
-      { id: "step-2", path_id: "path-sql", step_key: "sql-essencial-02-contagens", display_order: 2, status: "active" },
-      { id: "step-3", path_id: "path-sql", step_key: "sql-essencial-03-filtro-mais-agregacao", display_order: 3, status: "active" }
+      { id: "step-1", path_id: "path-sql", step_key: "sql-essencial-01-where", display_order: 1, status: "active", metadata: { practice_slug: "sql-essencial-filtros-where" } },
+      { id: "step-2", path_id: "path-sql", step_key: "sql-essencial-02-contagens", display_order: 2, status: "active", metadata: { practice_slug: "sql-essencial-count-nulos-distintos" } },
+      { id: "step-3", path_id: "path-sql", step_key: "sql-essencial-03-filtro-mais-agregacao", display_order: 3, status: "active", metadata: { practice_slug: "sql-essencial-filtro-antes-agregacao" } },
+      { id: "step-4", path_id: "path-sql", step_key: "sql-essencial-04-group-by", display_order: 4, status: "active", metadata: { practice_slug: "sql-essencial-group-by" } },
+      { id: "step-5", path_id: "path-sql", step_key: "sql-essencial-05-join", display_order: 5, status: "active", metadata: { practice_slug: "sql-essencial-join" } }
     ],
+    user_practice_attempts: [],
     user_learning_progress: [
       {
         id: "progress-1",
@@ -138,8 +141,8 @@ function createAuthenticatedWindow() {
 
 async function run() {
   const anonymousService = loadService(createAnonymousWindow());
-  assert.strictEqual(anonymousService.getProgressPercent(1, 3), 33.33);
-  assert.strictEqual(anonymousService.getProgressPercent(3, 3), 100);
+  assert.strictEqual(anonymousService.getProgressPercent(1, 5), 20);
+  assert.strictEqual(anonymousService.getProgressPercent(5, 5), 100);
 
   const anonymousResult = await anonymousService.savePracticeProgress({
     slug: "sql-essencial-filtros-where"
@@ -149,18 +152,28 @@ async function run() {
 
   const authenticated = createAuthenticatedWindow();
   const authenticatedService = loadService(authenticated.window);
+  const attemptResult = await authenticatedService.saveAttempt(
+    { id: "activity-3", exerciseId: "exercise-3" },
+    "query-run-3",
+    { status: "correct", message: "Correto", details: { hasCount: true } },
+    1
+  );
+  assert.strictEqual(attemptResult.ok, true);
+  assert.strictEqual(authenticated.tables.user_practice_attempts.length, 1);
+  assert.strictEqual(authenticated.tables.user_practice_attempts[0].validation_status, "correct");
+
   const practice = { slug: "sql-essencial-filtros-where" };
   const firstResult = await authenticatedService.savePracticeProgress(practice);
   const secondResult = await authenticatedService.savePracticeProgress(practice);
   let rows = authenticated.tables.user_learning_progress;
 
   assert.strictEqual(firstResult.ok, true);
-  assert.strictEqual(firstResult.progressPercent, 33.33);
+  assert.strictEqual(firstResult.progressPercent, 20);
   assert.strictEqual(secondResult.ok, true);
   assert.strictEqual(rows.length, 2);
   assert.strictEqual(rows.find((row) => row.step_id === "step-1").status, "completed");
   assert.strictEqual(rows.find((row) => row.step_id === "step-2").status, "in_progress");
-  assert.strictEqual(rows.find((row) => row.step_id === "step-2").progress_percent, 33.33);
+  assert.strictEqual(rows.find((row) => row.step_id === "step-2").progress_percent, 20);
 
   const stepTwoPractice = { slug: "sql-essencial-count-nulos-distintos" };
   const stepTwoFirstResult = await authenticatedService.savePracticeProgress(stepTwoPractice);
@@ -168,14 +181,60 @@ async function run() {
   rows = authenticated.tables.user_learning_progress;
 
   assert.strictEqual(stepTwoFirstResult.ok, true);
-  assert.strictEqual(stepTwoFirstResult.progressPercent, 66.67);
+  assert.strictEqual(stepTwoFirstResult.progressPercent, 40);
   assert.strictEqual(stepTwoFirstResult.completedStep.step_key, "sql-essencial-02-contagens");
   assert.strictEqual(stepTwoFirstResult.nextStep.step_key, "sql-essencial-03-filtro-mais-agregacao");
   assert.strictEqual(stepTwoSecondResult.ok, true);
   assert.strictEqual(rows.length, 3);
   assert.strictEqual(rows.find((row) => row.step_id === "step-2").status, "completed");
   assert.strictEqual(rows.find((row) => row.step_id === "step-3").status, "in_progress");
-  assert.strictEqual(rows.find((row) => row.step_id === "step-3").progress_percent, 66.67);
+  assert.strictEqual(rows.find((row) => row.step_id === "step-3").progress_percent, 40);
+
+  const stepThreeResult = await authenticatedService.savePracticeProgress({
+    slug: "sql-essencial-filtro-antes-agregacao"
+  });
+  assert.strictEqual(stepThreeResult.ok, true);
+  assert.strictEqual(stepThreeResult.progressPercent, 60);
+  assert.strictEqual(stepThreeResult.completedStep.step_key, "sql-essencial-03-filtro-mais-agregacao");
+  assert.strictEqual(stepThreeResult.nextStep.step_key, "sql-essencial-04-group-by");
+
+  const stepFourResult = await authenticatedService.savePracticeProgress({
+    slug: "sql-essencial-group-by"
+  });
+  assert.strictEqual(stepFourResult.ok, true);
+  assert.strictEqual(stepFourResult.progressPercent, 80);
+  assert.strictEqual(stepFourResult.completedStep.step_key, "sql-essencial-04-group-by");
+  assert.strictEqual(stepFourResult.nextStep.step_key, "sql-essencial-05-join");
+
+  const stepFiveResult = await authenticatedService.savePracticeProgress({
+    slug: "sql-essencial-join"
+  });
+  const repeatedStepFiveResult = await authenticatedService.savePracticeProgress({
+    slug: "sql-essencial-join"
+  });
+  rows = authenticated.tables.user_learning_progress;
+
+  assert.strictEqual(stepFiveResult.ok, true);
+  assert.strictEqual(stepFiveResult.progressPercent, 100);
+  assert.strictEqual(stepFiveResult.completedStep.step_key, "sql-essencial-05-join");
+  assert.strictEqual(stepFiveResult.nextStep, null);
+  assert.strictEqual(repeatedStepFiveResult.progressPercent, 100);
+  assert.strictEqual(rows.length, 5);
+  assert.strictEqual(rows.every((row) => row.status === "completed"), true);
+  assert.deepStrictEqual(
+    rows.map((row) => Number(row.progress_percent)).sort((left, right) => left - right),
+    [20, 40, 60, 80, 100]
+  );
+
+  const progressPageSource = fs.readFileSync(
+    path.join(__dirname, "..", "src", "progress-page.js"),
+    "utf8"
+  );
+  assert.match(progressPageSource, /"sql-essencial-04-group-by"/);
+  assert.match(progressPageSource, /"sql-essencial-05-join"/);
+  assert.match(progressPageSource, /\["not_started", "in_progress", "paused"\]/);
+  assert.match(progressPageSource, /\.eq\("progress_percent", 100\)/);
+  assert.match(progressPageSource, /Todas as práticas concluídas/);
 
   console.log("SQL practice progress tests passed");
 }

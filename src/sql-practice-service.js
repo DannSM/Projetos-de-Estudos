@@ -10,7 +10,7 @@
     learningProgress: "user_learning_progress"
   };
 
-  const PRACTICE_PROGRESS_MAPPINGS = {
+  const PRACTICE_PROGRESS_FALLBACK_MAPPINGS = {
     "sql-essencial-filtros-where": {
       pathSlug: "sql-essencial",
       stepKey: "sql-essencial-01-where"
@@ -18,6 +18,18 @@
     "sql-essencial-count-nulos-distintos": {
       pathSlug: "sql-essencial",
       stepKey: "sql-essencial-02-contagens"
+    },
+    "sql-essencial-filtro-antes-agregacao": {
+      pathSlug: "sql-essencial",
+      stepKey: "sql-essencial-03-filtro-mais-agregacao"
+    },
+    "sql-essencial-group-by": {
+      pathSlug: "sql-essencial",
+      stepKey: "sql-essencial-04-group-by"
+    },
+    "sql-essencial-join": {
+      pathSlug: "sql-essencial",
+      stepKey: "sql-essencial-05-join"
     }
   };
 
@@ -254,10 +266,17 @@
     return Math.round((completedCount / totalCount) * 10000) / 100;
   }
 
+  function findPracticeStep(steps, practiceSlug, fallbackStepKey) {
+    return steps.find((step) => (
+      step.metadata?.practice_slug === practiceSlug
+      || step.metadata?.activity_slug === practiceSlug
+    )) || steps.find((step) => step.step_key === fallbackStepKey);
+  }
+
   async function savePracticeProgress(practice) {
     const client = getClient();
     const user = await getAuthenticatedUser();
-    const mapping = PRACTICE_PROGRESS_MAPPINGS[practice?.slug];
+    const mapping = PRACTICE_PROGRESS_FALLBACK_MAPPINGS[practice?.slug];
 
     if (!client || !user) {
       return { ok: false, skipped: true, authenticated: false, reason: "user_not_authenticated" };
@@ -282,7 +301,7 @@
 
       const { data: steps, error: stepsError } = await client
         .from(TABLES.steps)
-        .select("id,path_id,step_key,display_order,status")
+        .select("id,path_id,step_key,display_order,status,metadata")
         .eq("path_id", path.id)
         .eq("status", "active")
         .order("display_order", { ascending: true });
@@ -290,7 +309,7 @@
       if (stepsError) return { ok: false, authenticated: true, error: stepsError };
 
       const activeSteps = Array.isArray(steps) ? steps : [];
-      const completedStep = activeSteps.find((step) => step.step_key === mapping.stepKey);
+      const completedStep = findPracticeStep(activeSteps, practice.slug, mapping.stepKey);
       if (!completedStep) {
         return { ok: false, authenticated: true, reason: "step_not_found" };
       }
@@ -329,7 +348,7 @@
           ...(completedRow?.metadata || {}),
           source: "sql_practice_completion",
           practice_slug: practice.slug,
-          completed_step_key: mapping.stepKey
+          completed_step_key: completedStep.step_key
         },
         updated_at: now
       };

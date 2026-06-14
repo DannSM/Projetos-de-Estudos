@@ -5,6 +5,7 @@
     "test:sql-missions": "node scripts/test-sql-mission-validation.js",
     "test:sql-poc": "node scripts/test-sql-poc-engine.js",
     "test:sql-seed": "node scripts/test-sql-practice-steps3-5-seed.js",
+    "test:sql-progress-seed": "node scripts/test-sql-essential-progress-seed.js",
     "test:sql-progress": "node scripts/test-sql-practice-progress.js",
     "test:sql-ai-tutor": "node scripts/test-sql-ai-tutor.js",
     "test:visual": "node scripts/visual-smoke.js"

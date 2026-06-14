@@ -17,12 +17,16 @@
   const SQL_MISSION_URLS_BY_STEP_KEY = {
     "sql-essencial-01-where": "praticas-sql.html?pratica=sql-essencial-filtros-where",
     "sql-essencial-02-contagens": "praticas-sql.html?pratica=sql-essencial-count-nulos-distintos",
-    "sql-essencial-03-filtro-mais-agregacao": "praticas-sql.html?pratica=sql-essencial-filtro-antes-agregacao"
+    "sql-essencial-03-filtro-mais-agregacao": "praticas-sql.html?pratica=sql-essencial-filtro-antes-agregacao",
+    "sql-essencial-04-group-by": "praticas-sql.html?pratica=sql-essencial-group-by",
+    "sql-essencial-05-join": "praticas-sql.html?pratica=sql-essencial-join"
   };
   const SQL_MISSION_URLS_BY_TITLE = [
     { pattern: /filtros?\s+com\s+where/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-01-where"] },
     { pattern: /contagens?\s+e\s+nulos/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-02-contagens"] },
-    { pattern: /filtro\s+antes\s+do\s+resumo/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-03-filtro-mais-agregacao"] }
+    { pattern: /filtro\s+antes\s+do\s+resumo/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-03-filtro-mais-agregacao"] },
+    { pattern: /agrupamentos?\s+com\s+group\s+by/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-04-group-by"] },
+    { pattern: /relacionando\s+tabelas\s+com\s+join/i, href: SQL_MISSION_URLS_BY_STEP_KEY["sql-essencial-05-join"] }
   ];
 
   function escapeHtml(value) {
@@ -169,6 +173,11 @@
   function getRecommendedPracticeHref(step) {
     if (!step) return "";
 
+    const practiceSlug = step.metadata?.practice_slug || step.metadata?.activity_slug;
+    if (practiceSlug) {
+      return `praticas-sql.html?pratica=${encodeURIComponent(practiceSlug)}`;
+    }
+
     const contentUrl = String(step.content_url || "").trim();
     if (contentUrl) {
       return normalizeRecommendedPracticeHref(contentUrl);
@@ -281,6 +290,20 @@
   }
 
   function buildNextStep({ learningRecommendation, diagnosticRecommendation, learningProgress, path, step, latestSession, priorityArea }) {
+    const progressPercent = clampPercent(learningProgress?.progress_percent);
+    if (learningProgress?.status === "completed" && progressPercent === 100 && path) {
+      return {
+        title: `${path.title} concluída`,
+        eyebrow: "Trilha concluída",
+        text: "Você concluiu todas as práticas desta trilha.",
+        href: "index.html#trilhas",
+        cta: "Ver trilhas",
+        isRecommendedPractice: false,
+        pathTitle: path.title,
+        note: "100% da trilha concluída."
+      };
+    }
+
     if (step) {
       const practiceHref = getRecommendedPracticeHref(step);
       const isRecommendedPractice = Boolean(practiceHref) && (isMissionUrl(practiceHref) || !step.content_url);
@@ -409,21 +432,35 @@
       .order("updated_at", { ascending: false })
       .limit(1);
 
+    const completedLearningProgressQuery = client
+      .from("user_learning_progress")
+      .select("path_id,step_id,status,progress_percent,last_activity_at,updated_at")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .eq("progress_percent", 100)
+      .order("last_activity_at", { ascending: false, nullsFirst: false })
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
     const [
       profileResult,
       sessionsResult,
       skillProgressResult,
       recommendationsResult,
-      learningProgressResult
+      learningProgressResult,
+      completedLearningProgressResult
     ] = await Promise.all([
       fetchOrThrow(profileQuery, "profiles"),
       fetchOrThrow(sessionsQuery, "diagnostic_sessions"),
       fetchOrThrow(skillProgressQuery, "user_skill_progress"),
       fetchOrThrow(learningRecommendationsQuery, "learning_recommendations"),
-      fetchOrThrow(learningProgressQuery, "user_learning_progress")
+      fetchOrThrow(learningProgressQuery, "user_learning_progress"),
+      fetchOrThrow(completedLearningProgressQuery, "user_learning_progress completed")
     ]);
 
-    const learningProgress = normalizeList(learningProgressResult.data)[0] || null;
+    const learningProgress = normalizeList(learningProgressResult.data)[0]
+      || normalizeList(completedLearningProgressResult.data)[0]
+      || null;
     const latestSession = normalizeList(sessionsResult.data)[0] || null;
     let diagnosticAnswers = [];
     let areaSummary = buildAreaSummary({
@@ -504,7 +541,7 @@
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
-          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status")
+          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status,metadata")
           .eq("id", learningProgress.step_id)
           .maybeSingle(),
         "learning_path_steps"
@@ -514,7 +551,7 @@
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
-          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status")
+          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status,metadata")
           .eq("path_id", path.id)
           .eq("status", "active")
           .order("display_order", { ascending: true })
@@ -548,6 +585,18 @@
     const priorityArea = data.priorityArea || getPriorityArea(data.areaSummary || { areas: [] });
     const totalQuestions = Number(latestSession?.total_questions_answered || 0);
     const totalCorrect = Number(latestSession?.total_correct || 0);
+    const diagnosticActivityAt = getSessionDate(latestSession);
+    const learningActivityAt = data.learningProgress?.last_activity_at || null;
+    const diagnosticTimestamp = diagnosticActivityAt ? new Date(diagnosticActivityAt).getTime() : 0;
+    const learningTimestamp = learningActivityAt ? new Date(learningActivityAt).getTime() : 0;
+    const latestActivityAt = learningTimestamp > diagnosticTimestamp
+      ? learningActivityAt
+      : diagnosticActivityAt;
+    const latestActivityNote = learningTimestamp > diagnosticTimestamp
+      ? `${formatPercent(data.learningProgress?.progress_percent) || "0%"} da trilha ${data.path?.title || "recomendada"}.`
+      : latestSession
+        ? `${totalCorrect}/${totalQuestions || 0} acertos registrados.`
+        : "Nenhuma atividade encontrada ainda.";
 
     return [
       {
@@ -570,8 +619,8 @@
         icon: "clock-3",
         tone: "cyan",
         label: "Última atividade",
-        value: formatDate(getSessionDate(latestSession)),
-        note: latestSession ? `${totalCorrect}/${totalQuestions || 0} acertos registrados.` : "Nenhuma sessão encontrada ainda."
+        value: formatDate(latestActivityAt),
+        note: latestActivityNote
       }
     ];
   }
@@ -705,9 +754,12 @@
 
     const progress = formatPercent(data.learningProgress?.progress_percent) || "0%";
     const progressValue = clampPercent(data.learningProgress?.progress_percent);
+    const isCompleted = data.learningProgress?.status === "completed" && progressValue === 100;
     const title = data.path?.title || data.learningRecommendation?.title || "Trilha recomendada";
-    const stepTitle = data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
-    const hasPractice = Boolean(getRecommendedPracticeHref(data.step));
+    const stepTitle = isCompleted
+      ? "Todas as práticas concluídas"
+      : data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
+    const hasPractice = !isCompleted && Boolean(getRecommendedPracticeHref(data.step));
 
     return `
       <div class="progress-path-card">
@@ -733,9 +785,9 @@
           <small>Avanço registrado nas práticas concluídas.</small>
         </div>
         <div class="progress-path-next">
-          <span>Próximo passo</span>
+          <span>${isCompleted ? "Situação" : "Próximo passo"}</span>
           <strong>${escapeHtml(stepTitle)}</strong>
-          <small>Continue pela próxima prática da trilha.</small>
+          <small>${isCompleted ? "A trilha SQL Essencial chegou a 100%." : "Continue pela próxima prática da trilha."}</small>
         </div>
         ${hasPractice ? `
           <div class="progress-path-practice">
