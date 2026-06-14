@@ -472,6 +472,7 @@
   function renderSupportPanels(practice) {
     const schemaColumns = ["coluna", "tipo"];
     const datasetTables = getPracticeDatasetTables(practice);
+    const conceptExample = getConceptExample(practice);
     const supportTabs = [
       { id: "concept", label: "Conceito", icon: "book-open" },
       { id: "data", label: "Dados", icon: "table-2" },
@@ -515,7 +516,7 @@
             >
               <h3>${escapeHtml(practice.contentTitle)}</h3>
               <p>${escapeHtml(practice.content)}</p>
-              <code class="code-block">${escapeHtml(practice.example)}</code>
+              ${conceptExample ? `<code class="code-block">${escapeHtml(conceptExample)}</code>` : ""}
               <div class="sql-support-tip">
                 <i data-lucide="lightbulb" aria-hidden="true"></i>
                 <div>
@@ -630,6 +631,50 @@
         </section>
       </aside>
     `;
+  }
+
+  function getConceptExample(practice) {
+    const validator = practice.validationConfig?.validator
+      || PRACTICE_VALIDATOR_BY_SLUG[practice.slug];
+
+    return {
+      paid_orders_with_customers: [
+        "select",
+        "  ...",
+        "from tabela_a",
+        "join tabela_b",
+        "  on tabela_b.chave = tabela_a.chave",
+        "where ...;"
+      ].join("\n"),
+      orders_by_category_summary: [
+        "select",
+        "  campo_de_grupo,",
+        "  funcao_agregada(campo) as metrica",
+        "from tabela",
+        "group by campo_de_grupo;"
+      ].join("\n"),
+      paid_orders_summary: [
+        "select",
+        "  funcao_agregada(campo) as metrica",
+        "from tabela",
+        "where condicao;"
+      ].join("\n"),
+      count_nulls_distincts: [
+        "select",
+        "  count(*) as total,",
+        "  count(campo) as preenchidos,",
+        "  count(distinct campo) as unicos",
+        "from tabela;"
+      ].join("\n"),
+      paid_orders_by_category: [
+        "select",
+        "  campo_de_grupo,",
+        "  count(*) as total",
+        "from tabela",
+        "where condicao",
+        "group by campo_de_grupo;"
+      ].join("\n")
+    }[validator] || "";
   }
 
   function getAiQuickActions(practice) {
@@ -1253,6 +1298,8 @@
 
   function renderPage() {
     const practice = getActivePractice();
+    const shouldAutoScroll = state.aiTutor.shouldScroll;
+    const preservedAiTutorScrollTop = shouldAutoScroll ? null : getAiTutorScrollTop();
     mount.innerHTML = `
       <div class="sql-practice-app">
         ${renderSidebar()}
@@ -1264,7 +1311,14 @@
       globalScope.lucide.createIcons();
     }
 
-    if (state.aiTutor.shouldScroll) {
+    if (Number.isFinite(preservedAiTutorScrollTop)) {
+      const messages = mount.querySelector("[data-ai-tutor-messages]");
+      if (messages) {
+        messages.scrollTop = preservedAiTutorScrollTop;
+      }
+    }
+
+    if (shouldAutoScroll) {
       const scrollToLatestMessage = () => {
         const messages = mount.querySelector("[data-ai-tutor-messages]");
         if (messages) {
@@ -1284,28 +1338,6 @@
 
   function getAiTutorScrollTop() {
     return mount.querySelector("[data-ai-tutor-messages]")?.scrollTop ?? null;
-  }
-
-  function restoreAiTutorScrollTop(scrollTop) {
-    if (!Number.isFinite(scrollTop)) {
-      return;
-    }
-
-    const restore = () => {
-      const messages = mount.querySelector("[data-ai-tutor-messages]");
-      if (messages) {
-        messages.scrollTop = scrollTop;
-      }
-    };
-
-    restore();
-    if (typeof globalScope.requestAnimationFrame === "function") {
-      globalScope.requestAnimationFrame(() => {
-        restore();
-        globalScope.requestAnimationFrame(restore);
-      });
-    }
-    globalScope.setTimeout(restore, 50);
   }
 
   async function ensureSqlWorkbench() {
@@ -1334,7 +1366,6 @@
       return;
     }
 
-    const aiTutorScrollTop = getAiTutorScrollTop();
     const query = state.queryAnswer.trim();
     workbench.status = "running";
     workbench.execution = null;
@@ -1367,19 +1398,16 @@
         renderPage();
       }
     }
-    restoreAiTutorScrollTop(aiTutorScrollTop);
   }
 
   async function validateSqlPractice() {
     const practice = getActivePractice();
     const workbench = state.sqlWorkbench;
     const query = state.queryAnswer.trim();
-    const aiTutorScrollTop = getAiTutorScrollTop();
 
     if (!workbench.execution || workbench.executionQuery !== query) {
       workbench.error = "Execute a versão atual da consulta antes de validar o exercício.";
       renderPage();
-      restoreAiTutorScrollTop(aiTutorScrollTop);
       return;
     }
 
@@ -1449,7 +1477,6 @@
         }
       }
     }
-    restoreAiTutorScrollTop(aiTutorScrollTop);
   }
 
   function syncSqlWorkbenchControls() {

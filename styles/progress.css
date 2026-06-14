@@ -233,6 +233,7 @@
   display: grid;
   align-content: center;
   gap: 0.45rem;
+  width: 100%;
   padding: 1.15rem;
   background:
     linear-gradient(145deg, rgba(239, 246, 255, 0.96), rgba(236, 253, 245, 0.82)),
