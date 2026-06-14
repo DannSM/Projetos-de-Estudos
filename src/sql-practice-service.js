@@ -61,6 +61,7 @@
       estimatedMinutes: row.estimated_minutes || 0,
       level: row.level_label || "",
       topic: row.metadata?.topic || "",
+      trackSlug: row.track_slug || "",
       trackTitle: row.track_title || "",
       stepOrder: row.step_order ?? 0,
       note: row.status === "completed" ? "validada localmente" : row.status === "coming_soon" ? "em breve" : ""
@@ -277,12 +278,13 @@
     const client = getClient();
     const user = await getAuthenticatedUser();
     const mapping = PRACTICE_PROGRESS_FALLBACK_MAPPINGS[practice?.slug];
+    const pathSlug = practice?.trackSlug || mapping?.pathSlug;
 
     if (!client || !user) {
       return { ok: false, skipped: true, authenticated: false, reason: "user_not_authenticated" };
     }
 
-    if (!mapping) {
+    if (!pathSlug) {
       return { ok: false, skipped: true, authenticated: true, reason: "practice_not_mapped" };
     }
 
@@ -290,7 +292,7 @@
       const { data: path, error: pathError } = await client
         .from(TABLES.paths)
         .select("id,slug,title")
-        .eq("slug", mapping.pathSlug)
+        .eq("slug", pathSlug)
         .eq("status", "active")
         .maybeSingle();
 
@@ -309,7 +311,7 @@
       if (stepsError) return { ok: false, authenticated: true, error: stepsError };
 
       const activeSteps = Array.isArray(steps) ? steps : [];
-      const completedStep = findPracticeStep(activeSteps, practice.slug, mapping.stepKey);
+      const completedStep = findPracticeStep(activeSteps, practice.slug, mapping?.stepKey);
       if (!completedStep) {
         return { ok: false, authenticated: true, reason: "step_not_found" };
       }

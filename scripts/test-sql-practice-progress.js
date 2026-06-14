@@ -89,7 +89,7 @@ function createQuery(table, tables) {
   return query;
 }
 
-function createAuthenticatedWindow() {
+function createAuthenticatedWindow(initialProgress) {
   const tables = {
     learning_paths: [
       { id: "path-sql", slug: "sql-essencial", title: "SQL Essencial", status: "active" }
@@ -102,7 +102,7 @@ function createAuthenticatedWindow() {
       { id: "step-5", path_id: "path-sql", step_key: "sql-essencial-05-join", display_order: 5, status: "active", metadata: { practice_slug: "sql-essencial-join" } }
     ],
     user_practice_attempts: [],
-    user_learning_progress: [
+    user_learning_progress: initialProgress || [
       {
         id: "progress-1",
         user_id: "user-1",
@@ -161,6 +161,81 @@ async function run() {
   assert.strictEqual(attemptResult.ok, true);
   assert.strictEqual(authenticated.tables.user_practice_attempts.length, 1);
   assert.strictEqual(authenticated.tables.user_practice_attempts[0].validation_status, "correct");
+
+  const stepThreeScenario = createAuthenticatedWindow([
+    {
+      id: "progress-step-1",
+      user_id: "user-1",
+      path_id: "path-sql",
+      step_id: "step-1",
+      status: "completed",
+      progress_percent: 20,
+      started_at: "2026-06-01T00:00:00.000Z",
+      completed_at: "2026-06-01T01:00:00.000Z",
+      metadata: {}
+    },
+    {
+      id: "progress-step-2",
+      user_id: "user-1",
+      path_id: "path-sql",
+      step_id: "step-2",
+      status: "completed",
+      progress_percent: 40,
+      started_at: "2026-06-02T00:00:00.000Z",
+      completed_at: "2026-06-02T01:00:00.000Z",
+      metadata: {}
+    },
+    {
+      id: "progress-step-3",
+      user_id: "user-1",
+      path_id: "path-sql",
+      step_id: "step-3",
+      status: "in_progress",
+      progress_percent: 40,
+      started_at: "2026-06-02T01:00:00.000Z",
+      completed_at: null,
+      metadata: {}
+    }
+  ]);
+  const stepThreeService = loadService(stepThreeScenario.window);
+  const stepThreeAttempt = await stepThreeService.saveAttempt(
+    { id: "activity-3", exerciseId: "exercise-3" },
+    "query-run-step-3",
+    { status: "correct", message: "Correto", details: { hasCount: true, hasSumValue: true } },
+    1
+  );
+  const stepThreeProgress = await stepThreeService.savePracticeProgress({
+    slug: "sql-essencial-filtro-antes-agregacao",
+    trackSlug: "sql-essencial"
+  });
+  const repeatedStepThreeProgress = await stepThreeService.savePracticeProgress({
+    slug: "sql-essencial-filtro-antes-agregacao",
+    trackSlug: "sql-essencial"
+  });
+  const stepThreeRows = stepThreeScenario.tables.user_learning_progress;
+
+  assert.strictEqual(stepThreeAttempt.ok, true);
+  assert.strictEqual(stepThreeScenario.tables.user_practice_attempts.length, 1);
+  assert.strictEqual(stepThreeProgress.ok, true);
+  assert.strictEqual(stepThreeProgress.progressPercent, 60);
+  assert.strictEqual(stepThreeProgress.completedStep.step_key, "sql-essencial-03-filtro-mais-agregacao");
+  assert.strictEqual(stepThreeProgress.nextStep.step_key, "sql-essencial-04-group-by");
+  assert.strictEqual(repeatedStepThreeProgress.progressPercent, 60);
+  assert.strictEqual(stepThreeRows.length, 4);
+  assert.strictEqual(stepThreeRows.find((row) => row.step_id === "step-3").status, "completed");
+  assert.strictEqual(stepThreeRows.find((row) => row.step_id === "step-3").progress_percent, 60);
+  assert.strictEqual(stepThreeRows.find((row) => row.step_id === "step-4").status, "in_progress");
+  assert.strictEqual(stepThreeRows.find((row) => row.step_id === "step-4").progress_percent, 60);
+
+  const metadataScenario = createAuthenticatedWindow();
+  metadataScenario.tables.learning_path_steps[2].metadata.practice_slug = "sql-metadata-only";
+  const metadataService = loadService(metadataScenario.window);
+  const metadataResult = await metadataService.savePracticeProgress({
+    slug: "sql-metadata-only",
+    trackSlug: "sql-essencial"
+  });
+  assert.strictEqual(metadataResult.ok, true);
+  assert.strictEqual(metadataResult.completedStep.step_key, "sql-essencial-03-filtro-mais-agregacao");
 
   const practice = { slug: "sql-essencial-filtros-where" };
   const firstResult = await authenticatedService.savePracticeProgress(practice);
