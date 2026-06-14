@@ -5793,6 +5793,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   flex: 1 1 auto;
   min-height: 0;
   max-height: min(18rem, 40vh);
+  justify-content: safe flex-end;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
@@ -6224,8 +6225,6 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-panel .sql-support-chat {
-  display: flex;
-  flex-direction: column;
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -6233,6 +6232,15 @@ body.analytics-auth-locked .analytics-hero-copy {
   background: transparent;
   border: 0;
   box-shadow: none;
+}
+
+.sql-support-panel .sql-support-chat:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.sql-support-panel .sql-support-chat[hidden] {
+  display: none;
 }
 
 .sql-support-panel .sql-support-chat__messages.is-empty {
