@@ -641,38 +641,40 @@
       paid_orders_with_customers: [
         "select",
         "  ...",
-        "from tabela_a",
-        "join tabela_b",
-        "  on tabela_b.chave = tabela_a.chave",
+        "from pedidos",
+        "join clientes",
+        "  on ... = ...",
         "where ...;"
       ].join("\n"),
       orders_by_category_summary: [
         "select",
-        "  campo_de_grupo,",
-        "  funcao_agregada(campo) as metrica",
-        "from tabela",
-        "group by campo_de_grupo;"
+        "  categoria,",
+        "  funcao_agregada(...)",
+        "from pedidos",
+        "group by ...;"
       ].join("\n"),
       paid_orders_summary: [
         "select",
-        "  funcao_agregada(campo) as metrica",
-        "from tabela",
-        "where condicao;"
+        "  funcao_de_contagem(...),",
+        "  funcao_de_soma(...)",
+        "from pedidos",
+        "where ...;"
       ].join("\n"),
       count_nulls_distincts: [
         "select",
-        "  count(*) as total,",
-        "  count(campo) as preenchidos,",
-        "  count(distinct campo) as unicos",
-        "from tabela;"
+        "  count(*),",
+        "  count(cupom),",
+        "  count(distinct cliente_id),",
+        "  ...",
+        "from pedidos;"
       ].join("\n"),
       paid_orders_by_category: [
         "select",
-        "  campo_de_grupo,",
-        "  count(*) as total",
-        "from tabela",
-        "where condicao",
-        "group by campo_de_grupo;"
+        "  categoria,",
+        "  funcao_de_contagem(...)",
+        "from pedidos",
+        "where ...",
+        "group by ...;"
       ].join("\n")
     }[validator] || "";
   }
@@ -1296,10 +1298,12 @@
     `;
   }
 
-  function renderPage() {
+  function renderPage({ preserveAiTutorScroll = false } = {}) {
     const practice = getActivePractice();
     const shouldAutoScroll = state.aiTutor.shouldScroll;
-    const preservedAiTutorScrollTop = shouldAutoScroll ? null : getAiTutorScrollTop();
+    const preservedAiTutorScrollTop = preserveAiTutorScroll && !shouldAutoScroll
+      ? getAiTutorScrollTop()
+      : null;
     mount.innerHTML = `
       <div class="sql-practice-app">
         ${renderSidebar()}
@@ -1372,7 +1376,7 @@
     workbench.executionQuery = "";
     workbench.error = "";
     state.feedback = null;
-    renderPage();
+    renderPage({ preserveAiTutorScroll: true });
 
     try {
       workbench.execution = await workbench.engine.execute(query);
@@ -1383,7 +1387,7 @@
       workbench.status = "ready";
     }
 
-    renderPage();
+    renderPage({ preserveAiTutorScroll: true });
 
     if (sqlPracticeService) {
       const saveResult = await sqlPracticeService.saveQueryRun(
@@ -1395,7 +1399,7 @@
       state.lastQueryRunId = saveResult.ok ? saveResult.id : null;
       if (saveResult.authenticated && !saveResult.ok) {
         state.persistenceStatus = "A consulta rodou localmente, mas não foi possível salvar esta execução.";
-        renderPage();
+        renderPage({ preserveAiTutorScroll: true });
       }
     }
   }
@@ -1407,7 +1411,7 @@
 
     if (!workbench.execution || workbench.executionQuery !== query) {
       workbench.error = "Execute a versão atual da consulta antes de validar o exercício.";
-      renderPage();
+      renderPage({ preserveAiTutorScroll: true });
       return;
     }
 
@@ -1446,7 +1450,7 @@
       attemptCount: previousAttemptCount + 1
     };
 
-    renderPage();
+    renderPage({ preserveAiTutorScroll: true });
 
     if (sqlPracticeService) {
       const saveResult = await sqlPracticeService.saveAttempt(
@@ -1457,7 +1461,7 @@
       );
       if (saveResult.authenticated && !saveResult.ok) {
         state.persistenceStatus = "A validação local foi concluída, mas a tentativa não pôde ser salva.";
-        renderPage();
+        renderPage({ preserveAiTutorScroll: true });
       }
 
       if (isCorrect && saveResult.ok) {
@@ -1471,7 +1475,7 @@
             nextPractice.userProgressStatus = "in_progress";
           }
           state.persistenceStatus = "Progresso da trilha atualizado.";
-          renderPage();
+          renderPage({ preserveAiTutorScroll: true });
         } else if (progressResult.authenticated && !progressResult.skipped) {
           console.warn("[Central SQL] A prática foi validada, mas o progresso da trilha não foi atualizado.", progressResult.error || progressResult.reason);
         }
@@ -1659,7 +1663,7 @@
       state.sqlWorkbench.error = "";
       state.sqlWorkbench.execution = null;
       state.sqlWorkbench.executionQuery = "";
-      renderPage();
+      renderPage({ preserveAiTutorScroll: true });
       return;
     }
 

@@ -174,6 +174,7 @@ async function run() {
   assert.match(pageSource, /data-support-tab/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
   assert.match(pageSource, /preservedAiTutorScrollTop/);
+  assert.match(pageSource, /preserveAiTutorScroll: true/);
   assert.match(pageSource, /getConceptExample\(practice\)/);
   assert.match(pageSource, /practice\.userProgressStatus === "completed"/);
   assert.match(pageSource, /userState\.practiceProgress/);

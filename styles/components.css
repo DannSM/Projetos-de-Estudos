@@ -5790,12 +5790,13 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-chat__messages.has-conversation {
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: min(18rem, 40vh);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
   scrollbar-width: thin;
-  scroll-behavior: smooth;
 }
 
 .sql-support-chat__welcome,
@@ -6120,6 +6121,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-panel__body {
   flex: 1 1 auto;
+  display: flex;
   min-width: 0;
   padding: clamp(0.9rem, 1.5vw, 1.1rem);
 }
@@ -6129,6 +6131,8 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-tabpanel {
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
 }
 
@@ -6220,12 +6224,19 @@ body.analytics-auth-locked .analytics-hero-copy {
 }
 
 .sql-support-panel .sql-support-chat {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  height: auto;
+  min-height: 0;
+  height: 100%;
   padding: 0;
   background: transparent;
   border: 0;
   box-shadow: none;
+}
+
+.sql-support-panel .sql-support-chat__messages.is-empty {
+  flex: 1 1 auto;
 }
 
 .sql-support-panel .sql-support-chat__messages,
