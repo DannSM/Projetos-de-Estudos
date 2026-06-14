@@ -5579,6 +5579,7 @@ body.analytics-auth-locked .analytics-hero-copy {
   grid-template-columns: minmax(22.5rem, 0.8fr) minmax(35rem, 1.2fr);
   gap: clamp(0.85rem, 1.35vw, 1.2rem);
   align-items: stretch;
+  min-height: 0;
 }
 
 .sql-practice-support,
@@ -5590,6 +5591,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-practice-support {
   display: block;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .sql-practice-editor-panel {
@@ -6123,6 +6127,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 .sql-support-panel__body {
   flex: 1 1 auto;
   display: flex;
+  min-height: 0;
   min-width: 0;
   padding: clamp(0.9rem, 1.5vw, 1.1rem);
 }
@@ -6133,6 +6138,7 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .sql-support-tabpanel {
   flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   min-width: 0;
 }
@@ -6587,6 +6593,11 @@ body.analytics-auth-locked .analytics-hero-copy {
   .sql-practice-app-grid {
     min-width: 0;
     grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .sql-practice-support {
+    height: auto;
     overflow: visible;
   }
 
