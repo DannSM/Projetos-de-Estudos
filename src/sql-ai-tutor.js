@@ -66,9 +66,22 @@
         })).filter((column) => column.name)
       : [];
 
+    const tables = Array.isArray(schema?.tables)
+      ? schema.tables.slice(0, 5).map((table) => ({
+          table: truncate(table?.table, 80),
+          columns: Array.isArray(table?.columns)
+            ? table.columns.slice(0, 30).map((column) => ({
+                name: truncate(column?.name, 80),
+                type: truncate(column?.type, 80)
+              })).filter((column) => column.name)
+            : []
+        })).filter((table) => table.table)
+      : [];
+
     return {
       table: truncate(schema?.table, 80),
-      columns
+      columns,
+      tables
     };
   }
 
@@ -98,6 +111,8 @@
       practiceTitle: truncate(context?.practiceTitle, 160),
       practicePrompt: truncate(context?.practicePrompt, 1200),
       practiceObjective: truncate(context?.practiceObjective, 800),
+      practiceConcept: truncate(context?.practiceConcept, 1200),
+      practiceHint: truncate(context?.practiceHint, 800),
       prompt: sanitizedPrompt,
       quickAction,
       studentQuery: truncate(context?.studentQuery, MAX_QUERY_CHARS),

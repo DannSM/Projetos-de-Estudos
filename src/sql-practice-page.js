@@ -327,22 +327,27 @@
   }
 
   function getSidebarStatus(practice, index) {
+    if (practice.userProgressStatus === "completed") return "completed";
     if (practice.status === "completed") return "completed";
     if (index === state.activeIndex) {
       return state.attempts[practice.slug]?.status === "correct" ? "completed" : "active";
+    }
+    if (practice.userProgressStatus === "in_progress" || practice.status === "active") {
+      return "available";
     }
     return "locked";
   }
 
   function getSidebarIcon(status) {
     if (status === "completed") return "check-circle-2";
-    if (status === "active") return "play-circle";
+    if (status === "active" || status === "available") return "play-circle";
     return "lock";
   }
 
   function getSidebarLabel(status) {
     if (status === "completed") return "validada local";
     if (status === "active") return "ativa";
+    if (status === "available") return "disponível";
     return "em breve";
   }
 
@@ -744,6 +749,8 @@
       practiceTitle: practice.shortTitle,
       practicePrompt: practice.prompt,
       practiceObjective: practice.objective,
+      practiceConcept: practice.content,
+      practiceHint: practice.hintText,
       studentQuery: state.queryAnswer,
       lastResultPreview: Array.isArray(execution?.rows) ? execution.rows : [],
       lastError: state.sqlWorkbench.error,
@@ -1275,6 +1282,32 @@
     void ensureSqlWorkbench();
   }
 
+  function getAiTutorScrollTop() {
+    return mount.querySelector("[data-ai-tutor-messages]")?.scrollTop ?? null;
+  }
+
+  function restoreAiTutorScrollTop(scrollTop) {
+    if (!Number.isFinite(scrollTop)) {
+      return;
+    }
+
+    const restore = () => {
+      const messages = mount.querySelector("[data-ai-tutor-messages]");
+      if (messages) {
+        messages.scrollTop = scrollTop;
+      }
+    };
+
+    restore();
+    if (typeof globalScope.requestAnimationFrame === "function") {
+      globalScope.requestAnimationFrame(() => {
+        restore();
+        globalScope.requestAnimationFrame(restore);
+      });
+    }
+    globalScope.setTimeout(restore, 50);
+  }
+
   async function ensureSqlWorkbench() {
     if (state.sqlWorkbench.status !== "idle") {
       return;
@@ -1301,6 +1334,7 @@
       return;
     }
 
+    const aiTutorScrollTop = getAiTutorScrollTop();
     const query = state.queryAnswer.trim();
     workbench.status = "running";
     workbench.execution = null;
@@ -1333,16 +1367,19 @@
         renderPage();
       }
     }
+    restoreAiTutorScrollTop(aiTutorScrollTop);
   }
 
   async function validateSqlPractice() {
     const practice = getActivePractice();
     const workbench = state.sqlWorkbench;
     const query = state.queryAnswer.trim();
+    const aiTutorScrollTop = getAiTutorScrollTop();
 
     if (!workbench.execution || workbench.executionQuery !== query) {
       workbench.error = "Execute a versão atual da consulta antes de validar o exercício.";
       renderPage();
+      restoreAiTutorScrollTop(aiTutorScrollTop);
       return;
     }
 
@@ -1398,6 +1435,13 @@
       if (isCorrect && saveResult.ok) {
         const progressResult = await sqlPracticeService.savePracticeProgress(practice);
         if (progressResult.ok) {
+          practice.userProgressStatus = "completed";
+          const nextPracticeSlug = progressResult.nextStep?.metadata?.practice_slug
+            || progressResult.nextStep?.metadata?.activity_slug;
+          const nextPractice = practices.find((item) => item.slug === nextPracticeSlug);
+          if (nextPractice && nextPractice.userProgressStatus !== "completed") {
+            nextPractice.userProgressStatus = "in_progress";
+          }
           state.persistenceStatus = "Progresso da trilha atualizado.";
           renderPage();
         } else if (progressResult.authenticated && !progressResult.skipped) {
@@ -1405,6 +1449,7 @@
         }
       }
     }
+    restoreAiTutorScrollTop(aiTutorScrollTop);
   }
 
   function syncSqlWorkbenchControls() {
@@ -1774,6 +1819,10 @@
           state.attempts[mergedPractice.slug] = {
             attemptCount: userState.attemptCount || 0
           };
+          practices = practices.map((item) => ({
+            ...item,
+            userProgressStatus: userState.practiceProgress?.[item.slug]?.status || ""
+          }));
         } else {
           if (userState.authenticated) {
             state.persistenceStatus = "Não foi possível carregar seus dados salvos. O modo local continua disponível.";

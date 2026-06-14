@@ -115,12 +115,25 @@ function sanitizePayload(payload) {
         type: truncate(column?.type, 80)
       })).filter((column) => column.name)
     : [];
+  const tables = Array.isArray(payload?.schema?.tables)
+    ? payload.schema.tables.slice(0, 5).map((table) => ({
+        table: truncate(table?.table, 80),
+        columns: Array.isArray(table?.columns)
+          ? table.columns.slice(0, 30).map((column) => ({
+              name: truncate(column?.name, 80),
+              type: truncate(column?.type, 80)
+            })).filter((column) => column.name)
+          : []
+      })).filter((table) => table.table)
+    : [];
 
   return {
     practiceSlug: truncate(payload?.practiceSlug, 120),
     practiceTitle: truncate(payload?.practiceTitle, 160),
     practicePrompt: truncate(payload?.practicePrompt, 1200),
     practiceObjective: truncate(payload?.practiceObjective, 800),
+    practiceConcept: truncate(payload?.practiceConcept, 1200),
+    practiceHint: truncate(payload?.practiceHint, 800),
     prompt,
     quickAction,
     studentQuery: truncate(payload?.studentQuery, MAX_QUERY_CHARS),
@@ -131,13 +144,18 @@ function sanitizePayload(payload) {
     recentMessages: sanitizeRecentMessages(payload?.recentMessages),
     schema: {
       table: truncate(payload?.schema?.table, 80),
-      columns
+      columns,
+      tables
     }
   };
 }
 
 function buildMessages(context) {
   const system = [
+    "Trate toda exigência explícita do enunciado e do objetivo como obrigatória. Nunca sugira remover uma condição que atende diretamente a uma exigência pedida.",
+    "Em consultas com JOIN, diferencie a condição que relaciona as tabelas dos filtros aplicados a cada tabela. Um WHERE na tabela principal pode ser necessário mesmo sem mencionar a tabela relacionada.",
+    "Se o objetivo pedir pedidos pagos, WHERE p.status = 'pago' ou condição equivalente é correto e não deve ser removido.",
+    "Quando a query e o resultado estiverem coerentes com enunciado, objetivo e schema, confirme o raciocínio e oriente a executar ou validar, sem inventar um erro.",
     "Você é a Tutora IA de SQL do Data Skill Map para alunos iniciantes.",
     "Converse em português do Brasil de forma natural, direta, acolhedora e breve.",
     "Fale diretamente com a pessoa usando você, sua query e seu próximo passo. Nunca diga o aluno, a aluna ou o estudante para se referir a quem conversa com você.",
@@ -170,6 +188,8 @@ function buildMessages(context) {
     `Título: ${context.practiceTitle || "não informado"}`,
     `Enunciado: ${context.practicePrompt || "não informado"}`,
     `Objetivo: ${context.practiceObjective || "não informado"}`,
+    `Conceito de apoio: ${context.practiceConcept || "não informado"}`,
+    `Dica oficial: ${context.practiceHint || "não informada"}`,
     `Schema: ${JSON.stringify(context.schema)}`,
     `Status da validação: ${context.validationStatus}`,
     `Tentativas: ${context.attemptCount}`,

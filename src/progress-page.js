@@ -289,15 +289,28 @@
     return areaSummary.areas[0] || null;
   }
 
-  function buildNextStep({ learningRecommendation, diagnosticRecommendation, learningProgress, path, step, latestSession, priorityArea }) {
+  function buildNextStep({
+    learningRecommendation,
+    diagnosticRecommendation,
+    learningProgress,
+    path,
+    step,
+    nextPath,
+    nextPathStep,
+    latestSession,
+    priorityArea
+  }) {
     const progressPercent = clampPercent(learningProgress?.progress_percent);
     if (learningProgress?.status === "completed" && progressPercent === 100 && path) {
+      const nextPathText = nextPath
+        ? ` Próxima recomendação: ${nextPath.title}${nextPathStep?.title ? `, começando por ${nextPathStep.title}` : ""}.`
+        : "";
       return {
         title: `${path.title} concluída`,
         eyebrow: "Trilha concluída",
-        text: "Você concluiu todas as práticas desta trilha.",
+        text: `Você concluiu todas as práticas desta trilha.${nextPathText}`,
         href: "index.html#trilhas",
-        cta: "Ver trilhas",
+        cta: nextPath ? "Ver próxima trilha" : "Ver trilhas",
         isRecommendedPractice: false,
         pathTitle: path.title,
         note: "100% da trilha concluída."
@@ -458,9 +471,18 @@
       fetchOrThrow(completedLearningProgressQuery, "user_learning_progress completed")
     ]);
 
-    const learningProgress = normalizeList(learningProgressResult.data)[0]
-      || normalizeList(completedLearningProgressResult.data)[0]
-      || null;
+    const activeLearningProgress = normalizeList(learningProgressResult.data)[0] || null;
+    const completedLearningProgress = normalizeList(completedLearningProgressResult.data)[0] || null;
+    const learningProgress = [activeLearningProgress, completedLearningProgress]
+      .filter(Boolean)
+      .sort((left, right) => {
+        const leftTime = new Date(left.last_activity_at || left.updated_at || 0).getTime();
+        const rightTime = new Date(right.last_activity_at || right.updated_at || 0).getTime();
+        return rightTime - leftTime;
+      })[0] || null;
+    const nextLearningProgress = learningProgress === completedLearningProgress
+      ? activeLearningProgress
+      : null;
     const latestSession = normalizeList(sessionsResult.data)[0] || null;
     let diagnosticAnswers = [];
     let areaSummary = buildAreaSummary({
@@ -472,6 +494,8 @@
     let diagnosticRecommendation = null;
     let path = null;
     let step = null;
+    let nextPath = null;
+    let nextPathStep = null;
 
     if (latestSession?.attempt_id) {
       const answersResult = await fetchOrThrow(
@@ -561,6 +585,30 @@
       step = normalizeList(stepResult.data)[0] || null;
     }
 
+    if (nextLearningProgress?.path_id) {
+      const nextPathResult = await fetchOrThrow(
+        client
+          .from("learning_paths")
+          .select("id,title,description,skill_area,level,estimated_minutes,status")
+          .eq("id", nextLearningProgress.path_id)
+          .maybeSingle(),
+        "learning_paths next"
+      );
+      nextPath = nextPathResult.data || null;
+    }
+
+    if (nextLearningProgress?.step_id) {
+      const nextStepResult = await fetchOrThrow(
+        client
+          .from("learning_path_steps")
+          .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status,metadata")
+          .eq("id", nextLearningProgress.step_id)
+          .maybeSingle(),
+        "learning_path_steps next"
+      );
+      nextPathStep = nextStepResult.data || null;
+    }
+
     return {
       profile: profileResult.data || null,
       diagnosticSessions: normalizeList(sessionsResult.data),
@@ -574,7 +622,10 @@
       diagnosticRecommendation,
       learningProgress,
       path,
-      step
+      step,
+      nextLearningProgress,
+      nextPath,
+      nextPathStep
     };
   }
 
@@ -849,6 +900,8 @@
       learningProgress: data.learningProgress,
       path: data.path,
       step: data.step,
+      nextPath: data.nextPath,
+      nextPathStep: data.nextPathStep,
       latestSession,
       priorityArea: data.priorityArea
     });

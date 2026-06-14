@@ -171,7 +171,7 @@
     }
 
     try {
-      const [noteResult, feedbackResult, attemptsResult] = await Promise.all([
+      const [noteResult, feedbackResult, attemptsResult, pathResult] = await Promise.all([
         client
           .from(TABLES.notes)
           .select("note_text")
@@ -189,11 +189,59 @@
           .from(TABLES.attempts)
           .select("*", { count: "exact", head: true })
           .eq("user_id", user.id)
-          .eq("exercise_id", practice.exerciseId)
+          .eq("exercise_id", practice.exerciseId),
+        practice.trackSlug
+          ? client
+            .from(TABLES.paths)
+            .select("id")
+            .eq("slug", practice.trackSlug)
+            .eq("status", "active")
+            .maybeSingle()
+          : Promise.resolve({ data: null, error: null })
       ]);
 
-      const error = noteResult.error || feedbackResult.error || attemptsResult.error;
+      const error = noteResult.error || feedbackResult.error || attemptsResult.error || pathResult.error;
       if (error) return { ok: false, authenticated: true, user, error };
+
+      let practiceProgress = {};
+      if (pathResult.data?.id) {
+        const [stepsResult, progressResult] = await Promise.all([
+          client
+            .from(TABLES.steps)
+            .select("id,step_key,metadata")
+            .eq("path_id", pathResult.data.id)
+            .eq("status", "active"),
+          client
+            .from(TABLES.learningProgress)
+            .select("step_id,status,progress_percent")
+            .eq("user_id", user.id)
+            .eq("path_id", pathResult.data.id)
+        ]);
+
+        const progressError = stepsResult.error || progressResult.error;
+        if (progressError) {
+          return { ok: false, authenticated: true, user, error: progressError };
+        }
+
+        const progressByStepId = new Map(
+          (progressResult.data || []).map((row) => [row.step_id, row])
+        );
+        practiceProgress = Object.fromEntries(
+          (stepsResult.data || [])
+            .map((step) => {
+              const practiceSlug = step.metadata?.practice_slug || step.metadata?.activity_slug;
+              const progress = progressByStepId.get(step.id);
+              return practiceSlug && progress
+                ? [practiceSlug, {
+                    status: progress.status,
+                    progressPercent: Number(progress.progress_percent) || 0,
+                    stepKey: step.step_key
+                  }]
+                : null;
+            })
+            .filter(Boolean)
+        );
+      }
 
       return {
         ok: true,
@@ -203,7 +251,8 @@
         note: noteResult.data?.note_text || "",
         hasFeedback: Boolean(feedbackResult.data),
         feedback: feedbackResult.data || null,
-        attemptCount: attemptsResult.count || 0
+        attemptCount: attemptsResult.count || 0,
+        practiceProgress
       };
     } catch (error) {
       return { ok: false, authenticated: true, user, error };

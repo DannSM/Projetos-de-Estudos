@@ -101,6 +101,8 @@ function createAuthenticatedWindow(initialProgress) {
       { id: "step-4", path_id: "path-sql", step_key: "sql-essencial-04-group-by", display_order: 4, status: "active", metadata: { practice_slug: "sql-essencial-group-by" } },
       { id: "step-5", path_id: "path-sql", step_key: "sql-essencial-05-join", display_order: 5, status: "active", metadata: { practice_slug: "sql-essencial-join" } }
     ],
+    user_practice_notes: [],
+    user_activity_feedback: [],
     user_practice_attempts: [],
     user_learning_progress: initialProgress || [
       {
@@ -161,6 +163,14 @@ async function run() {
   assert.strictEqual(attemptResult.ok, true);
   assert.strictEqual(authenticated.tables.user_practice_attempts.length, 1);
   assert.strictEqual(authenticated.tables.user_practice_attempts[0].validation_status, "correct");
+
+  const loadedUserState = await authenticatedService.loadUserState({
+    slug: "sql-essencial-filtro-antes-agregacao",
+    trackSlug: "sql-essencial",
+    exerciseId: "exercise-3"
+  });
+  assert.strictEqual(loadedUserState.ok, true);
+  assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtros-where"].status, "in_progress");
 
   const stepThreeScenario = createAuthenticatedWindow([
     {
@@ -310,6 +320,10 @@ async function run() {
   assert.match(progressPageSource, /\["not_started", "in_progress", "paused"\]/);
   assert.match(progressPageSource, /\.eq\("progress_percent", 100\)/);
   assert.match(progressPageSource, /Todas as práticas concluídas/);
+  assert.match(progressPageSource, /\[activeLearningProgress, completedLearningProgress\]/);
+  assert.match(progressPageSource, /nextLearningProgress/);
+  assert.match(progressPageSource, /Próxima recomendação:/);
+  assert.match(progressPageSource, /100% da trilha concluída/);
 
   console.log("SQL practice progress tests passed");
 }

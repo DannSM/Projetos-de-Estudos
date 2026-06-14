@@ -9,7 +9,7 @@ const host = "127.0.0.1";
 const port = Number(process.env.VISUAL_PORT || 4173);
 const baseUrl = process.env.VISUAL_BASE_URL || `http://${host}:${port}`;
 const timeoutMs = Number(process.env.VISUAL_TIMEOUT_MS || 20000);
-const validateSqlSteps35 = process.env.VISUAL_SQL_STEPS_3_5 === "1";
+const validateSqlSteps35 = process.env.VISUAL_SQL_STEPS_3_5 !== "0";
 
 const pages = [
   { name: "home", path: "/index.html", waitFor: "#home" },
@@ -95,6 +95,12 @@ if (validateSqlSteps35) {
       ]
     }
   );
+}
+
+const pageFilter = String(process.env.VISUAL_PAGE_FILTER || "").trim();
+if (pageFilter) {
+  const filteredPages = pages.filter((page) => page.name.includes(pageFilter));
+  pages.splice(0, pages.length, ...filteredPages);
 }
 
 const viewports = [
@@ -507,6 +513,113 @@ async function validatePage(browser, pageConfig, viewport) {
           }
           if (chatLayout.history.scrollHeight > chatLayout.history.clientHeight + 1) {
             throw new Error("historico curto criou scroll interno desnecessario");
+          }
+
+          if (pageConfig.name === "central-sql-etapa-5-join") {
+            for (let index = 0; index < 5; index += 1) {
+              const assistantCount = await page.locator(".sql-support-chat__message.is-assistant").count();
+              await page.locator("[data-ai-quick-action]").first().click();
+              await page.locator(".sql-support-chat__message.is-assistant").nth(assistantCount).waitFor({
+                state: "visible",
+                timeout: timeoutMs
+              });
+            }
+
+            const query = [
+              "select",
+              "  p.pedido_id,",
+              "  c.nome,",
+              "  p.valor",
+              "from pedidos p",
+              "join clientes c",
+              "  on c.cliente_id = p.cliente_id",
+              "where p.status = 'pago';"
+            ].join("\n");
+            await page.locator("[data-query-answer]").fill(query);
+            await page.evaluate(() => new Promise((resolve) => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }));
+            const scrollBeforeExecute = await page.evaluate(() => {
+              const messages = document.querySelector("[data-ai-tutor-messages]");
+              const target = Math.max(1, Math.floor((messages.scrollHeight - messages.clientHeight) / 2));
+              messages.scrollTop = target;
+              return messages.scrollTop;
+            });
+
+            await page.locator("[data-execute-query]").click();
+            await page.locator("[data-validate-query]").waitFor({ state: "visible", timeout: timeoutMs });
+            await page.waitForFunction(() => {
+              const button = document.querySelector("[data-validate-query]");
+              return button && !button.disabled;
+            });
+            await page.waitForTimeout(100);
+            await page.evaluate(() => new Promise((resolve) => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }));
+            const scrollAfterExecute = await page.evaluate(() => {
+              const messages = document.querySelector("[data-ai-tutor-messages]");
+              return {
+                scrollTop: messages?.scrollTop || 0,
+                maxScrollTop: Math.max(0, (messages?.scrollHeight || 0) - (messages?.clientHeight || 0))
+              };
+            });
+            const expectedAfterExecute = Math.min(
+              scrollBeforeExecute,
+              scrollAfterExecute.maxScrollTop
+            );
+            if (Math.abs(scrollAfterExecute.scrollTop - expectedAfterExecute) > 2) {
+              throw new Error(
+                `executar SQL alterou scroll da MapIA: ${scrollBeforeExecute} -> ${JSON.stringify(scrollAfterExecute)}`
+              );
+            }
+
+            await page.locator("[data-validate-query]").click();
+            await page.locator(".mission-feedback--correct").waitFor({
+              state: "visible",
+              timeout: timeoutMs
+            });
+            await page.waitForTimeout(100);
+            await page.evaluate(() => new Promise((resolve) => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }));
+            const scrollAfterValidation = await page.evaluate(() => {
+              const messages = document.querySelector("[data-ai-tutor-messages]");
+              return {
+                scrollTop: messages?.scrollTop || 0,
+                maxScrollTop: Math.max(0, (messages?.scrollHeight || 0) - (messages?.clientHeight || 0))
+              };
+            });
+            const expectedAfterValidation = Math.min(
+              scrollBeforeExecute,
+              scrollAfterValidation.maxScrollTop
+            );
+            if (Math.abs(scrollAfterValidation.scrollTop - expectedAfterValidation) > 2) {
+              throw new Error(
+                `validar SQL alterou scroll da MapIA: ${scrollBeforeExecute} -> ${JSON.stringify(scrollAfterValidation)}`
+              );
+            }
+
+            const assistantCount = await page.locator(".sql-support-chat__message.is-assistant").count();
+            await page.locator("[data-ai-quick-action]").first().click();
+            await page.locator(".sql-support-chat__message.is-assistant").nth(assistantCount).waitFor({
+              state: "visible",
+              timeout: timeoutMs
+            });
+            await page.evaluate(() => new Promise((resolve) => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }));
+            const chatScroll = await page.evaluate(() => {
+              const messages = document.querySelector("[data-ai-tutor-messages]");
+              return {
+                scrollTop: messages.scrollTop,
+                bottom: messages.scrollHeight - messages.clientHeight
+              };
+            });
+            if (Math.abs(chatScroll.bottom - chatScroll.scrollTop) > 2) {
+              throw new Error(
+                `nova mensagem nao levou ao fim da conversa: ${JSON.stringify(chatScroll)}`
+              );
+            }
           }
 
           const conversationScreenshotPath = path.join(

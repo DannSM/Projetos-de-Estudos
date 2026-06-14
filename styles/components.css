@@ -5310,6 +5310,16 @@ body.analytics-auth-locked .analytics-hero-copy {
   background: #16a34a;
 }
 
+.sql-practice-step.is-available {
+  color: #334155;
+}
+
+.sql-practice-step.is-available .sql-practice-step__icon {
+  color: #0f766e;
+  background: #ecfeff;
+  border-color: #a5f3fc;
+}
+
 .sql-practice-step.is-locked {
   opacity: 0.62;
 }

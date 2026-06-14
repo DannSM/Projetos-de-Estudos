@@ -29,6 +29,8 @@ async function run() {
     practiceTitle: "COUNT",
     practicePrompt: "x".repeat(1400),
     practiceObjective: "Comparar formas de contagem sem depender de uma etapa fixa.",
+    practiceConcept: "O filtro pedido no enunciado deve ser preservado.",
+    practiceHint: "Em JOIN, conecte as tabelas e mantenha os filtros pedidos.",
     studentQuery: "q".repeat(5000),
     lastResultPreview: Array.from({ length: 10 }, (_, index) => ({
       total: index,
@@ -48,7 +50,11 @@ async function run() {
     ],
     schema: {
       table: "pedidos",
-      columns: [{ name: "pedido_id", type: "integer" }]
+      columns: [{ name: "pedido_id", type: "integer" }],
+      tables: [
+        { table: "pedidos", columns: [{ name: "cliente_id", type: "integer" }] },
+        { table: "clientes", columns: [{ name: "cliente_id", type: "integer" }] }
+      ]
     },
     email: "nao-enviar@example.com",
     accessToken: "segredo"
@@ -58,6 +64,8 @@ async function run() {
   assert.strictEqual(payload.studentQuery.length, tutor.MAX_QUERY_CHARS);
   assert.strictEqual(payload.lastResultPreview.length, tutor.MAX_RESULT_ROWS);
   assert.strictEqual(payload.recentMessages.length, tutor.MAX_HISTORY_MESSAGES);
+  assert.strictEqual(payload.schema.tables.length, 2);
+  assert.match(payload.practiceHint, /mantenha os filtros pedidos/);
   assert.strictEqual(payload.recentMessages[0].content, "Olá! Vamos olhar o objetivo.");
   assert.strictEqual("email" in payload, false);
   assert.strictEqual("accessToken" in payload, false);
@@ -132,6 +140,12 @@ async function run() {
   assert.match(promptMessages, /Nunca diga que COUNT\(coluna\) conta nulos/);
   assert.match(promptMessages, /no máximo uma orientação prática por resposta/);
   assert.match(promptMessages, /COUNT\(\*\) - COUNT\(coluna\)/);
+  assert.match(promptMessages, /exigência explícita do enunciado/);
+  assert.match(promptMessages, /WHERE p\.status = 'pago'/);
+  assert.match(promptMessages, /condição que relaciona as tabelas/);
+  assert.match(promptMessages, /Conceito de apoio/);
+  assert.match(promptMessages, /Dica oficial/);
+  assert.match(promptMessages, /clientes/);
   assert.doesNotMatch(promptMessages, /pedidos pagos por categoria/);
 
   const pageSource = fs.readFileSync(
@@ -159,6 +173,9 @@ async function run() {
   assert.match(pageSource, /aria-selected=/);
   assert.match(pageSource, /data-support-tab/);
   assert.match(pageSource, /messages\.scrollTop = messages\.scrollHeight/);
+  assert.match(pageSource, /restoreAiTutorScrollTop\(aiTutorScrollTop\)/);
+  assert.match(pageSource, /practice\.userProgressStatus === "completed"/);
+  assert.match(pageSource, /userState\.practiceProgress/);
   assert.match(pageSource, /Tutora IA/);
   assert.match(pageSource, /\{ id: "tutor", label: "Tutora IA", icon: "sparkles" \}/);
   assert.match(pageSource, />Pensando</);
