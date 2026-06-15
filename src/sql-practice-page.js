@@ -256,6 +256,12 @@
       .replace(/'/g, "&#039;");
   }
 
+  function renderMapiaMessageContent(value) {
+    return escapeHtml(value)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\n/g, "<br>");
+  }
+
   function getFirstName(value) {
     const normalized = String(value || "").trim();
     return normalized ? normalized.split(/\s+/)[0].slice(0, 40) : "";
@@ -549,22 +555,29 @@
               `).join("")}
             </section>
             <section
-              class="sql-support-tabpanel sql-support-chat"
+              class="sql-support-tabpanel sql-support-chat mapia-chat-shell"
               id="sql-support-panel-tutor"
               role="tabpanel"
               aria-labelledby="sql-support-tab-tutor"
               ${state.activeSupportTab === "tutor" ? "" : "hidden"}
             >
               <div
-                class="sql-support-chat__messages ${hasAiConversation ? "has-conversation" : "is-empty"}"
+                class="sql-support-chat__messages mapia-chat-messages ${hasAiConversation ? "has-conversation" : "is-empty"}"
                 data-ai-tutor-messages
                 aria-live="polite"
               >
+                <div class="mapia-messages-list">
                 ${state.aiTutor.messages.length
                   ? state.aiTutor.messages.map((message) => `
-                      <div class="sql-support-chat__message is-${escapeHtml(message.role)}">
-                        <strong>${message.role === "assistant" ? "MapIA" : escapeHtml(state.studentName)}</strong>
-                        <p>${escapeHtml(message.content).replace(/\n/g, "<br>")}</p>
+                      <div class="sql-support-chat__message ${message.role === "assistant" ? "mapia-msg-ai" : "mapia-msg-user"} is-${escapeHtml(message.role)}">
+                        ${message.role === "assistant" ? `<span class="mapia-ai-avatar" aria-hidden="true">*</span>` : ""}
+                        <div class="${message.role === "assistant" ? "mapia-ai-message-content" : ""}">
+                          ${message.role === "assistant" ? `<strong class="mapia-ai-sender-name">MapIA</strong>` : ""}
+                          <p class="mapia-bubble">${renderMapiaMessageContent(message.content)}</p>
+                          ${message.role === "assistant" && state.aiTutor.metadata && message === state.aiTutor.messages[state.aiTutor.messages.length - 1]
+                            ? `<div class="mapia-message-meta">MapIA · ${escapeHtml(formatAiDuration(state.aiTutor.metadata.durationMs))}</div>`
+                            : ""}
+                        </div>
                       </div>
                     `).join("")
                   : `
@@ -584,19 +597,29 @@
                   `}
                 ${state.aiTutor.status === "loading"
                   ? `
-                    <div class="sql-support-chat__loading">
-                      <span>Pensando</span>
-                      <span class="sql-support-chat__typing" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <div class="sql-support-chat__loading mapia-msg-ai">
+                      <span class="mapia-ai-avatar" aria-hidden="true">*</span>
+                      <div class="mapia-ai-message-content">
+                        <strong class="mapia-ai-sender-name">MapIA</strong>
+                        <span class="mapia-typing-bubble" aria-label="MapIA pensando">
+                          <span class="mapia-typing-dot"></span>
+                          <span class="mapia-typing-dot"></span>
+                          <span class="mapia-typing-dot"></span>
+                        </span>
+                      </div>
                     </div>
                   `
                   : ""}
                 ${state.aiTutor.error
                   ? `<p class="sql-support-chat__error" role="alert">${escapeHtml(state.aiTutor.error)}</p>`
                   : ""}
+                </div>
               </div>
-              <div class="sql-support-chat__quick-actions" aria-label="Ações rápidas da tutora">
+              <div class="mapia-chat-footer">
+              <div class="sql-support-chat__quick-actions mapia-chips-zone" aria-label="Ações rápidas da tutora">
                 ${getAiQuickActions(practice).map((action) => `
                   <button
+                    class="mapia-chip"
                     type="button"
                     data-ai-quick-action="${escapeHtml(action.action)}"
                     ${state.aiTutor.status === "loading" ? "disabled" : ""}
@@ -605,6 +628,7 @@
               </div>
               <div class="sql-support-chat__composer" aria-label="Pergunta para a tutora SQL">
                 <input
+                  class="mapia-input"
                   type="text"
                   maxlength="${sqlAiTutor.MAX_PROMPT_CHARS}"
                   value="${escapeHtml(state.aiTutor.draft)}"
@@ -613,6 +637,7 @@
                   ${state.aiTutor.status === "loading" ? "disabled" : ""}
                 >
                 <button
+                  class="mapia-send-button"
                   type="button"
                   data-ai-tutor-send
                   ${!state.aiTutor.draft.trim() || state.aiTutor.status === "loading" ? "disabled" : ""}
@@ -629,6 +654,7 @@
                   >IA Cloudflare <span aria-hidden="true">•</span> ${escapeHtml(formatAiDuration(state.aiTutor.metadata.durationMs))}</small>
                 `
                 : ""}
+              </div>
             </section>
           </div>
         </section>
@@ -1326,21 +1352,26 @@
     }
 
     if (shouldAutoScroll) {
-      const scrollToLatestMessage = () => {
-        const messages = mount.querySelector("[data-ai-tutor-messages]");
-        if (messages) {
-          messages.scrollTop = messages.scrollHeight;
-        }
-        state.aiTutor.shouldScroll = false;
-      };
-      if (typeof globalScope.requestAnimationFrame === "function") {
-        globalScope.requestAnimationFrame(scrollToLatestMessage);
-      } else {
-        globalScope.setTimeout(scrollToLatestMessage, 0);
-      }
+      scrollMapiaToBottom();
+      state.aiTutor.shouldScroll = false;
     }
 
     void ensureSqlWorkbench();
+  }
+
+  function scrollMapiaToBottom() {
+    const container = mount.querySelector(".mapia-chat-messages");
+    if (!container) return;
+
+    const scrollToLatestMessage = () => {
+      container.scrollTop = container.scrollHeight;
+    };
+
+    if (typeof globalScope.requestAnimationFrame === "function") {
+      globalScope.requestAnimationFrame(scrollToLatestMessage);
+    } else {
+      globalScope.setTimeout(scrollToLatestMessage, 0);
+    }
   }
 
   function getAiTutorScrollTop() {
