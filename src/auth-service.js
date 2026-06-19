@@ -226,19 +226,31 @@
       return missingClientResult("Supabase nao configurado para recuperacao de senha.");
     }
 
-    const currentUrl = new URL(globalScope.location.href);
-    currentUrl.hash = "";
-    const redirectOptions = /^https?:$/.test(currentUrl.protocol)
-      ? { redirectTo: currentUrl.toString() }
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const redirectOptions = /^https?:$/.test(globalScope.location.protocol)
+      ? { redirectTo: new URL("/", globalScope.location.origin).toString() }
       : undefined;
 
     try {
-      const { data, error } = await client.auth.resetPasswordForEmail(email, redirectOptions);
+      const { data, error } = await client.auth.resetPasswordForEmail(normalizedEmail, redirectOptions);
       if (error) return { ok: false, data: data || null, error };
       return { ok: true, data: data || null, error: null };
     } catch (error) {
       return { ok: false, data: null, error: normalizeError(error) };
     }
+  }
+
+  function onAuthStateChange(callback) {
+    const client = getClient();
+    if (!client || typeof callback !== "function") {
+      return null;
+    }
+
+    const { data } = client.auth.onAuthStateChange((event, session) => {
+      callback(event, session || null);
+    });
+
+    return data?.subscription || null;
   }
 
   async function updatePassword(password) {
@@ -335,6 +347,7 @@
     signInWithGoogle,
     signUp,
     resetPassword,
+    onAuthStateChange,
     updatePassword,
     signOut,
     getCurrentSession,

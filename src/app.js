@@ -418,6 +418,11 @@ async function setupAuthEntryPoints() {
 
   let currentSession = null;
   let currentIsAdmin = false;
+  let recoveryModalOpened = false;
+
+  const clearAuthHash = () => {
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  };
 
   const closeMobileMenu = () => {
     const toggle = document.querySelector(".mobile-nav-toggle");
@@ -455,6 +460,51 @@ async function setupAuthEntryPoints() {
     setAuthState(session, isAdmin);
   };
 
+  const openPasswordRecovery = async (eventSession = null) => {
+    if (recoveryModalOpened || !window.authModal || typeof window.authModal.openPasswordRecoveryModal !== "function") {
+      return false;
+    }
+
+    let recoverySession = eventSession || currentSession;
+    if (!recoverySession) {
+      const sessionResult = await window.authService.getCurrentSession();
+      recoverySession = sessionResult?.ok ? sessionResult.session : null;
+    }
+
+    if (!recoverySession) {
+      return false;
+    }
+
+    recoveryModalOpened = true;
+    clearAuthHash();
+    window.authModal.openPasswordRecoveryModal({
+      onSuccess: async ({ signedOut } = {}) => {
+        if (signedOut) {
+          setAuthState(null, false);
+          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+            detail: { session: null, user: null }
+          }));
+          return;
+        }
+
+        await refreshAuthState();
+      }
+    });
+    return true;
+  };
+
+  if (typeof window.authService.onAuthStateChange === "function") {
+    window.authService.onAuthStateChange((event, session) => {
+      if (event !== "PASSWORD_RECOVERY") {
+        return;
+      }
+
+      window.setTimeout(() => {
+        void openPasswordRecovery(session);
+      }, 0);
+    });
+  }
+
   window.addEventListener("data-skill-map-auth-changed", () => {
     void refreshAuthState();
   });
@@ -490,13 +540,15 @@ async function setupAuthEntryPoints() {
 
   await refreshAuthState();
 
-  if (!authCallback || !window.authModal) {
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+  if (recoveryModalOpened) {
     return;
   }
 
-  const clearAuthHash = () => {
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-  };
+  if (!authCallback || !window.authModal) {
+    return;
+  }
 
   if (authCallback.type === "error") {
     clearAuthHash();
@@ -507,29 +559,17 @@ async function setupAuthEntryPoints() {
     return;
   }
 
-  if (!currentSession) {
+  if (authCallback.type === "recovery" && await openPasswordRecovery(currentSession)) {
+    return;
+  }
+
+  if (authCallback.type === "recovery") {
     clearAuthHash();
     window.authModal.openAuthModal({
       mode: "login",
       initialStatus: "Nao foi possivel validar o link. Solicite uma nova redefinicao de senha."
     });
-    return;
   }
-
-  clearAuthHash();
-  window.authModal.openPasswordRecoveryModal({
-    onSuccess: async ({ signedOut } = {}) => {
-      if (signedOut) {
-        setAuthState(null, false);
-        window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-          detail: { session: null, user: null }
-        }));
-        return;
-      }
-
-      await refreshAuthState();
-    }
-  });
 }
 
 function updateHomeChallengeCount() {
