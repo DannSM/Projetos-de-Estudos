@@ -82,6 +82,17 @@
     return !result?.session && !result?.data?.session && !user.email_confirmed_at && !user.confirmed_at;
   }
 
+  function normalizeResetPasswordError(error) {
+    const code = typeof error?.code === "string" ? error.code.toLowerCase() : "";
+    const status = Number(error?.status || 0);
+
+    if (status === 429 || code.includes("rate_limit") || code.includes("rate-limit")) {
+      return "Muitas solicitações de recuperação foram feitas. Aguarde alguns minutos antes de tentar novamente.";
+    }
+
+    return "Não foi possível enviar o link agora. Verifique o e-mail e tente novamente.";
+  }
+
   function getOrCreateModalRoot() {
     let overlay = document.getElementById(MODAL_ID);
     if (overlay) return overlay;
@@ -376,7 +387,7 @@
     if (state.isLoading) return;
 
     const emailInput = document.getElementById("authModalEmail");
-    const email = String(emailInput?.value || "").trim();
+    const email = String(emailInput?.value || "").trim().toLowerCase();
 
     if (!email) {
       setStatus("Informe seu e-mail para receber o link de recuperacao.");
@@ -395,7 +406,7 @@
     setLoading(false);
 
     if (!result || !result.ok) {
-      setStatus("Nao foi possivel enviar o link agora. Verifique o e-mail e tente novamente.");
+      setStatus(normalizeResetPasswordError(result?.error));
       return;
     }
 
