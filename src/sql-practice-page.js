@@ -570,7 +570,7 @@
                 ${state.aiTutor.messages.length
                   ? state.aiTutor.messages.map((message) => `
                       <div class="sql-support-chat__message ${message.role === "assistant" ? "mapia-msg-ai" : "mapia-msg-user"} is-${escapeHtml(message.role)}">
-                        ${message.role === "assistant" ? `<span class="mapia-ai-avatar" aria-hidden="true">*</span>` : ""}
+                        ${message.role === "assistant" ? `<span class="mapia-ai-avatar" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.7 5.2L19 10l-5.3 1.8L12 17l-1.7-5.2L5 10l5.3-1.8L12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>` : ""}
                         <div class="${message.role === "assistant" ? "mapia-ai-message-content" : ""}">
                           ${message.role === "assistant" ? `<strong class="mapia-ai-sender-name">MapIA</strong>` : ""}
                           <p class="mapia-bubble">${renderMapiaMessageContent(message.content)}</p>
@@ -598,7 +598,7 @@
                 ${state.aiTutor.status === "loading"
                   ? `
                     <div class="sql-support-chat__loading mapia-msg-ai">
-                      <span class="mapia-ai-avatar" aria-hidden="true">*</span>
+                      <span class="mapia-ai-avatar" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.7 5.2L19 10l-5.3 1.8L12 17l-1.7-5.2L5 10l5.3-1.8L12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
                       <div class="mapia-ai-message-content">
                         <strong class="mapia-ai-sender-name">MapIA</strong>
                         <span class="mapia-typing-bubble" aria-label="MapIA pensando">
