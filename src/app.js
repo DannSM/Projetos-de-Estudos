@@ -502,7 +502,7 @@ async function setupAuthEntryPoints() {
     clearAuthHash();
     window.authModal.openAuthModal({
       mode: "login",
-      initialStatus: "Link invalido ou expirado. Solicite uma nova redefinicao de senha."
+      initialStatus: "Não foi possível concluir a autenticação. O link pode estar inválido ou expirado. Tente novamente."
     });
     return;
   }
@@ -518,11 +518,16 @@ async function setupAuthEntryPoints() {
 
   clearAuthHash();
   window.authModal.openPasswordRecoveryModal({
-    onSuccess: async () => {
-      setAuthState(null, false);
-      window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-        detail: { session: null, user: null }
-      }));
+    onSuccess: async ({ signedOut } = {}) => {
+      if (signedOut) {
+        setAuthState(null, false);
+        window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+          detail: { session: null, user: null }
+        }));
+        return;
+      }
+
+      await refreshAuthState();
     }
   });
 }

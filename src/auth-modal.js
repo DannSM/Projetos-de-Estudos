@@ -294,17 +294,28 @@
         return;
       }
 
+      let signedOut = false;
       if (typeof globalScope.authService.signOut === "function") {
-        await globalScope.authService.signOut();
+        const signOutResult = await globalScope.authService.signOut();
+        signedOut = Boolean(signOutResult?.ok);
+
+        if (!signedOut) {
+          console.warn("[Auth] A senha foi atualizada, mas a sessao nao foi encerrada automaticamente.", {
+            code: signOutResult?.error?.code || null,
+            status: signOutResult?.error?.status || null
+          });
+        }
       }
 
       if (typeof state.options.onSuccess === "function") {
-        await state.options.onSuccess({ mode: "recovery", result });
+        await state.options.onSuccess({ mode: "recovery", result, signedOut });
       }
 
       state.mode = "login";
       state.options = {
-        initialStatus: "Senha atualizada com sucesso. Entre com a nova senha.",
+        initialStatus: signedOut
+          ? "Senha atualizada com sucesso. Entre com a nova senha."
+          : "Senha atualizada com sucesso. Não foi possível encerrar sua sessão automaticamente; use Sair antes de entrar novamente.",
         initialStatusType: "success"
       };
       renderAuthModal();
