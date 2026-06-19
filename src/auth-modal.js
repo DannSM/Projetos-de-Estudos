@@ -10,6 +10,14 @@
   };
 
   function getCopy(mode) {
+    if (mode === "recovery") {
+      return {
+        title: "Redefinir senha",
+        description: "Crie uma nova senha para voltar a acessar sua conta.",
+        submitLabel: "Salvar nova senha"
+      };
+    }
+
     if (mode === "signup") {
       return {
         title: "Criar conta",
@@ -57,9 +65,15 @@
       return "Confira se o e-mail foi digitado corretamente.";
     }
 
-    return mode === "signup"
-      ? "Nao foi possivel criar a conta agora. Tente novamente em instantes."
-      : "Nao foi possivel entrar agora. Tente novamente em instantes.";
+    if (mode === "signup") {
+      return "Nao foi possivel criar a conta agora. Tente novamente em instantes.";
+    }
+
+    if (mode === "recovery") {
+      return "Nao foi possivel atualizar a senha. Solicite um novo link se o problema continuar.";
+    }
+
+    return "Nao foi possivel entrar agora. Tente novamente em instantes.";
   }
 
   function isPendingEmailConfirmation(result) {
@@ -113,6 +127,7 @@
     const overlay = getOrCreateModalRoot();
     const copy = getCopy(state.mode);
     const isSignUp = state.mode === "signup";
+    const isRecovery = state.mode === "recovery";
 
     overlay.innerHTML = `
       <div class="auth-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
@@ -126,7 +141,7 @@
         </div>
 
         <form id="authModalForm" class="auth-modal-form" novalidate>
-          <button type="button" class="auth-google-button" id="authModalGoogle">
+          ${!isRecovery ? `<button type="button" class="auth-google-button" id="authModalGoogle">
             <span class="auth-google-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.14H12v4.05h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.24c1.9-1.75 2.97-4.32 2.97-7.44z"/>
@@ -138,41 +153,53 @@
             <span data-auth-google-label>Continuar com Google</span>
           </button>
 
-          <div class="auth-modal-divider"><span>ou</span></div>
+          <div class="auth-modal-divider"><span>ou</span></div>` : ""}
 
           ${isSignUp ? `
             <label for="authModalName">Nome (opcional)</label>
             <input id="authModalName" name="name" type="text" autocomplete="name" placeholder="Como podemos chamar voce?">
           ` : ""}
 
-          <label for="authModalEmail">E-mail</label>
-          <input id="authModalEmail" name="email" type="email" autocomplete="username" placeholder="seu@email.com" required>
+          ${!isRecovery ? `
+            <label for="authModalEmail">E-mail</label>
+            <input id="authModalEmail" name="email" type="email" autocomplete="username" placeholder="seu@email.com" required>
+          ` : ""}
 
-          <label for="authModalPassword">Senha</label>
+          <label for="authModalPassword">${isRecovery ? "Nova senha" : "Senha"}</label>
           <div class="auth-password-field">
-            <input id="authModalPassword" name="password" type="password" autocomplete="${isSignUp ? "new-password" : "current-password"}" placeholder="Digite sua senha" required minlength="6">
+            <input id="authModalPassword" name="password" type="password" autocomplete="${isSignUp || isRecovery ? "new-password" : "current-password"}" placeholder="${isRecovery ? "Digite a nova senha" : "Digite sua senha"}" required minlength="6">
             <button type="button" class="auth-password-toggle" id="authModalPasswordToggle" aria-label="Mostrar senha" aria-pressed="false">
               <i data-lucide="eye" aria-hidden="true"></i>
             </button>
           </div>
-          ${!isSignUp ? `
+          ${!isSignUp && !isRecovery ? `
             <button type="button" class="auth-forgot-password" id="authModalForgotPassword">Esqueci minha senha</button>
+          ` : ""}
+
+          ${isRecovery ? `
+            <label for="authModalPasswordConfirmation">Confirmar nova senha</label>
+            <div class="auth-password-field">
+              <input id="authModalPasswordConfirmation" name="passwordConfirmation" type="password" autocomplete="new-password" placeholder="Digite a nova senha novamente" required minlength="6">
+            </div>
           ` : ""}
 
           <p id="authModalStatus" class="auth-modal-status hidden" aria-live="polite"></p>
 
           <div class="auth-modal-actions">
             <button type="submit" class="submit-button" id="authModalSubmit">${copy.submitLabel}</button>
-            <button type="button" class="auth-modal-secondary" id="authModalToggle">
+            ${!isRecovery ? `<button type="button" class="auth-modal-secondary" id="authModalToggle">
               <span>${copy.toggleText}</span>
               <strong>${copy.toggleLabel}</strong>
-            </button>
+            </button>` : ""}
           </div>
         </form>
       </div>
     `;
 
     bindModalEvents(overlay);
+    if (state.options.initialStatus) {
+      setStatus(state.options.initialStatus, state.options.initialStatusType || "error");
+    }
     if (globalScope.lucide && typeof globalScope.lucide.createIcons === "function") {
       globalScope.lucide.createIcons();
     }
@@ -235,6 +262,55 @@
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
+    const passwordConfirmation = String(formData.get("passwordConfirmation") || "");
+
+    if (state.mode === "recovery") {
+      if (!password) {
+        setStatus("Informe a nova senha para continuar.");
+        return;
+      }
+
+      if (password.length < 6) {
+        setStatus("A senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+
+      if (password !== passwordConfirmation) {
+        setStatus("A confirmacao precisa ser igual a nova senha.");
+        return;
+      }
+
+      setStatus("");
+      setLoading(true, "Salvando...");
+      const result = await globalScope.authService.updatePassword(password);
+      setLoading(false);
+
+      if (!result || !result.ok) {
+        console.warn("[Auth] Falha segura ao atualizar senha.", {
+          code: result?.error?.code || null,
+          status: result?.error?.status || null
+        });
+        setStatus(normalizeErrorMessage(result?.error, "recovery"));
+        return;
+      }
+
+      if (typeof globalScope.authService.signOut === "function") {
+        await globalScope.authService.signOut();
+      }
+
+      if (typeof state.options.onSuccess === "function") {
+        await state.options.onSuccess({ mode: "recovery", result });
+      }
+
+      state.mode = "login";
+      state.options = {
+        initialStatus: "Senha atualizada com sucesso. Entre com a nova senha.",
+        initialStatusType: "success"
+      };
+      renderAuthModal();
+      focusFirstField();
+      return;
+    }
 
     if (!email || !password) {
       setStatus("Informe e-mail e senha para continuar.");
@@ -382,7 +458,7 @@
 
   function openAuthModal(options = {}) {
     state.options = options || {};
-    state.mode = options.mode === "signup" ? "signup" : "login";
+    state.mode = options.mode === "signup" ? "signup" : options.mode === "recovery" ? "recovery" : "login";
     state.lastFocusedElement = document.activeElement;
 
     const overlay = renderAuthModal();
@@ -392,6 +468,10 @@
     focusFirstField();
   }
 
+  function openPasswordRecoveryModal(options = {}) {
+    openAuthModal({ ...options, mode: "recovery" });
+  }
+
   globalScope.authModal = {
     openAuthModal,
     closeAuthModal,
@@ -399,6 +479,7 @@
     renderAuthModal,
     showLogin,
     showSignUp,
+    openPasswordRecoveryModal,
     open: openAuthModal,
     close: closeAuthModal
   };

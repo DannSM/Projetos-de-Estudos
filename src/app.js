@@ -261,7 +261,18 @@ function setupGlobalNavigation() {
       return;
     }
 
-    const target = document.querySelector(hashValue);
+    let anchorId = "";
+    try {
+      anchorId = decodeURIComponent(hashValue.slice(1));
+    } catch (error) {
+      return;
+    }
+
+    if (!anchorId || anchorId.includes("=") || anchorId.includes("&")) {
+      return;
+    }
+
+    const target = document.getElementById(anchorId);
     if (!target) {
       return;
     }
@@ -383,6 +394,20 @@ function setupGlobalNavigation() {
 }
 
 async function setupAuthEntryPoints() {
+  const authCallback = (() => {
+    const hash = window.location.hash || "";
+    if (!hash || hash === "#") return null;
+
+    const params = new URLSearchParams(hash.slice(1));
+    const type = params.get("type");
+    const errorCode = params.get("error_code");
+    const hasAuthError = params.has("error") || Boolean(errorCode);
+
+    if (type === "recovery") return { type: "recovery" };
+    if (hasAuthError) return { type: "error", errorCode };
+    return null;
+  })();
+
   renderGlobalNavigation(null, false);
 
   if (!window.authService) {
@@ -464,6 +489,42 @@ async function setupAuthEntryPoints() {
   });
 
   await refreshAuthState();
+
+  if (!authCallback || !window.authModal) {
+    return;
+  }
+
+  const clearAuthHash = () => {
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  };
+
+  if (authCallback.type === "error") {
+    clearAuthHash();
+    window.authModal.openAuthModal({
+      mode: "login",
+      initialStatus: "Link invalido ou expirado. Solicite uma nova redefinicao de senha."
+    });
+    return;
+  }
+
+  if (!currentSession) {
+    clearAuthHash();
+    window.authModal.openAuthModal({
+      mode: "login",
+      initialStatus: "Nao foi possivel validar o link. Solicite uma nova redefinicao de senha."
+    });
+    return;
+  }
+
+  clearAuthHash();
+  window.authModal.openPasswordRecoveryModal({
+    onSuccess: async () => {
+      setAuthState(null, false);
+      window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+        detail: { session: null, user: null }
+      }));
+    }
+  });
 }
 
 function updateHomeChallengeCount() {
