@@ -241,6 +241,21 @@
     }
   }
 
+  async function updatePassword(password) {
+    const client = getClient();
+    if (!client) {
+      return missingClientResult("Supabase nao configurado para atualizar a senha.");
+    }
+
+    try {
+      const { data, error } = await client.auth.updateUser({ password });
+      if (error) return { ok: false, data: data || null, error };
+      return { ok: true, data: data || null, error: null };
+    } catch (error) {
+      return { ok: false, data: null, error: normalizeError(error) };
+    }
+  }
+
   async function signOut() {
     const client = getClient();
     if (!client) return { ok: true, error: null };
@@ -320,6 +335,7 @@
     signInWithGoogle,
     signUp,
     resetPassword,
+    updatePassword,
     signOut,
     getCurrentSession,
     getProfile,
