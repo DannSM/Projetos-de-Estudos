@@ -100,7 +100,7 @@ video {
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr);
   align-items: center;
   gap: 0.62rem;
   min-height: var(--header-height);
@@ -191,11 +191,26 @@ video {
 }
 
 .header-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
   padding: 0.38rem 0.54rem;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   white-space: nowrap;
   transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.header-nav a .lucide,
+.mobile-nav-panel a .lucide {
+  width: 0.92rem;
+  height: 0.92rem;
+  flex: 0 0 auto;
+  stroke-width: 2;
+}
+
+.header-actions {
+  justify-self: end;
 }
 
 .header-nav a:hover {
@@ -372,6 +387,7 @@ video {
 .mobile-nav-panel a {
   display: flex;
   align-items: center;
+  gap: 0.48rem;
   min-height: 2.46rem;
   padding: 0.5rem 0.7rem;
   color: var(--color-text-secondary);

@@ -12,22 +12,38 @@ const timeoutMs = Number(process.env.VISUAL_TIMEOUT_MS || 20000);
 const validateSqlSteps35 = process.env.VISUAL_SQL_STEPS_3_5 !== "0";
 
 const pages = [
-  { name: "home", path: "/index.html", waitFor: "#home" },
-  { name: "diagnostico", path: "/diagnostico.html", waitFor: ".diagnostic-intro" },
+  {
+    name: "home",
+    path: "/",
+    waitFor: "#home",
+    readyFor: ".learning-paths-summary",
+    activeNav: "home",
+    learningPathCtas: true
+  },
+  { name: "diagnostico", path: "/diagnostico", waitFor: ".diagnostic-intro", activeNav: "diagnostico" },
   {
     name: "meu-progresso",
-    path: "/meu-progresso.html",
-    waitFor: ".progress-gate-card, .progress-dashboard"
+    path: "/meu-progresso",
+    waitFor: ".progress-gate-card, .progress-dashboard",
+    activeNav: "progresso",
+    anonymousGate: true
   },
-  { name: "trilhas", path: "/index.html#trilhas", waitFor: "#trilhas" },
+  { name: "trilhas", path: "/#trilhas", waitFor: "#trilhas", activeNav: "trilhas" },
   {
     name: "central-sql-filtros-where",
-    path: "/praticas-sql.html?pratica=sql-essencial-filtros-where",
-    waitFor: ".sql-practice-workspace"
+    path: "/praticas-sql?pratica=sql-essencial-filtros-where",
+    waitFor: ".sql-practice-workspace",
+    activeNav: "praticas-sql",
+    sidebarSteps: [
+      "sql-essencial-count-nulos-distintos",
+      "sql-essencial-filtro-antes-agregacao",
+      "sql-essencial-group-by",
+      "sql-essencial-join"
+    ]
   },
   {
     name: "central-sql-count-nulos-distintos",
-    path: "/praticas-sql.html?pratica=sql-essencial-count-nulos-distintos",
+    path: "/praticas-sql?pratica=sql-essencial-count-nulos-distintos",
     waitFor: ".sql-practice-workspace",
     finalEvidence: true,
     supportTabs: [
@@ -48,7 +64,7 @@ if (validateSqlSteps35) {
   pages.push(
     {
       name: "central-sql-etapa-3-filtro-agregacao",
-      path: "/praticas-sql.html?pratica=sql-essencial-filtro-antes-agregacao",
+      path: "/praticas-sql?pratica=sql-essencial-filtro-antes-agregacao",
       waitFor: ".sql-practice-workspace",
       practiceEvidence: {
         title: "Filtro antes da agregação",
@@ -64,7 +80,7 @@ if (validateSqlSteps35) {
     },
     {
       name: "central-sql-etapa-4-group-by",
-      path: "/praticas-sql.html?pratica=sql-essencial-group-by",
+      path: "/praticas-sql?pratica=sql-essencial-group-by",
       waitFor: ".sql-practice-workspace",
       practiceEvidence: {
         title: "Agrupamentos com GROUP BY",
@@ -80,7 +96,7 @@ if (validateSqlSteps35) {
     },
     {
       name: "central-sql-etapa-5-join",
-      path: "/praticas-sql.html?pratica=sql-essencial-join",
+      path: "/praticas-sql?pratica=sql-essencial-join",
       waitFor: ".sql-practice-workspace",
       practiceEvidence: {
         title: "Relacionando tabelas com JOIN",
@@ -132,7 +148,8 @@ function isIgnoredConsoleError(message) {
 
 function resolveRequestPath(requestUrl) {
   const pathname = decodeURIComponent(new URL(requestUrl, baseUrl).pathname);
-  const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+  const routePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+  const relativePath = path.extname(routePath) ? routePath : `${routePath}.html`;
   const filePath = path.resolve(projectRoot, relativePath);
   const relativeToRoot = path.relative(projectRoot, filePath);
 
@@ -257,7 +274,67 @@ async function validatePage(browser, pageConfig, viewport) {
       state: "visible",
       timeout: timeoutMs
     });
+    if (pageConfig.readyFor) {
+      await page.locator(pageConfig.readyFor).first().waitFor({
+        state: "visible",
+        timeout: timeoutMs
+      });
+    }
     await page.waitForTimeout(500);
+
+    if (pageConfig.learningPathCtas) {
+      const ctaEvidence = await page.evaluate(() => {
+        const summary = document.querySelector(".learning-paths-summary");
+        const actions = summary?.querySelector(".learning-paths-summary-actions");
+        const buttons = [...(actions?.querySelectorAll("a") || [])];
+        const summaryRect = summary?.getBoundingClientRect();
+        const actionsRect = actions?.getBoundingClientRect();
+        const buttonRects = buttons.map((button) => button.getBoundingClientRect());
+        return {
+          looseCtaCount: document.querySelectorAll(".tracks-heading-actions a").length,
+          labels: buttons.map((link) => link.textContent.trim()),
+          hrefs: buttons.map((link) => link.getAttribute("href")),
+          stacked: buttonRects.length === 2 && buttonRects[1].top > buttonRects[0].bottom,
+          equalWidths: buttonRects.length === 2 && Math.abs(buttonRects[0].width - buttonRects[1].width) <= 1,
+          mobileSideGaps: summaryRect && actionsRect
+            ? [actionsRect.left - summaryRect.left, summaryRect.right - actionsRect.right]
+            : []
+        };
+      });
+      if (
+        ctaEvidence.looseCtaCount !== 0
+        || ctaEvidence.labels.join("|") !== "Fazer diagnóstico|Explorar práticas SQL"
+        || ctaEvidence.hrefs[1] !== "praticas-sql.html?pratica=sql-essencial-filtros-where"
+        || !ctaEvidence.stacked
+        || !ctaEvidence.equalWidths
+        || (viewport.width <= 620 && ctaEvidence.mobileSideGaps.some((gap) => gap < 10 || gap > 20))
+      ) {
+        throw new Error(`CTAs de Trilhas fora da hierarquia esperada: ${JSON.stringify(ctaEvidence)}`);
+      }
+    }
+
+    if (pageConfig.anonymousGate) {
+      const gateEvidence = await page.evaluate(() => ({
+        gateVisible: Boolean(document.querySelector(".progress-gate-card")),
+        dashboardCount: document.querySelectorAll(".progress-dashboard").length,
+        loginCta: document.querySelector(".progress-gate-card [data-progress-auth-open]")?.textContent.trim() || ""
+      }));
+      if (
+        !gateEvidence.gateVisible
+        || gateEvidence.dashboardCount !== 0
+        || gateEvidence.loginCta !== "Entrar / Criar conta"
+      ) {
+        throw new Error(`gate anônimo de Meu Progresso inválido: ${JSON.stringify(gateEvidence)}`);
+      }
+    }
+
+    if (pageConfig.activeNav) {
+      const activeNavKeys = await page.locator("[data-global-nav='desktop'] [data-nav-key].is-active")
+        .evaluateAll((links) => links.map((link) => link.dataset.navKey));
+      if (activeNavKeys.length !== 1 || activeNavKeys[0] !== pageConfig.activeNav) {
+        throw new Error(`menu ativo incorreto: ${JSON.stringify(activeNavKeys)}, esperado ${pageConfig.activeNav}`);
+      }
+    }
 
     if (pageConfig.expectedPath && new URL(page.url()).pathname !== pageConfig.expectedPath) {
       throw new Error(`redirect terminou em ${page.url()}, esperado ${pageConfig.expectedPath}`);
@@ -279,7 +356,7 @@ async function validatePage(browser, pageConfig, viewport) {
         || !practiceEvidence.tags?.includes(expected.tableText)
         || practiceEvidence.conceptTitle !== expected.conceptTitle
         || !practiceEvidence.hint
-        || practiceEvidence.source !== "Dados Supabase"
+        || practiceEvidence.source !== "Dados da prática"
       ) {
         throw new Error(`conteudo oficial incompleto: ${JSON.stringify(practiceEvidence)}`);
       }
@@ -686,6 +763,35 @@ async function validatePage(browser, pageConfig, viewport) {
         console.log(
           `OK ${pageConfig.name} / ${supportTab.name} / ${viewport.name} -> ${supportScreenshotPath}`
         );
+      }
+    }
+
+    if (pageConfig.sidebarSteps && viewport.name === "desktop") {
+      for (const slug of pageConfig.sidebarSteps) {
+        const targetIndex = await page.evaluate((targetSlug) => {
+          const buttons = [...document.querySelectorAll("[data-select-practice]")];
+          const slugs = [
+            "sql-introducao",
+            "sql-essencial-filtros-where",
+            "sql-essencial-count-nulos-distintos",
+            "sql-essencial-filtro-antes-agregacao",
+            "sql-essencial-group-by",
+            "sql-essencial-join"
+          ];
+          return buttons.findIndex((button) => Number(button.dataset.selectPractice) === slugs.indexOf(targetSlug));
+        }, slug);
+        if (targetIndex < 0) {
+          throw new Error(`etapa ausente na sidebar: ${slug}`);
+        }
+        await page.locator("[data-select-practice]").nth(targetIndex).click();
+        await page.waitForFunction((targetSlug) => (
+          new URL(window.location.href).searchParams.get("pratica") === targetSlug
+          && document.querySelector(".sql-practice-source")?.textContent.trim() === "Dados da prática"
+          && Boolean(document.querySelector(".sql-practice-brief h1")?.textContent.trim())
+          && Boolean(document.querySelector(".sql-support-concept h3")?.textContent.trim())
+          && Boolean(document.querySelector(".sql-support-tip p")?.textContent.trim())
+          && Boolean(document.querySelector(".sql-practice-tags")?.textContent.trim())
+        ), slug, { timeout: timeoutMs });
       }
     }
 

@@ -55,11 +55,12 @@ function renderIcons() {
 }
 
 const GLOBAL_NAV_ITEMS = [
-  { key: "home", label: "Início", href: "index.html", states: ["anonymous", "student", "admin"] },
-  { key: "como-funciona", label: "Como funciona", href: "index.html#como-funciona", states: ["anonymous"] },
-  { key: "diagnostico", label: "Diagnóstico", href: "diagnostico.html", states: ["anonymous", "student", "admin"] },
-  { key: "trilhas", label: "Trilhas", href: "index.html#trilhas", states: ["anonymous", "student", "admin"] },
-  { key: "progresso", label: "Meu Progresso", href: "meu-progresso.html", states: ["student", "admin"] },
+  { key: "home", label: "Início", icon: "house", href: "index.html", states: ["anonymous", "student", "admin"] },
+  { key: "como-funciona", label: "Como funciona", icon: "list-checks", href: "index.html#como-funciona", states: ["anonymous"] },
+  { key: "diagnostico", label: "Diagnóstico", icon: "clipboard-list", href: "diagnostico.html", states: ["anonymous", "student", "admin"] },
+  { key: "trilhas", label: "Trilhas", icon: "route", href: "index.html#trilhas", states: ["anonymous", "student", "admin"] },
+  { key: "progresso", label: "Meu Progresso", icon: "line-chart", href: "meu-progresso.html", states: ["anonymous", "student", "admin"] },
+  { key: "praticas-sql", label: "Práticas SQL", icon: "square-terminal", href: "praticas-sql.html?pratica=sql-essencial-filtros-where", states: ["anonymous", "student", "admin"] },
   { key: "analytics", label: "Analytics", href: "analytics.html", states: ["admin"] }
 ];
 
@@ -73,7 +74,7 @@ function getNavigationState(session, isAdmin) {
 }
 
 function getPrimaryCta(session) {
-  const fileName = ((window.location.pathname || "").split("/").pop() || "index.html").toLowerCase();
+  const route = (((window.location.pathname || "").split("/").pop() || "index").toLowerCase()).replace(/\.html$/, "");
   const isAuthenticated = Boolean(session);
 
   if (!isAuthenticated) {
@@ -86,13 +87,14 @@ function getPrimaryCta(session) {
 
   return {
     href: "diagnostico.html",
-    label: fileName === "meu-progresso.html" ? "Iniciar diagnóstico" : "Refazer diagnóstico",
-    icon: fileName === "meu-progresso.html" ? "play" : "clipboard-list"
+    label: route === "meu-progresso" ? "Iniciar diagnóstico" : "Refazer diagnóstico",
+    icon: route === "meu-progresso" ? "play" : "clipboard-list"
   };
 }
 
 function renderNavLink(item) {
-  return `<a data-nav-key="${escapeAttribute(item.key)}" href="${escapeAttribute(item.href)}">${item.label}</a>`;
+  const icon = item.icon ? `<i data-lucide="${escapeAttribute(item.icon)}" aria-hidden="true"></i>` : "";
+  return `<a data-nav-key="${escapeAttribute(item.key)}" href="${escapeAttribute(item.href)}">${icon}<span>${item.label}</span></a>`;
 }
 
 function renderAuthButton(session, variant) {
@@ -145,22 +147,26 @@ function renderGlobalNavigation(session = null, isAdmin = false) {
 
 function getCurrentNavKey() {
   const path = (window.location.pathname || "").toLowerCase();
-  const fileName = path.split("/").pop() || "index.html";
+  const route = (path.replace(/\/+$/, "").split("/").pop() || "index").replace(/\.html$/, "");
   const hash = (window.location.hash || "").toLowerCase();
 
-  if (fileName === "diagnostico.html") {
+  if (route === "diagnostico") {
     return "diagnostico";
   }
 
-  if (fileName === "analytics.html") {
+  if (route === "analytics") {
     return "analytics";
   }
 
-  if (fileName === "meu-progresso.html") {
+  if (route === "meu-progresso") {
     return "progresso";
   }
 
-  if (fileName === "index.html" || fileName === "" || path.endsWith("/")) {
+  if (route === "praticas-sql") {
+    return "praticas-sql";
+  }
+
+  if (route === "index") {
     if (hash === "#trilhas") {
       return "trilhas";
     }
@@ -176,7 +182,7 @@ function getCurrentNavKey() {
     return "home";
   }
 
-  return "home";
+  return null;
 }
 
 function updateGlobalNavActiveState() {

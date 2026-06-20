@@ -293,7 +293,7 @@
         </span>
         <div>
           <h3>Trilhas em preparação</h3>
-          <p>A estrutura de trilhas já está conectada. Assim que houver registros ativos em learning_paths e learning_path_steps, eles aparecem aqui automaticamente.</p>
+          <p>Novos caminhos de estudo estão sendo preparados. Volte em breve para explorar as trilhas disponíveis.</p>
         </div>
       </article>
     `;
@@ -305,14 +305,20 @@
       return `
         <article class="learning-paths-summary">
           <div>
-            <span class="section-kicker">Trilhas reais</span>
+            <span class="section-kicker">Trilhas</span>
             <h3>Entre para ver sua trilha personalizada.</h3>
-            <p>As trilhas abaixo vêm do banco quando estão ativas. O progresso individual aparece depois do login.</p>
+            <p>Explore os caminhos disponíveis. Ao entrar, você também acompanha seu progresso individual.</p>
           </div>
-          <a class="button button-secondary" href="diagnostico.html">
-            <i data-lucide="clipboard-list" aria-hidden="true"></i>
-            <span>Fazer diagnóstico</span>
-          </a>
+          <div class="learning-paths-summary-actions">
+            <a class="button button-primary" href="diagnostico.html">
+              <i data-lucide="clipboard-list" aria-hidden="true"></i>
+              <span>Fazer diagnóstico</span>
+            </a>
+            <a class="button button-secondary" href="praticas-sql.html?pratica=sql-essencial-filtros-where">
+              <i data-lucide="square-terminal" aria-hidden="true"></i>
+              <span>Explorar práticas SQL</span>
+            </a>
+          </div>
         </article>
       `;
     }
@@ -345,6 +351,7 @@
     const progress = getPathProgress(path, progressByPath);
     const minutes = formatMinutes(path.estimated_minutes);
     const isFeatured = featuredPath?.id === path.id;
+    const isSqlEssencial = path.slug === "sql-essencial" || /sql essencial/i.test(path.title || "");
 
     return `
       <article class="track-card learning-path-card${isFeatured ? " is-featured" : ""}">
@@ -378,6 +385,12 @@
             `).join("")}
           </ol>
         ` : `<p class="learning-path-empty-steps">Passos ainda não cadastrados para esta trilha.</p>`}
+        ${isSqlEssencial ? `
+          <a class="button button-secondary track-practice-link" href="praticas-sql.html?pratica=sql-essencial-filtros-where">
+            <i data-lucide="square-terminal" aria-hidden="true"></i>
+            <span>Explorar práticas SQL</span>
+          </a>
+        ` : ""}
       </article>
     `;
   }

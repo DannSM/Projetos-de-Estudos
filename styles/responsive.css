@@ -28,7 +28,7 @@
   }
 }
 
-@media (min-width: 1121px) {
+@media (min-width: 1281px) {
   .mobile-nav-toggle,
   .mobile-nav-panel,
   .mobile-nav-backdrop {
@@ -36,7 +36,7 @@
   }
 }
 
-@media (min-width: 1025px) and (max-width: 1120px) {
+@media (min-width: 1025px) and (max-width: 1280px) {
   :root {
     --header-height: 56px;
   }
@@ -354,6 +354,11 @@
   .learning-paths-empty {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .learning-paths-summary-actions {
+    width: 100%;
+    margin-left: 0;
   }
 
   .app-header {

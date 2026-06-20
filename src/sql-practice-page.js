@@ -189,6 +189,7 @@
     activeSupportTab: "concept",
     lastQueryRunId: null,
     persistenceStatus: "",
+    loadingPracticeSlug: "",
     aiTutor: {
       draft: "",
       status: "idle",
@@ -361,7 +362,10 @@
     return `
       <aside class="sql-practice-sidebar" aria-label="Roteiro SQL Essencial">
         <div class="sql-practice-sidebar__header">
-          <h1>SQL Essencial <span aria-hidden="true">·</span> Trilha de prática</h1>
+          <div>
+            <span>Práticas SQL</span>
+            <h1>SQL Essencial</h1>
+          </div>
         </div>
         <nav class="sql-practice-steps" aria-label="Etapas da Central SQL">
           ${practices.map((practice, index) => {
@@ -372,7 +376,7 @@
                 class="sql-practice-step is-${status}"
                 type="button"
                 data-select-practice="${index}"
-                ${isLocked ? "disabled" : ""}
+                ${isLocked || state.loadingPracticeSlug ? "disabled" : ""}
               >
                 <span class="sql-practice-step__icon" aria-hidden="true">
                   <i data-lucide="${getSidebarIcon(status)}"></i>
@@ -413,7 +417,7 @@
         </div>
         <div class="sql-practice-workspace__tools" aria-label="Ações da prática">
           <span class="sql-practice-source is-${sourceTone}" title="${escapeHtml(state.sourceStatus)}">
-            ${state.dataSource === "supabase" ? "Dados Supabase" : state.dataSource === "loading" ? "Carregando dados" : "Modo local"}
+            ${state.dataSource === "supabase" ? "Dados da prática" : state.dataSource === "loading" ? "Carregando conteúdo" : "Conteúdo local"}
           </span>
           <span class="sql-practice-status is-${status.tone}">
             <span aria-hidden="true"></span>
@@ -441,13 +445,13 @@
     const tableLabel = tableNames.length > 1 ? "Tabelas" : "Tabela";
     return `
       <div class="mission-context-list sql-practice-tags" aria-label="Contexto da prática">
-        <span><i data-lucide="table-2" aria-hidden="true"></i>${tableLabel}: ${escapeHtml(tableNames.join(", "))}</span>
-        <span><i data-lucide="graduation-cap" aria-hidden="true"></i>Nível: ${escapeHtml(practice.level)}</span>
-        <span><i data-lucide="shield-check" aria-hidden="true"></i>Validação local</span>
-        <details class="sql-practice-columns">
+        ${tableNames.length ? `<span><i data-lucide="table-2" aria-hidden="true"></i>${tableLabel}: ${escapeHtml(tableNames.join(", "))}</span>` : ""}
+        ${practice.level ? `<span><i data-lucide="graduation-cap" aria-hidden="true"></i>Nível: ${escapeHtml(practice.level)}</span>` : ""}
+        <span title="Sua consulta é executada com segurança somente neste navegador."><i data-lucide="shield-check" aria-hidden="true"></i>Execução segura no navegador</span>
+        ${practice.columns ? `<details class="sql-practice-columns">
           <summary><i data-lucide="columns-3" aria-hidden="true"></i>Colunas: ver detalhes</summary>
           <div>${escapeHtml(practice.columns)}</div>
-        </details>
+        </details>` : ""}
       </div>
     `;
   }
@@ -600,7 +604,7 @@
                     <div class="sql-support-chat__loading mapia-msg-ai">
                       <span class="mapia-ai-avatar" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.7 5.2L19 10l-5.3 1.8L12 17l-1.7-5.2L5 10l5.3-1.8L12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
                       <div class="mapia-ai-message-content">
-                        <strong class="mapia-ai-sender-name">MapIA</strong>
+                        <strong class="mapia-ai-sender-name">Pensando</strong>
                         <span class="mapia-typing-bubble" aria-label="MapIA pensando">
                           <span class="mapia-typing-dot"></span>
                           <span class="mapia-typing-dot"></span>
@@ -1360,11 +1364,11 @@
   }
 
   function scrollMapiaToBottom() {
-    const container = mount.querySelector(".mapia-chat-messages");
-    if (!container) return;
+    const messages = mount.querySelector(".mapia-chat-messages");
+    if (!messages) return;
 
     const scrollToLatestMessage = () => {
-      container.scrollTop = container.scrollHeight;
+      messages.scrollTop = messages.scrollHeight;
     };
 
     if (typeof globalScope.requestAnimationFrame === "function") {
@@ -1625,16 +1629,60 @@
     renderPage();
   }
 
-  function selectPractice(index) {
+  async function selectPractice(index) {
     const practice = practices[index];
-    if (!practice || practice.status !== "active") {
+    if (!practice || practice.status !== "active" || state.loadingPracticeSlug) {
       return;
     }
 
-    state.activeIndex = index;
-    resetPracticeInteraction(practice);
+    let selectedPractice = practice;
+    if (sqlPracticeService) {
+      state.loadingPracticeSlug = practice.slug;
+      state.persistenceStatus = "Carregando o conteúdo completo desta etapa...";
+      renderPage();
+
+      const loadResult = await sqlPracticeService.loadPractice(practice.slug);
+      state.loadingPracticeSlug = "";
+      if (!loadResult.ok) {
+        state.persistenceStatus = "Não foi possível carregar esta etapa agora. Tente novamente.";
+        renderPage();
+        return;
+      }
+
+      const localPractice = practices.find((item) => item.slug === loadResult.practice.slug) || {};
+      const validator = PRACTICE_VALIDATOR_BY_SLUG[loadResult.practice.slug];
+      selectedPractice = {
+        ...localPractice,
+        ...loadResult.practice,
+        solutionText: localPractice.solutionText || "",
+        validationConfig: validator ? { validator } : localPractice.validationConfig,
+        expectedResult: localPractice.expectedResult
+      };
+      practices = (loadResult.catalog || []).map((item) => ({
+        ...(practices.find((localItem) => localItem.slug === item.slug) || {}),
+        ...item,
+        ...(item.slug === selectedPractice.slug ? selectedPractice : {})
+      }));
+      state.dataSource = "supabase";
+      state.sourceStatus = "Conteúdo completo carregado; a consulta é executada com segurança no navegador.";
+
+      const userState = await sqlPracticeService.loadUserState(selectedPractice);
+      state.isAuthenticated = Boolean(userState.authenticated);
+      if (userState.ok && userState.authenticated) {
+        state.attempts[selectedPractice.slug] = { attemptCount: userState.attemptCount || 0 };
+        practices = practices.map((item) => ({
+          ...item,
+          userProgressStatus: userState.practiceProgress?.[item.slug]?.status || item.userProgressStatus || ""
+        }));
+      }
+    }
+
+    state.activeIndex = Math.max(0, practices.findIndex((item) => item.slug === selectedPractice.slug));
+    state.persistenceStatus = "";
+    resetPracticeInteraction(selectedPractice);
+    state.sqlWorkbench = { status: "idle", engine: null, execution: null, executionQuery: "", error: "" };
     const nextUrl = new URL(globalScope.location.href);
-    nextUrl.searchParams.set("pratica", practice.slug);
+    nextUrl.searchParams.set("pratica", selectedPractice.slug);
     globalScope.history.replaceState({}, "", nextUrl);
     renderPage();
   }
@@ -1745,7 +1793,7 @@
 
     const practiceButton = event.target.closest("[data-select-practice]");
     if (practiceButton) {
-      selectPractice(Number(practiceButton.dataset.selectPractice));
+      void selectPractice(Number(practiceButton.dataset.selectPractice));
     }
   });
 

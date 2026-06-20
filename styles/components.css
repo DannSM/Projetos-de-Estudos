@@ -896,6 +896,19 @@
   flex-shrink: 0;
 }
 
+.learning-paths-summary-actions {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+  width: min(15.5rem, 100%);
+  flex-shrink: 0;
+}
+
+.learning-paths-summary-actions .button {
+  width: 100%;
+  align-self: stretch;
+}
+
 .learning-paths-summary-progress {
   display: grid;
   align-content: center;
@@ -924,6 +937,11 @@
 
 .learning-path-card {
   gap: 0.58rem;
+}
+
+.track-practice-link {
+  width: fit-content;
+  margin-top: auto;
 }
 
 .learning-path-card.is-featured {
@@ -5245,6 +5263,19 @@ body.analytics-auth-locked .analytics-hero-copy {
   font-size: clamp(1rem, 1.25vw, 1.15rem);
   line-height: 1.1;
   white-space: nowrap;
+}
+
+.sql-practice-sidebar__header > div {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.sql-practice-sidebar__header > div > span {
+  color: #0f766e;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .sql-practice-steps {
