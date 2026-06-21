@@ -611,13 +611,13 @@
 
     if (selectedCompletedCandidate && path?.id) {
       const verifiedTrack = await verifyCompletedTrack(client, userId, path.id);
-      learningProgress = {
-        ...learningProgress,
-        status: verifiedTrack.isCompleted ? "completed" : "in_progress",
-        progress_percent: verifiedTrack.progressPercent
-      };
+      const reconcileProgress = globalScope.learningProgressStatus?.reconcileTrackProgress;
+      if (typeof reconcileProgress !== "function") {
+        throw new Error("Reconciliação de progresso da trilha indisponível.");
+      }
+      learningProgress = reconcileProgress(learningProgress, verifiedTrack);
 
-      if (!verifiedTrack.isCompleted) {
+      if (verifiedTrack.isVerifiable && !verifiedTrack.isCompleted) {
         nextLearningProgress = null;
         step = verifiedTrack.nextStep;
       }

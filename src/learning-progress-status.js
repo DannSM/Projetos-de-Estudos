@@ -8,9 +8,11 @@
   }
 
   function calculateTrackStatus({ steps, activities, attempts }) {
-    const activeSteps = normalizeList(steps)
-      .filter((step) => step?.status === "active" && getPracticeSlug(step))
+    const allActiveSteps = normalizeList(steps)
+      .filter((step) => step?.status === "active")
       .sort((left, right) => Number(left.display_order || 0) - Number(right.display_order || 0));
+    const activeSteps = allActiveSteps.filter((step) => getPracticeSlug(step));
+    const isVerifiable = allActiveSteps.length > 0 && activeSteps.length === allActiveSteps.length;
     const activityBySlug = new Map(
       normalizeList(activities).map((activity) => [String(activity?.slug || ""), activity])
     );
@@ -29,14 +31,15 @@
       }
     });
 
-    const requiredSteps = activeSteps.length;
+    const requiredSteps = allActiveSteps.length;
     const completedSteps = completedStepIds.size;
     const progressPercent = requiredSteps
       ? Math.round((completedSteps / requiredSteps) * 100)
       : 0;
 
     return {
-      isCompleted: requiredSteps > 0 && completedSteps === requiredSteps,
+      isVerifiable,
+      isCompleted: isVerifiable && completedSteps === requiredSteps,
       progressPercent,
       requiredSteps,
       completedSteps,
@@ -45,7 +48,19 @@
     };
   }
 
-  const api = { calculateTrackStatus, getPracticeSlug };
+  function reconcileTrackProgress(progress, verifiedTrack) {
+    if (!progress || !verifiedTrack?.isVerifiable) {
+      return progress;
+    }
+
+    return {
+      ...progress,
+      status: verifiedTrack.isCompleted ? "completed" : "in_progress",
+      progress_percent: verifiedTrack.progressPercent
+    };
+  }
+
+  const api = { calculateTrackStatus, getPracticeSlug, reconcileTrackProgress };
   globalScope.learningProgressStatus = api;
 
   if (typeof module !== "undefined" && module.exports) {
