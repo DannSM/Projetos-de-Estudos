@@ -739,7 +739,7 @@ h3 {
   display: grid;
   grid-template-columns: minmax(12rem, 0.34fr) minmax(0, 1fr);
   gap: clamp(0.8rem, 2vw, 1.25rem);
-  align-items: center;
+  align-items: start;
   padding-top: clamp(0.75rem, 2vw, 1.2rem);
   padding-bottom: clamp(0.75rem, 2vw, 1.2rem);
 }
@@ -760,6 +760,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.62rem;
+  margin-top: 3rem;
 }
 
 .diagnostic-outcomes__grid article {

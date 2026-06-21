@@ -398,8 +398,6 @@
     const progress = getPathProgress(path, progressByPath, verifiedTrackStatusByPath);
     const minutes = formatMinutes(path.estimated_minutes);
     const isFeatured = featuredPath?.id === path.id;
-    const isSqlEssencial = path.slug === "sql-essencial" || /sql essencial/i.test(path.title || "");
-
     return `
       <article class="track-card learning-path-card${isFeatured ? " is-featured" : ""}">
         <div class="learning-path-card-top">
@@ -432,12 +430,6 @@
             `).join("")}
           </ol>
         ` : `<p class="learning-path-empty-steps">Passos ainda não cadastrados para esta trilha.</p>`}
-        ${isSqlEssencial ? `
-          <a class="button button-secondary track-practice-link" href="praticas-sql.html?pratica=sql-essencial-filtros-where">
-            <i data-lucide="square-terminal" aria-hidden="true"></i>
-            <span>Explorar práticas SQL</span>
-          </a>
-        ` : ""}
       </article>
     `;
   }

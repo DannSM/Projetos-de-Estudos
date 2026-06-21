@@ -3645,14 +3645,6 @@ body.analytics-auth-locked .analytics-hero-copy {
   margin-top: clamp(2.5rem, 6vw, 4.5rem);
 }
 
-.legal-footer .contact-footer__content {
-  padding-block: 2rem;
-}
-
-.legal-footer .contact-footer__links {
-  justify-content: center;
-}
-
 @media (max-width: 600px) {
   .legal-page {
     padding-top: 2rem;
