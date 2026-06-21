@@ -600,6 +600,7 @@ function renderDiagnosticIntro() {
         ${areaGoals.map((area) => `<span>${area}</span>`).join("")}
       </div>
       <button class="submit-button" id="startDiagnostic">Iniciar diagnóstico</button>
+      <p class="diagnostic-start-note">15 perguntas rápidas · sem cadastro obrigatório · resultado com próxima prioridade</p>
     </div>
   `;
 
@@ -696,12 +697,12 @@ function getOrCreateAnonymousDiagnosticModal() {
       <div class="anonymous-diagnostic-modal-copy">
         <span class="auth-modal-kicker">Data Skill Map</span>
         <h2 id="anonymousDiagnosticTitle">Salve seu progresso antes de começar</h2>
-        <p>Você pode fazer o diagnóstico sem login. Mas, para salvar seu resultado, acompanhar sua evolução e receber recomendações depois, entre ou crie uma conta gratuita.</p>
+        <p>Você pode fazer o diagnóstico sem login. Mas, ao entrar, seu resultado, sua trilha e suas próximas práticas ficam salvos para continuar depois.</p>
         <small>Continuar sem login mantém a experiência livre, mas o histórico pode não ficar vinculado à sua conta.</small>
       </div>
       <div class="anonymous-diagnostic-modal-actions">
         <button type="button" class="filter-button" data-anonymous-diagnostic-continue>Continuar sem login</button>
-        <button type="button" class="submit-button" data-anonymous-diagnostic-auth>Entrar / Criar conta</button>
+        <button type="button" class="submit-button" data-anonymous-diagnostic-auth>Entrar para salvar resultado</button>
       </div>
     </div>
   `;
