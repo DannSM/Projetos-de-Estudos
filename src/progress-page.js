@@ -812,26 +812,60 @@
 
   function renderLockedState() {
     mount.innerHTML = `
-      <article class="progress-gate-card">
-        <div class="progress-gate-visual" aria-hidden="true">
-          <span class="progress-gate-icon">
-            <i data-lucide="lock-keyhole"></i>
-          </span>
-          <div class="progress-gate-lines">
-            <span></span>
-            <span></span>
-            <span></span>
+      <article class="progress-preview" aria-labelledby="progressPreviewTitle">
+        <div class="progress-preview-heading">
+          <div class="progress-preview-copy">
+            <span class="section-kicker">Meu Progresso</span>
+            <h1 id="progressPreviewTitle">Seu progresso fica salvo aqui</h1>
+            <p>Entre para acompanhar sua trilha recomendada, suas práticas concluídas e o próximo passo sugerido com base no seu diagnóstico.</p>
           </div>
+          <span class="progress-preview-note">
+            <i data-lucide="eye" aria-hidden="true"></i>
+            Prévia do que você verá após entrar.
+          </span>
         </div>
 
-        <div class="progress-gate-copy">
-          <span class="section-kicker">Área autenticada</span>
-          <h1>Entre para ver seu progresso.</h1>
-          <p>Crie uma conta ou acesse sua conta atual para acompanhar sua evolução no Data Skill Map.</p>
+        <div class="progress-preview-grid" aria-label="Exemplos do painel de progresso">
+          <section class="progress-preview-card progress-preview-card--practice">
+            <div class="progress-preview-card-heading">
+              <span class="progress-preview-icon"><i data-lucide="play-circle" aria-hidden="true"></i></span>
+              <span class="progress-preview-badge">10 min</span>
+            </div>
+            <div>
+              <span class="progress-preview-label">Próxima prática recomendada</span>
+              <strong>SQL Essencial — Filtros com WHERE</strong>
+              <p>Exemplo de prática curta para continuar evoluindo.</p>
+            </div>
+          </section>
+
+          <section class="progress-preview-card progress-preview-card--path">
+            <span class="progress-preview-icon"><i data-lucide="route" aria-hidden="true"></i></span>
+            <div>
+              <span class="progress-preview-label">Trilha atual</span>
+              <strong>Diagnóstico → SQL Essencial → Central SQL</strong>
+              <p>Veja sua rota de estudo organizada por prioridade.</p>
+            </div>
+          </section>
+
+          <section class="progress-preview-card progress-preview-card--saved">
+            <span class="progress-preview-icon"><i data-lucide="bookmark-check" aria-hidden="true"></i></span>
+            <div>
+              <span class="progress-preview-label">Progresso salvo</span>
+              <strong>Continue de onde parou</strong>
+              <p>Suas práticas, revisões e avanços ficam disponíveis após o login.</p>
+            </div>
+          </section>
+        </div>
+
+        <div class="progress-preview-actions">
           <button class="button button-primary progress-auth-button" type="button" data-progress-auth-open>
             <i data-lucide="user-circle" aria-hidden="true"></i>
-            <span>Entrar / Criar conta</span>
+            <span>Entrar para salvar meu progresso</span>
           </button>
+          <a class="button button-secondary" href="diagnostico.html">
+            <i data-lucide="clipboard-list" aria-hidden="true"></i>
+            <span>Fazer diagnóstico primeiro</span>
+          </a>
         </div>
       </article>
     `;

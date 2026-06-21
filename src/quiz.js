@@ -901,8 +901,9 @@ async function confirmDiagnosticAnswer() {
   document.querySelector("#feedbackMount").innerHTML = `
     <div class="feedback-box feedback-box-compact">
       <div class="feedback-box-compact-content">
-        <strong>Resposta confirmada.</strong>
-        <p class="question-meta">Conceito avaliado: ${answerRecord.concept}</p>
+        <strong>Resposta registrada.</strong>
+        <p class="question-meta"><b>Conceito avaliado:</b> ${answerRecord.concept}</p>
+        <p class="question-meta">No final, vamos usar esse resultado para indicar sua próxima prioridade de estudo.</p>
       </div>
       <button class="submit-button feedback-next-button ${nextAction.isTerminal ? "is-terminal-action" : ""} ${nextAction.action === "level-performance" ? "is-level-performance-action" : ""}" id="nextQuestion">
         ${nextAction.label}

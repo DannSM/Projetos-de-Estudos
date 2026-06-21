@@ -131,6 +131,165 @@
   margin-top: 0.35rem;
 }
 
+.progress-ui .progress-preview {
+  display: grid;
+  gap: clamp(1.15rem, 2.5vw, 1.7rem);
+  padding: clamp(1rem, 3vw, 1.7rem);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0, rgba(94, 234, 212, 0.16), transparent 36%),
+    rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.progress-ui .progress-preview-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.progress-ui .progress-preview-copy {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 48rem;
+}
+
+.progress-ui .progress-preview-copy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.15rem);
+  line-height: 1;
+}
+
+.progress-ui .progress-preview-copy p,
+.progress-ui .progress-preview-card p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.progress-ui .progress-preview-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex: 0 0 auto;
+  padding: 0.42rem 0.64rem;
+  color: var(--color-text-secondary);
+  background: rgba(248, 250, 252, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.progress-ui .progress-preview-note .lucide {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.progress-ui .progress-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.progress-ui .progress-preview-card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-width: 0;
+  min-height: 13rem;
+  padding: 1rem;
+  background: rgba(248, 250, 252, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius-lg);
+}
+
+.progress-ui .progress-preview-card--practice {
+  background: linear-gradient(145deg, rgba(239, 246, 255, 0.94), rgba(255, 255, 255, 0.88));
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.progress-ui .progress-preview-card--path {
+  background: linear-gradient(145deg, rgba(240, 253, 250, 0.94), rgba(255, 255, 255, 0.88));
+  border-color: rgba(20, 184, 166, 0.22);
+}
+
+.progress-ui .progress-preview-card--saved {
+  background: linear-gradient(145deg, rgba(255, 251, 235, 0.94), rgba(255, 255, 255, 0.88));
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.progress-ui .progress-preview-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.progress-ui .progress-preview-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-grid;
+  place-items: center;
+  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 12px;
+}
+
+.progress-ui .progress-preview-icon .lucide {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.progress-ui .progress-preview-badge {
+  padding: 0.28rem 0.52rem;
+  color: #0f766e;
+  background: rgba(204, 251, 241, 0.86);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.progress-ui .progress-preview-card > div:last-child {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.progress-ui .progress-preview-label {
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.progress-ui .progress-preview-card strong {
+  color: var(--color-text-primary);
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.progress-ui .progress-preview-card p {
+  font-size: 0.84rem;
+}
+
+.progress-ui .progress-preview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.progress-ui .progress-preview-actions .button {
+  width: 100%;
+  margin: 0;
+}
+
 .progress-ui .progress-dashboard {
   display: grid;
   gap: 1.05rem;
@@ -1064,6 +1223,27 @@
 }
 
 @media (max-width: 780px) {
+  .progress-ui .progress-preview-heading {
+    display: grid;
+    align-items: start;
+  }
+
+  .progress-ui .progress-preview-note {
+    width: fit-content;
+  }
+
+  .progress-ui .progress-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-ui .progress-preview-card {
+    min-height: 0;
+  }
+
+  .progress-ui .progress-preview-actions {
+    grid-template-columns: 1fr;
+  }
+
   .progress-ui .progress-metric-grid,
   .progress-ui .progress-detail-grid {
     grid-template-columns: 1fr;
@@ -1323,4 +1503,22 @@
   .progress-ui .progress-auth-button {
     width: 100%;
   }
+
+  .progress-ui .progress-preview {
+    padding: 0.76rem;
+  }
+
+  .progress-ui .progress-preview-copy h1 {
+    font-size: clamp(1.72rem, 9vw, 2.18rem);
+  }
+
+  .progress-ui .progress-preview-grid {
+    gap: 0.55rem;
+  }
+
+  .progress-ui .progress-preview-card {
+    gap: 0.62rem;
+    padding: 0.72rem;
+  }
+
 }
