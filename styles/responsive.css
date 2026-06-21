@@ -518,12 +518,27 @@
   }
 
   .commercial-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 0.42rem;
     margin-top: 0.54rem;
   }
 
   .commercial-hero-actions .button {
-    min-height: 2.74rem;
+    min-height: 2.875rem;
+  }
+
+  .diagnostic-outcomes {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnostic-outcomes__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .diagnostic-outcomes__grid article {
+    padding: 0.66rem;
   }
 
   .hero-benefits {

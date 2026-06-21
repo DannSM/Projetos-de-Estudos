@@ -225,6 +225,10 @@
   text-align: center;
 }
 
+.diagnostic-intro > #startDiagnostic {
+  min-height: 2.875rem;
+}
+
 .quiz-step {
   animation: quizStepIn 260ms ease both;
 }

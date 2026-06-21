@@ -1244,6 +1244,10 @@
     grid-template-columns: 1fr;
   }
 
+  .progress-ui .progress-preview-actions .button {
+    min-height: 2.875rem;
+  }
+
   .progress-ui .progress-metric-grid,
   .progress-ui .progress-detail-grid {
     grid-template-columns: 1fr;
