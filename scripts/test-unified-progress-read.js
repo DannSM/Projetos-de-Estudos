@@ -27,6 +27,11 @@ function run() {
   assert.doesNotMatch(progress, /\.from\("learning_activities"\)/);
   assert.match(progress, /if \(path\?\.id\) \{\s*verifiedTrack = await verifyCompletedTrack/);
   assert.doesNotMatch(progress, /if \(selectedCompletedCandidate && path\?\.id\)/);
+  assert.match(progress, /function buildJourneyStatus\(data\)/);
+  assert.match(progress, /progress-journey-grid/);
+  assert.match(progress, /Trilha concluída/);
+  assert.match(progress, /Comece por: \$\{nextPathStep\.title\}/);
+  assert.match(progress, /title: "Comece pelo diagnóstico"/);
 
   const loadUserStateSource = practiceService.slice(
     practiceService.indexOf("async function loadUserState"),

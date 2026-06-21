@@ -300,20 +300,38 @@
     latestSession,
     priorityArea
   }) {
+    if (!latestSession) {
+      return {
+        title: "Comece pelo diagnóstico",
+        eyebrow: "Próximo passo",
+        text: "Descubra seu nível atual e receba uma trilha personalizada para começar.",
+        href: "diagnostico.html",
+        cta: "Iniciar diagnóstico"
+      };
+    }
+
     const progressPercent = clampPercent(learningProgress?.progress_percent);
     if (learningProgress?.status === "completed" && progressPercent === 100 && path) {
-      const nextPathText = nextPath
-        ? ` Próxima recomendação: ${nextPath.title}${nextPathStep?.title ? `, começando por ${nextPathStep.title}` : ""}.`
-        : "";
+      if (nextPath || nextPathStep) {
+        return {
+          title: nextPath?.title || nextPathStep?.title || "Continue sua evolução",
+          eyebrow: "Próximo passo",
+          text: nextPathStep?.title
+            ? `Comece por: ${nextPathStep.title}.`
+            : "Uma nova trilha já está pronta para você continuar evoluindo.",
+          href: "index.html#trilhas",
+          cta: "Ver próxima trilha",
+          pathTitle: nextPath?.title || "",
+          note: "Próxima recomendação: nova trilha disponível."
+        };
+      }
+
       return {
-        title: `${path.title} concluída`,
-        eyebrow: "Trilha concluída",
-        text: `Você concluiu todas as práticas desta trilha.${nextPathText}`,
+        title: "Continue sua evolução",
+        eyebrow: "Próximo passo",
+        text: "Explore uma nova trilha para seguir desenvolvendo suas habilidades.",
         href: "index.html#trilhas",
-        cta: nextPath ? "Ver próxima trilha" : "Ver trilhas",
-        isRecommendedPractice: false,
-        pathTitle: path.title,
-        note: "100% da trilha concluída."
+        cta: "Ver trilhas"
       };
     }
 
@@ -383,10 +401,60 @@
     }
 
     return {
-      title: "Iniciar diagnóstico",
-      text: EMPTY_MESSAGE,
-      href: "diagnostico.html",
-      cta: "Fazer diagnóstico"
+      title: "Continue sua evolução",
+      eyebrow: "Próximo passo",
+      text: "Revise seu resultado e escolha uma trilha para seguir avançando.",
+      href: "index.html#trilhas",
+      cta: "Ver trilhas"
+    };
+  }
+
+  function buildJourneyStatus(data) {
+    const latestSession = data.diagnosticSessions[0] || null;
+    const progressValue = clampPercent(data.learningProgress?.progress_percent);
+    const isCompleted = data.learningProgress?.status === "completed" && progressValue === 100 && data.path;
+    const recommendedTitle = data.path?.title || data.learningRecommendation?.title || data.diagnosticRecommendation?.title;
+
+    if (!latestSession) {
+      return {
+        tone: "initial",
+        icon: "compass",
+        eyebrow: "Status da jornada",
+        title: "Diagnóstico pendente",
+        text: "Ainda não há uma trilha personalizada. Faça o diagnóstico para descobrir por onde começar.",
+        progress: 0,
+        progressLabel: "Jornada ainda não iniciada",
+        status: "Ponto de partida",
+        pathTitle: "Trilha a definir"
+      };
+    }
+
+    if (isCompleted) {
+      return {
+        tone: "completed",
+        icon: "trophy",
+        eyebrow: "Trilha concluída",
+        title: `${data.path.title} concluída`,
+        text: "Você concluiu todas as práticas desta trilha.",
+        progress: 100,
+        progressLabel: "100% da trilha concluída",
+        status: "Conquista alcançada",
+        pathTitle: data.path.title
+      };
+    }
+
+    return {
+      tone: "active",
+      icon: "route",
+      eyebrow: "Trilha recomendada",
+      title: recommendedTitle || "Sua jornada está em construção",
+      text: recommendedTitle
+        ? "Esta é a trilha em foco para você avançar a partir do seu diagnóstico."
+        : "Seu diagnóstico já orienta os próximos estudos enquanto a trilha é preparada.",
+      progress: progressValue,
+      progressLabel: `${progressValue}% da trilha concluída`,
+      status: progressValue > 0 ? "Em andamento" : "Pronta para começar",
+      pathTitle: recommendedTitle || "Recomendação em preparação"
     };
   }
 
@@ -938,6 +1006,37 @@
     `;
   }
 
+  function renderJourneyStatusCard(journeyStatus) {
+    return `
+      <article class="progress-journey-card progress-journey-card--${escapeHtml(journeyStatus.tone)}" aria-label="Status da jornada">
+        <div class="progress-journey-card__heading">
+          <span class="progress-journey-icon" aria-hidden="true">
+            <i data-lucide="${escapeHtml(journeyStatus.icon)}"></i>
+          </span>
+          <div>
+            <span class="progress-status-eyebrow">${escapeHtml(journeyStatus.eyebrow)}</span>
+            <strong>${escapeHtml(journeyStatus.title)}</strong>
+          </div>
+        </div>
+        <p>${escapeHtml(journeyStatus.text)}</p>
+        <div class="progress-journey-tags" aria-label="Situação da trilha">
+          <small>${escapeHtml(journeyStatus.status)}</small>
+          <small>${escapeHtml(journeyStatus.pathTitle)}</small>
+        </div>
+        <div class="progress-journey-progress">
+          <div>
+            <span>Evolução da trilha</span>
+            <strong>${escapeHtml(`${journeyStatus.progress}%`)}</strong>
+          </div>
+          <div role="progressbar" aria-label="Evolução da trilha" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${journeyStatus.progress}">
+            <span style="width: ${journeyStatus.progress}%"></span>
+          </div>
+          <small>${escapeHtml(journeyStatus.progressLabel)}</small>
+        </div>
+      </article>
+    `;
+  }
+
   function renderAuthenticatedState(session, data) {
     const user = session?.user || {};
     const displayName = pickDisplayName(data.profile, user);
@@ -962,6 +1061,7 @@
       latestSession,
       priorityArea: data.priorityArea
     });
+    const journeyStatus = buildJourneyStatus(data);
     const cards = buildCards(data).map((card) => `
       <article class="progress-metric-card progress-metric-card--${card.tone}">
         <span class="progress-metric-icon" aria-hidden="true">
@@ -1005,6 +1105,9 @@
                 <strong>${escapeHtml(priorityArea ? getAreaDisplayName(priorityArea.area) : "A definir")}</strong>
               </div>
             </div>
+          </div>
+          <div class="progress-journey-grid">
+            ${renderJourneyStatusCard(journeyStatus)}
             ${renderNextStepCard(nextStep, progressStatus)}
           </div>
         </section>

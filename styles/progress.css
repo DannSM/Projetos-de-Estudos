@@ -243,6 +243,156 @@
   box-shadow: 0 18px 38px rgba(37, 99, 235, 0.11);
 }
 
+.progress-ui .progress-journey-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 0.85rem;
+}
+
+.progress-ui .progress-journey-card,
+.progress-ui .progress-journey-grid .progress-status-card {
+  min-height: 17rem;
+}
+
+.progress-ui .progress-journey-grid .progress-status-card--practice {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.progress-ui .progress-journey-grid .progress-status-card--practice .progress-status-link {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.progress-ui .progress-journey-card {
+  display: grid;
+  align-content: start;
+  gap: 0.78rem;
+  padding: 1.15rem;
+  background: linear-gradient(145deg, rgba(248, 250, 252, 0.95), rgba(239, 246, 255, 0.88));
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 38px rgba(37, 99, 235, 0.09);
+}
+
+.progress-ui .progress-journey-card--completed {
+  background:
+    radial-gradient(circle at 92% 12%, rgba(163, 230, 53, 0.24), transparent 30%),
+    linear-gradient(145deg, rgba(236, 253, 245, 0.96), rgba(240, 253, 250, 0.88));
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.progress-ui .progress-journey-card--initial {
+  background: linear-gradient(145deg, rgba(248, 250, 252, 0.96), rgba(241, 245, 249, 0.9));
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.progress-ui .progress-journey-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+}
+
+.progress-ui .progress-journey-card__heading > div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.progress-ui .progress-journey-card__heading strong {
+  color: var(--color-text-primary);
+  font-size: clamp(1.18rem, 2vw, 1.48rem);
+  line-height: 1.2;
+}
+
+.progress-ui .progress-journey-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.65rem;
+  height: 2.65rem;
+  color: var(--color-primary);
+  background: rgba(219, 234, 254, 0.88);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: 14px;
+}
+
+.progress-ui .progress-journey-card--completed .progress-journey-icon {
+  color: #047857;
+  background: rgba(209, 250, 229, 0.9);
+  border-color: rgba(16, 185, 129, 0.24);
+}
+
+.progress-ui .progress-journey-icon .lucide {
+  width: 1.22rem;
+  height: 1.22rem;
+}
+
+.progress-ui .progress-journey-card p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.progress-ui .progress-journey-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.progress-ui .progress-journey-tags small {
+  padding: 0.28rem 0.52rem;
+  color: #1d4ed8;
+  background: rgba(219, 234, 254, 0.78);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.progress-ui .progress-journey-card--completed .progress-journey-tags small {
+  color: #047857;
+  background: rgba(209, 250, 229, 0.82);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.progress-ui .progress-journey-progress {
+  display: grid;
+  gap: 0.42rem;
+  margin-top: auto;
+}
+
+.progress-ui .progress-journey-progress > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.progress-ui .progress-journey-progress span,
+.progress-ui .progress-journey-progress small {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.progress-ui .progress-journey-progress > div:nth-child(2) {
+  height: 0.55rem;
+  overflow: hidden;
+  background: rgba(203, 213, 225, 0.72);
+  border-radius: 999px;
+}
+
+.progress-ui .progress-journey-progress > div:nth-child(2) span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent-strong));
+  border-radius: inherit;
+}
+
+.progress-ui .progress-journey-card--completed .progress-journey-progress > div:nth-child(2) span {
+  background: linear-gradient(90deg, #10b981, #14b8a6);
+}
+
 .progress-ui .progress-status-card--practice {
   isolation: isolate;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -902,6 +1052,17 @@
   }
 }
 
+@media (max-width: 860px) {
+  .progress-ui .progress-journey-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-ui .progress-journey-card,
+  .progress-ui .progress-journey-grid .progress-status-card {
+    min-height: auto;
+  }
+}
+
 @media (max-width: 780px) {
   .progress-ui .progress-metric-grid,
   .progress-ui .progress-detail-grid {
@@ -1017,6 +1178,21 @@
   .progress-ui .progress-status-card {
     gap: 0.3rem;
     padding: 0.7rem;
+  }
+
+  .progress-ui .progress-journey-grid {
+    gap: 0.55rem;
+  }
+
+  .progress-ui .progress-journey-card {
+    gap: 0.58rem;
+    padding: 0.72rem;
+  }
+
+  .progress-ui .progress-journey-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 12px;
   }
 
   .progress-ui .progress-status-card--practice {
