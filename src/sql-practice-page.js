@@ -33,11 +33,11 @@
       slug: "sql-introducao",
       navTitle: "Introdução ao SQL",
       shortTitle: "Introdução ao SQL",
-      status: "completed",
+      status: "active",
       estimatedMinutes: 8,
       level: "SQL Junior",
       topic: "Base",
-      note: "validada localmente"
+      note: ""
     },
     {
       slug: "sql-essencial-filtros-where",
@@ -335,7 +335,6 @@
 
   function getSidebarStatus(practice, index) {
     if (practice.userProgressStatus === "completed") return "completed";
-    if (practice.status === "completed") return "completed";
     if (index === state.activeIndex) {
       return state.attempts[practice.slug]?.status === "correct" ? "completed" : "active";
     }
@@ -352,10 +351,10 @@
   }
 
   function getSidebarLabel(status) {
-    if (status === "completed") return "validada local";
-    if (status === "active") return "ativa";
+    if (status === "completed") return "concluída";
+    if (status === "active") return "em andamento";
     if (status === "available") return "disponível";
-    return "em breve";
+    return "pendente";
   }
 
   function renderSidebar() {

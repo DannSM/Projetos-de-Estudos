@@ -4,10 +4,15 @@ const path = require("path");
 const vm = require("vm");
 
 function loadService(window) {
+  const progressStatusSource = fs.readFileSync(
+    path.join(__dirname, "..", "src", "learning-progress-status.js"),
+    "utf8"
+  );
   const source = fs.readFileSync(
     path.join(__dirname, "..", "src", "sql-practice-service.js"),
     "utf8"
   );
+  vm.runInNewContext(progressStatusSource, { window, console, Map, Set });
   vm.runInNewContext(source, { window, console, Date, Map, Set });
   return window.sqlPracticeService;
 }
@@ -43,6 +48,10 @@ function createQuery(table, tables) {
       filters.push([column, value]);
       return query;
     },
+    in(column, values) {
+      filters.push([column, values, "in"]);
+      return query;
+    },
     order(column) {
       orderColumn = column;
       return query;
@@ -67,7 +76,9 @@ function createQuery(table, tables) {
 
   async function execute(single) {
     const rows = tables[table];
-    const matches = (row) => filters.every(([column, value]) => row[column] === value);
+    const matches = (row) => filters.every(([column, value, operator]) => (
+      operator === "in" ? value.includes(row[column]) : row[column] === value
+    ));
 
     if (operation === "insert") {
       rows.push({ id: `${table}-${rows.length + 1}`, ...payload });
@@ -100,6 +111,13 @@ function createAuthenticatedWindow(initialProgress) {
       { id: "step-3", path_id: "path-sql", step_key: "sql-essencial-03-filtro-mais-agregacao", display_order: 3, status: "active", metadata: { practice_slug: "sql-essencial-filtro-antes-agregacao" } },
       { id: "step-4", path_id: "path-sql", step_key: "sql-essencial-04-group-by", display_order: 4, status: "active", metadata: { practice_slug: "sql-essencial-group-by" } },
       { id: "step-5", path_id: "path-sql", step_key: "sql-essencial-05-join", display_order: 5, status: "active", metadata: { practice_slug: "sql-essencial-join" } }
+    ],
+    learning_activities: [
+      { id: "activity-1", slug: "sql-essencial-filtros-where" },
+      { id: "activity-2", slug: "sql-essencial-count-nulos-distintos" },
+      { id: "activity-3", slug: "sql-essencial-filtro-antes-agregacao" },
+      { id: "activity-4", slug: "sql-essencial-group-by" },
+      { id: "activity-5", slug: "sql-essencial-join" }
     ],
     user_practice_notes: [],
     user_activity_feedback: [],
@@ -170,7 +188,8 @@ async function run() {
     exerciseId: "exercise-3"
   });
   assert.strictEqual(loadedUserState.ok, true);
-  assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtros-where"].status, "in_progress");
+  assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtros-where"].status, "not_started");
+  assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtro-antes-agregacao"].status, "completed");
 
   const stepThreeScenario = createAuthenticatedWindow([
     {
@@ -320,7 +339,7 @@ async function run() {
   assert.match(progressPageSource, /\["not_started", "in_progress", "paused"\]/);
   assert.match(progressPageSource, /\.eq\("progress_percent", 100\)/);
   assert.match(progressPageSource, /Todas as práticas concluídas/);
-  assert.match(progressPageSource, /\[activeLearningProgress, completedLearningProgress\]/);
+  assert.match(progressPageSource, /activeLearningProgress \|\| completedLearningProgress/);
   assert.match(progressPageSource, /nextLearningProgress/);
   assert.match(progressPageSource, /Próxima recomendação:/);
   assert.match(progressPageSource, /100% da trilha concluída/);

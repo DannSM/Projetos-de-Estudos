@@ -7,6 +7,7 @@
     feedback: "user_activity_feedback",
     paths: "learning_paths",
     steps: "learning_path_steps",
+    activities: "learning_activities",
     learningProgress: "user_learning_progress"
   };
 
@@ -57,14 +58,14 @@
       slug: row.slug,
       navTitle: row.subtitle || row.title,
       shortTitle: row.title,
-      status: row.status === "coming_soon" ? "soon" : row.status,
+      status: row.status === "coming_soon" ? "soon" : "active",
       estimatedMinutes: row.estimated_minutes || 0,
       level: row.level_label || "",
       topic: row.metadata?.topic || "",
       trackSlug: row.track_slug || "",
       trackTitle: row.track_title || "",
       stepOrder: row.step_order ?? 0,
-      note: row.status === "completed" ? "validada localmente" : row.status === "coming_soon" ? "em breve" : ""
+      note: row.status === "coming_soon" ? "em breve" : ""
     };
   }
 
@@ -205,36 +206,46 @@
 
       let practiceProgress = {};
       if (pathResult.data?.id) {
-        const [stepsResult, progressResult] = await Promise.all([
+        const stepsResult = await client
+          .from(TABLES.steps)
+          .select("id,step_key,display_order,status,metadata")
+          .eq("path_id", pathResult.data.id)
+          .eq("status", "active")
+          .order("display_order", { ascending: true });
+        const practiceSlugs = (stepsResult.data || [])
+          .map((step) => step.metadata?.practice_slug || step.metadata?.activity_slug)
+          .filter(Boolean);
+        const [activitiesResult, correctAttemptsResult] = await Promise.all([
           client
-            .from(TABLES.steps)
-            .select("id,step_key,metadata")
-            .eq("path_id", pathResult.data.id)
-            .eq("status", "active"),
+            .from(TABLES.activities)
+            .select("id,slug")
+            .in("slug", practiceSlugs),
           client
-            .from(TABLES.learningProgress)
-            .select("step_id,status,progress_percent")
+            .from(TABLES.attempts)
+            .select("activity_id,validation_status")
             .eq("user_id", user.id)
-            .eq("path_id", pathResult.data.id)
+            .eq("validation_status", "correct")
         ]);
 
-        const progressError = stepsResult.error || progressResult.error;
+        const progressError = stepsResult.error || activitiesResult.error || correctAttemptsResult.error;
         if (progressError) {
           return { ok: false, authenticated: true, user, error: progressError };
         }
 
-        const progressByStepId = new Map(
-          (progressResult.data || []).map((row) => [row.step_id, row])
-        );
+        const verifiedTrack = globalScope.learningProgressStatus?.calculateTrackStatus?.({
+          steps: stepsResult.data || [],
+          activities: activitiesResult.data || [],
+          attempts: correctAttemptsResult.data || []
+        });
+        const completedStepIds = verifiedTrack?.completedStepIds || new Set();
         practiceProgress = Object.fromEntries(
           (stepsResult.data || [])
             .map((step) => {
               const practiceSlug = step.metadata?.practice_slug || step.metadata?.activity_slug;
-              const progress = progressByStepId.get(step.id);
-              return practiceSlug && progress
+              return practiceSlug
                 ? [practiceSlug, {
-                    status: progress.status,
-                    progressPercent: Number(progress.progress_percent) || 0,
+                    status: completedStepIds.has(step.id) ? "completed" : "not_started",
+                    progressPercent: verifiedTrack?.progressPercent || 0,
                     stepKey: step.step_key
                   }]
                 : null;

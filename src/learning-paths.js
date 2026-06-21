@@ -10,7 +10,9 @@
     steps: "learning_path_steps",
     progress: "user_learning_progress",
     recommendations: "learning_recommendations",
-    sessions: "diagnostic_sessions"
+    sessions: "diagnostic_sessions",
+    activities: "learning_activities",
+    attempts: "user_practice_attempts"
   };
 
   function escapeHtml(value) {
@@ -157,9 +159,17 @@
     return null;
   }
 
-  function getPathProgress(path, progressByPath) {
+  function getPathProgress(path, progressByPath, verifiedTrackStatusByPath = {}) {
     const rows = progressByPath[path.id] || [];
     const pathRow = rows.find((row) => !row.step_id) || rows[0] || null;
+    const verifiedTrack = verifiedTrackStatusByPath[path.id];
+    if (verifiedTrack?.isVerifiable) {
+      return {
+        row: pathRow,
+        percent: verifiedTrack.progressPercent,
+        status: verifiedTrack.isCompleted ? "completed" : (verifiedTrack.completedSteps ? "in_progress" : "not_started")
+      };
+    }
     const percent = pathRow ? clampPercent(pathRow.progress_percent) : 0;
 
     return {
@@ -167,6 +177,40 @@
       percent,
       status: pathRow?.status || "not_started"
     };
+  }
+
+  async function fetchVerifiedTrackStatuses(client, userId, steps) {
+    const calculator = globalScope.learningProgressStatus?.calculateTrackStatus;
+    const getPracticeSlug = globalScope.learningProgressStatus?.getPracticeSlug;
+    if (typeof calculator !== "function" || typeof getPracticeSlug !== "function") return {};
+
+    const practiceSlugs = normalizeList(steps).map(getPracticeSlug).filter(Boolean);
+    if (!practiceSlugs.length) return {};
+
+    const [activities, attempts] = await Promise.all([
+      fetchOptional(
+        client.from(TABLES.activities).select("id,slug").in("slug", practiceSlugs),
+        TABLES.activities
+      ),
+      fetchOptional(
+        client
+          .from(TABLES.attempts)
+          .select("activity_id,validation_status")
+          .eq("user_id", userId)
+          .eq("validation_status", "correct"),
+        TABLES.attempts
+      )
+    ]);
+    const stepsByPath = indexByPathId(steps);
+
+    return Object.fromEntries(Object.entries(stepsByPath).map(([pathId, pathSteps]) => [
+      pathId,
+      calculator({
+        steps: pathSteps,
+        activities: normalizeList(activities),
+        attempts: normalizeList(attempts)
+      })
+    ]));
   }
 
   async function fetchLearningPathData() {
@@ -192,7 +236,7 @@
       ? normalizeList(await fetchOrThrow(
         client
           .from(TABLES.steps)
-          .select("id,path_id,title,description,skill_area,content_type,content_url,estimated_minutes,display_order,status")
+          .select("id,path_id,title,description,skill_area,content_type,content_url,estimated_minutes,display_order,status,metadata")
           .in("path_id", pathIds)
           .eq("status", "active")
           .order("display_order", { ascending: true })
@@ -207,6 +251,7 @@
         paths,
         steps,
         progressRows: [],
+        verifiedTrackStatusByPath: {},
         recommendation: null,
         latestSession: null
       };
@@ -245,12 +290,14 @@
         TABLES.sessions
       )
     ]);
+    const verifiedTrackStatusByPath = await fetchVerifiedTrackStatuses(client, user.id, steps);
 
     return {
       user,
       paths,
       steps,
       progressRows: normalizeList(progressRows),
+      verifiedTrackStatusByPath,
       recommendation: normalizeList(recommendations)[0] || null,
       latestSession: normalizeList(sessions)[0] || null
     };
@@ -346,9 +393,9 @@
     `;
   }
 
-  function renderPathCard(path, index, stepsByPath, progressByPath, featuredPath) {
+  function renderPathCard(path, index, stepsByPath, progressByPath, verifiedTrackStatusByPath, featuredPath) {
     const steps = stepsByPath[path.id] || [];
-    const progress = getPathProgress(path, progressByPath);
+    const progress = getPathProgress(path, progressByPath, verifiedTrackStatusByPath);
     const minutes = formatMinutes(path.estimated_minutes);
     const isFeatured = featuredPath?.id === path.id;
     const isSqlEssencial = path.slug === "sql-essencial" || /sql essencial/i.test(path.title || "");
@@ -404,7 +451,9 @@
     const stepsByPath = indexByPathId(data.steps);
     const progressByPath = indexByPathId(data.progressRows);
     const featuredPath = pickFeaturedPath(data);
-    const featuredProgress = featuredPath ? getPathProgress(featuredPath, progressByPath) : { percent: 0 };
+    const featuredProgress = featuredPath
+      ? getPathProgress(featuredPath, progressByPath, data.verifiedTrackStatusByPath)
+      : { percent: 0 };
 
     mount.innerHTML = `
       ${renderPersonalizedSummary({
@@ -415,7 +464,7 @@
         user: data.user
       })}
       <div class="track-grid learning-path-grid">
-        ${data.paths.map((path, index) => renderPathCard(path, index, stepsByPath, progressByPath, featuredPath)).join("")}
+        ${data.paths.map((path, index) => renderPathCard(path, index, stepsByPath, progressByPath, data.verifiedTrackStatusByPath, featuredPath)).join("")}
       </div>
     `;
     refreshIcons();

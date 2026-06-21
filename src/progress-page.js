@@ -520,13 +520,7 @@
 
     const activeLearningProgress = normalizeList(learningProgressResult.data)[0] || null;
     const completedLearningProgress = normalizeList(completedLearningProgressResult.data)[0] || null;
-    let learningProgress = [activeLearningProgress, completedLearningProgress]
-      .filter(Boolean)
-      .sort((left, right) => {
-        const leftTime = new Date(left.last_activity_at || left.updated_at || 0).getTime();
-        const rightTime = new Date(right.last_activity_at || right.updated_at || 0).getTime();
-        return rightTime - leftTime;
-      })[0] || null;
+    let learningProgress = activeLearningProgress || completedLearningProgress;
     const selectedCompletedCandidate = learningProgress === completedLearningProgress;
     let nextLearningProgress = selectedCompletedCandidate
       ? activeLearningProgress
