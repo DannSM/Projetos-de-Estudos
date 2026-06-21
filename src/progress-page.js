@@ -398,6 +398,53 @@
     return { data, count };
   }
 
+  async function verifyCompletedTrack(client, userId, pathId) {
+    const calculator = globalScope.learningProgressStatus?.calculateTrackStatus;
+    const getPracticeSlug = globalScope.learningProgressStatus?.getPracticeSlug;
+    if (typeof calculator !== "function" || typeof getPracticeSlug !== "function") {
+      throw new Error("Calculadora de progresso da trilha indisponível.");
+    }
+
+    const stepsResult = await fetchOrThrow(
+      client
+        .from("learning_path_steps")
+        .select("id,path_id,step_key,title,description,skill_area,content_type,content_url,display_order,status,metadata")
+        .eq("path_id", pathId)
+        .eq("status", "active")
+        .order("display_order", { ascending: true }),
+      "learning_path_steps completion evidence"
+    );
+    const steps = normalizeList(stepsResult.data);
+    const practiceSlugs = steps.map(getPracticeSlug).filter(Boolean);
+    let activities = [];
+
+    if (practiceSlugs.length) {
+      const activitiesResult = await fetchOrThrow(
+        client
+          .from("learning_activities")
+          .select("id,slug")
+          .in("slug", practiceSlugs),
+        "learning_activities completion evidence"
+      );
+      activities = normalizeList(activitiesResult.data);
+    }
+
+    const attemptsResult = await fetchOrThrow(
+      client
+        .from("user_practice_attempts")
+        .select("activity_id,validation_status")
+        .eq("user_id", userId)
+        .eq("validation_status", "correct"),
+      "user_practice_attempts completion evidence"
+    );
+
+    return calculator({
+      steps,
+      activities,
+      attempts: normalizeList(attemptsResult.data)
+    });
+  }
+
   async function fetchProgressData(user) {
     const client = globalScope.authService?.getClient?.();
     if (!client || !user?.id) {
@@ -473,14 +520,15 @@
 
     const activeLearningProgress = normalizeList(learningProgressResult.data)[0] || null;
     const completedLearningProgress = normalizeList(completedLearningProgressResult.data)[0] || null;
-    const learningProgress = [activeLearningProgress, completedLearningProgress]
+    let learningProgress = [activeLearningProgress, completedLearningProgress]
       .filter(Boolean)
       .sort((left, right) => {
         const leftTime = new Date(left.last_activity_at || left.updated_at || 0).getTime();
         const rightTime = new Date(right.last_activity_at || right.updated_at || 0).getTime();
         return rightTime - leftTime;
       })[0] || null;
-    const nextLearningProgress = learningProgress === completedLearningProgress
+    const selectedCompletedCandidate = learningProgress === completedLearningProgress;
+    let nextLearningProgress = selectedCompletedCandidate
       ? activeLearningProgress
       : null;
     const latestSession = normalizeList(sessionsResult.data)[0] || null;
@@ -561,7 +609,21 @@
       path = pathResult.data || null;
     }
 
-    if (learningProgress?.step_id) {
+    if (selectedCompletedCandidate && path?.id) {
+      const verifiedTrack = await verifyCompletedTrack(client, userId, path.id);
+      learningProgress = {
+        ...learningProgress,
+        status: verifiedTrack.isCompleted ? "completed" : "in_progress",
+        progress_percent: verifiedTrack.progressPercent
+      };
+
+      if (!verifiedTrack.isCompleted) {
+        nextLearningProgress = null;
+        step = verifiedTrack.nextStep;
+      }
+    }
+
+    if (!step && learningProgress?.step_id) {
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
