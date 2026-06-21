@@ -68,6 +68,15 @@ function escapeAttribute(value) {
   return String(value || "").replace(/"/g, "&quot;");
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function getNavigationState(session, isAdmin) {
   if (!session) return "anonymous";
   return isAdmin ? "admin" : "student";
@@ -98,19 +107,80 @@ function renderNavLink(item) {
 }
 
 function renderAuthButton(session, variant) {
-  const isAuthenticated = Boolean(session);
   const isMobile = variant === "mobile";
-  const label = isAuthenticated ? "Sair" : "Entrar / Criar conta";
-  const icon = isAuthenticated ? "log-out" : "user-circle";
-  const className = `auth-entry-button${isMobile ? " mobile-auth-entry" : ""}${isAuthenticated ? " is-authenticated" : ""}`;
-  const ariaLabel = isAuthenticated ? "Sair da conta" : "Entrar ou criar conta";
+  const className = `auth-entry-button${isMobile ? " mobile-auth-entry" : ""}`;
 
   return `
-    <button class="${className}" type="button" data-auth-entry aria-label="${ariaLabel}" title="${ariaLabel}">
-      <i data-lucide="${icon}" aria-hidden="true"></i>
-      <span data-auth-entry-label>${label}</span>
+    <button class="${className}" type="button" data-auth-entry aria-label="Entrar na conta" title="Entrar na conta">
+      <i data-lucide="user-circle" aria-hidden="true"></i>
+      <span data-auth-entry-label>Entrar</span>
     </button>
   `;
+}
+
+function getAccountIdentity(session) {
+  const user = session?.user || null;
+  const metadata = user?.user_metadata || {};
+  const email = typeof user?.email === "string" ? user.email.trim() : "";
+  const emailName = email.includes("@") ? email.split("@")[0] : email;
+  const fullName = String(
+    metadata.full_name
+    || metadata.display_name
+    || metadata.name
+    || emailName
+    || "Conta"
+  ).trim();
+  const firstName = fullName.split(/\s+/).filter(Boolean)[0] || "Conta";
+  const initialSource = firstName !== "Conta" ? firstName : (emailName || "C");
+  const initial = Array.from(initialSource.trim())[0]?.toLocaleUpperCase("pt-BR") || "C";
+
+  return { email, firstName, fullName, initial };
+}
+
+function renderAccountMenu(session, variant) {
+  const isMobile = variant === "mobile";
+  const identity = getAccountIdentity(session);
+  const menuId = `accountMenu-${variant}`;
+  const visibleName = isMobile ? "Conta" : identity.firstName;
+  const email = identity.email
+    ? `<a class="account-menu-email" href="mailto:${escapeAttribute(identity.email)}">${escapeHtml(identity.email)}</a>`
+    : "";
+
+  return `
+    <div class="account-menu${isMobile ? " mobile-account-menu" : ""}" data-account-menu>
+      <button
+        class="account-menu-toggle"
+        type="button"
+        data-account-menu-toggle
+        aria-expanded="false"
+        aria-haspopup="menu"
+        aria-controls="${menuId}"
+        aria-label="Abrir menu da conta de ${escapeAttribute(identity.firstName)}"
+      >
+        <span class="account-avatar" aria-hidden="true">${escapeHtml(identity.initial)}</span>
+        <span class="account-menu-name">${escapeHtml(visibleName)}</span>
+        <i data-lucide="chevron-down" aria-hidden="true"></i>
+      </button>
+      <div id="${menuId}" class="account-menu-dropdown" data-account-menu-dropdown role="menu" hidden>
+        <div class="account-menu-user">
+          <strong>${escapeHtml(identity.fullName)}</strong>
+          ${email}
+        </div>
+        <a href="meu-progresso.html" role="menuitem">
+          <i data-lucide="line-chart" aria-hidden="true"></i>
+          <span>Meu Progresso</span>
+        </a>
+        <button type="button" data-account-logout role="menuitem">
+          <i data-lucide="log-out" aria-hidden="true"></i>
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderAccountControl(session, variant) {
+  return session ? renderAccountMenu(session, variant) : renderAuthButton(session, variant);
 }
 
 function renderPrimaryCta(session, variant) {
@@ -134,11 +204,11 @@ function renderGlobalNavigation(session = null, isAdmin = false) {
   });
 
   document.querySelectorAll("[data-global-actions='desktop']").forEach((container) => {
-    container.innerHTML = `${renderAuthButton(session, "desktop")}${renderPrimaryCta(session, "desktop")}`;
+    container.innerHTML = `${renderAccountControl(session, "desktop")}${renderPrimaryCta(session, "desktop")}`;
   });
 
   document.querySelectorAll("[data-global-nav='mobile']").forEach((nav) => {
-    nav.innerHTML = `${navHtml}${renderAuthButton(session, "mobile")}${renderPrimaryCta(session, "mobile")}`;
+    nav.innerHTML = `${navHtml}${renderAccountControl(session, "mobile")}${renderPrimaryCta(session, "mobile")}`;
   });
 
   updateGlobalNavActiveState();
@@ -443,6 +513,21 @@ async function setupAuthEntryPoints() {
     }
   };
 
+  const closeAccountMenus = (focusToggle = false) => {
+    document.querySelectorAll("[data-account-menu-toggle]").forEach((toggle) => {
+      const wasOpen = toggle.getAttribute("aria-expanded") === "true";
+      const menuId = toggle.getAttribute("aria-controls");
+      const menu = menuId ? document.getElementById(menuId) : null;
+      toggle.setAttribute("aria-expanded", "false");
+      if (menu) {
+        menu.hidden = true;
+      }
+      if (focusToggle && wasOpen) {
+        toggle.focus();
+      }
+    });
+  };
+
   const setAuthState = (session, isAdmin = false) => {
     currentSession = session || null;
     currentIsAdmin = Boolean(currentSession && isAdmin);
@@ -516,14 +601,24 @@ async function setupAuthEntryPoints() {
   });
 
   document.addEventListener("click", async (event) => {
-    const button = event.target.closest("[data-auth-entry]");
-    if (!button) {
+    const accountToggle = event.target.closest("[data-account-menu-toggle]");
+    if (accountToggle) {
+      const menuId = accountToggle.getAttribute("aria-controls");
+      const menu = menuId ? document.getElementById(menuId) : null;
+      const shouldOpen = accountToggle.getAttribute("aria-expanded") !== "true";
+
+      closeAccountMenus();
+      accountToggle.setAttribute("aria-expanded", String(shouldOpen));
+      if (menu) {
+        menu.hidden = !shouldOpen;
+      }
       return;
     }
 
-    closeMobileMenu();
-
-    if (currentSession) {
+    const logoutButton = event.target.closest("[data-account-logout]");
+    if (logoutButton) {
+      closeAccountMenus();
+      closeMobileMenu();
       await window.authService.signOut();
       setAuthState(null, false);
       window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
@@ -531,6 +626,21 @@ async function setupAuthEntryPoints() {
       }));
       return;
     }
+
+    if (event.target.closest("[data-account-menu-dropdown] a")) {
+      closeAccountMenus();
+      return;
+    }
+
+    const button = event.target.closest("[data-auth-entry]");
+    if (!button) {
+      if (!event.target.closest("[data-account-menu]")) {
+        closeAccountMenus();
+      }
+      return;
+    }
+
+    closeMobileMenu();
 
     if (window.authModal && typeof window.authModal.openAuthModal === "function") {
       window.authModal.openAuthModal({
@@ -541,6 +651,12 @@ async function setupAuthEntryPoints() {
           }));
         }
       });
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAccountMenus(true);
     }
   });
 

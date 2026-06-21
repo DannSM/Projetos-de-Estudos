@@ -275,17 +275,198 @@ video {
   stroke-width: 2.3;
 }
 
-.auth-entry-button.is-authenticated {
-  color: var(--color-success);
-  background: var(--color-success-light);
-  border-color: rgba(22, 163, 74, 0.24);
+.account-menu {
+  position: relative;
+  min-width: 0;
 }
 
-.auth-entry-button.is-authenticated:hover,
-.auth-entry-button.is-authenticated:focus-visible {
+.account-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.48rem;
+  min-height: 2.5rem;
+  padding: 0.34rem 0.66rem 0.34rem 0.4rem;
+  color: #0f4c5c;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: 13px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  font-family: var(--font-base);
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.account-menu-toggle:hover,
+.account-menu-toggle:focus-visible,
+.account-menu-toggle[aria-expanded="true"] {
+  color: #0f766e;
+  background: #ffffff;
+  border-color: rgba(13, 148, 136, 0.38);
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.12);
+}
+
+.account-menu-toggle > .lucide {
+  width: 0.88rem;
+  height: 0.88rem;
+  margin-left: 0.08rem;
+  transition: transform 160ms ease;
+}
+
+.account-menu-toggle[aria-expanded="true"] > .lucide {
+  transform: rotate(180deg);
+}
+
+.account-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.72rem;
+  height: 1.72rem;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #2563eb, #0ea5b7);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+}
+
+.account-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  width: min(17rem, calc(100vw - 1.5rem));
+  padding: 0.48rem;
+  background: rgba(255, 255, 255, 0.99);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 15px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+}
+
+.account-menu-dropdown[hidden] {
+  display: none;
+}
+
+.account-menu-user {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.62rem 0.68rem 0.7rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.account-menu-user strong,
+.account-menu-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-user strong {
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+}
+
+.account-menu-email {
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.account-menu-dropdown > a,
+.account-menu-dropdown > button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.38rem;
+  margin-top: 0.18rem;
+  padding: 0.5rem 0.68rem;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-base);
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-align: left;
+  text-decoration: none;
+}
+
+.account-menu-dropdown > a:hover,
+.account-menu-dropdown > a:focus-visible,
+.account-menu-dropdown > button:hover,
+.account-menu-dropdown > button:focus-visible {
+  color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.account-menu-dropdown > button:hover,
+.account-menu-dropdown > button:focus-visible {
   color: var(--color-error);
   background: var(--color-error-light);
-  border-color: rgba(220, 38, 38, 0.22);
+}
+
+.account-menu-dropdown .lucide {
+  width: 0.96rem;
+  height: 0.96rem;
+  flex: 0 0 auto;
+}
+
+.mobile-account-menu {
+  width: 100%;
+  margin-top: 0.18rem;
+}
+
+.mobile-account-menu .account-menu-toggle {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.mobile-account-menu .account-menu-toggle > .lucide {
+  margin-left: auto;
+}
+
+.mobile-account-menu .account-menu-dropdown {
+  position: static;
+  width: 100%;
+  margin-top: 0.32rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.09);
+}
+
+.mobile-nav-panel .account-menu-dropdown > a {
+  min-height: 2.38rem;
+  margin-top: 0.18rem;
+  padding: 0.5rem 0.68rem;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font-size: 0.84rem;
+}
+
+.mobile-nav-panel .account-menu-email {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.mobile-nav-panel .account-menu-email:hover,
+.mobile-nav-panel .account-menu-email:focus-visible {
+  color: var(--color-primary);
+  background: transparent;
+  border: 0;
 }
 
 .header-cta,
