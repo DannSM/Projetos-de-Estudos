@@ -112,12 +112,12 @@ function createAuthenticatedWindow(initialProgress) {
       { id: "step-4", path_id: "path-sql", step_key: "sql-essencial-04-group-by", display_order: 4, status: "active", metadata: { practice_slug: "sql-essencial-group-by" } },
       { id: "step-5", path_id: "path-sql", step_key: "sql-essencial-05-join", display_order: 5, status: "active", metadata: { practice_slug: "sql-essencial-join" } }
     ],
-    learning_activities: [
-      { id: "activity-1", slug: "sql-essencial-filtros-where" },
-      { id: "activity-2", slug: "sql-essencial-count-nulos-distintos" },
-      { id: "activity-3", slug: "sql-essencial-filtro-antes-agregacao" },
-      { id: "activity-4", slug: "sql-essencial-group-by" },
-      { id: "activity-5", slug: "sql-essencial-join" }
+    vw_sql_practice_exercises_public: [
+      { activity_id: "activity-1", slug: "sql-essencial-filtros-where" },
+      { activity_id: "activity-2", slug: "sql-essencial-count-nulos-distintos" },
+      { activity_id: "activity-3", slug: "sql-essencial-filtro-antes-agregacao" },
+      { activity_id: "activity-4", slug: "sql-essencial-group-by" },
+      { activity_id: "activity-5", slug: "sql-essencial-join" }
     ],
     user_practice_notes: [],
     user_activity_feedback: [],
@@ -190,6 +190,28 @@ async function run() {
   assert.strictEqual(loadedUserState.ok, true);
   assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtros-where"].status, "not_started");
   assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtro-antes-agregacao"].status, "completed");
+
+  const adminScenario = createAuthenticatedWindow();
+  adminScenario.tables.user_practice_attempts.push(
+    ...adminScenario.tables.vw_sql_practice_exercises_public.map((activity, index) => ({
+      id: `admin-attempt-${index + 1}`,
+      user_id: "user-1",
+      activity_id: activity.activity_id,
+      exercise_id: `exercise-${index + 1}`,
+      validation_status: "correct"
+    }))
+  );
+  const adminState = await loadService(adminScenario.window).loadUserState({
+    slug: "sql-essencial-filtros-where",
+    trackSlug: "sql-essencial",
+    exerciseId: "exercise-1"
+  });
+  assert.strictEqual(adminState.ok, true);
+  assert.strictEqual(
+    Object.values(adminState.practiceProgress).filter((progress) => progress.status === "completed").length,
+    5
+  );
+  assert.strictEqual(adminState.practiceProgress["sql-essencial-join"].progressPercent, 100);
 
   const stepThreeScenario = createAuthenticatedWindow([
     {

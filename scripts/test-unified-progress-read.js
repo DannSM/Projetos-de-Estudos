@@ -10,6 +10,7 @@ function run() {
   const home = read("src/learning-paths.js");
   const progress = read("src/progress-page.js");
   const practiceService = read("src/sql-practice-service.js");
+  const progressStatus = read("src/learning-progress-status.js");
   const practicePage = read("src/sql-practice-page.js");
   const indexHtml = read("index.html");
   const practiceHtml = read("praticas-sql.html");
@@ -18,8 +19,14 @@ function run() {
   assert.match(home, /verifiedTrackStatusByPath/);
   assert.match(home, /verifiedTrack\?\.isVerifiable/);
   assert.match(home, /\.eq\("validation_status", "correct"\)/);
+  assert.match(home, /vw_sql_practice_exercises_public/);
+  assert.doesNotMatch(home, /activities: "learning_activities"/);
 
   assert.match(progress, /activeLearningProgress \|\| completedLearningProgress/);
+  assert.match(progress, /\.from\("vw_sql_practice_exercises_public"\)/);
+  assert.doesNotMatch(progress, /\.from\("learning_activities"\)/);
+  assert.match(progress, /if \(path\?\.id\) \{\s*verifiedTrack = await verifyCompletedTrack/);
+  assert.doesNotMatch(progress, /if \(selectedCompletedCandidate && path\?\.id\)/);
 
   const loadUserStateSource = practiceService.slice(
     practiceService.indexOf("async function loadUserState"),
@@ -29,7 +36,10 @@ function run() {
   assert.match(loadUserStateSource, /TABLES\.attempts/);
   assert.match(loadUserStateSource, /validation_status/);
   assert.match(loadUserStateSource, /calculateTrackStatus/);
+  assert.match(loadUserStateSource, /TABLES\.publicExercises/);
+  assert.doesNotMatch(loadUserStateSource, /TABLES\.activities/);
   assert.match(practiceService, /status: row\.status === "coming_soon" \? "soon" : "active"/);
+  assert.match(progressStatus, /activity\?\.activity_id \|\| activity\?\.id/);
 
   assert.doesNotMatch(practicePage, /practice\.status === "completed"/);
   assert.doesNotMatch(practicePage, /validada local/);

@@ -7,7 +7,6 @@
     feedback: "user_activity_feedback",
     paths: "learning_paths",
     steps: "learning_path_steps",
-    activities: "learning_activities",
     learningProgress: "user_learning_progress"
   };
 
@@ -217,8 +216,8 @@
           .filter(Boolean);
         const [activitiesResult, correctAttemptsResult] = await Promise.all([
           client
-            .from(TABLES.activities)
-            .select("id,slug")
+            .from(TABLES.publicExercises)
+            .select("activity_id,slug")
             .in("slug", practiceSlugs),
           client
             .from(TABLES.attempts)

@@ -7,6 +7,10 @@
     return String(step?.metadata?.practice_slug || step?.metadata?.activity_slug || "").trim();
   }
 
+  function getActivityId(activity) {
+    return activity?.activity_id || activity?.id || null;
+  }
+
   function calculateTrackStatus({ steps, activities, attempts }) {
     const allActiveSteps = normalizeList(steps)
       .filter((step) => step?.status === "active")
@@ -26,7 +30,8 @@
 
     activeSteps.forEach((step) => {
       const activity = activityBySlug.get(getPracticeSlug(step));
-      if (activity?.id && correctActivityIds.has(activity.id)) {
+      const activityId = getActivityId(activity);
+      if (activityId && correctActivityIds.has(activityId)) {
         completedStepIds.add(step.id);
       }
     });
@@ -60,7 +65,7 @@
     };
   }
 
-  const api = { calculateTrackStatus, getPracticeSlug, reconcileTrackProgress };
+  const api = { calculateTrackStatus, getActivityId, getPracticeSlug, reconcileTrackProgress };
   globalScope.learningProgressStatus = api;
 
   if (typeof module !== "undefined" && module.exports) {

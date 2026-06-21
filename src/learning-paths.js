@@ -11,7 +11,7 @@
     progress: "user_learning_progress",
     recommendations: "learning_recommendations",
     sessions: "diagnostic_sessions",
-    activities: "learning_activities",
+    practiceCatalog: "vw_sql_practice_exercises_public",
     attempts: "user_practice_attempts"
   };
 
@@ -189,8 +189,8 @@
 
     const [activities, attempts] = await Promise.all([
       fetchOptional(
-        client.from(TABLES.activities).select("id,slug").in("slug", practiceSlugs),
-        TABLES.activities
+        client.from(TABLES.practiceCatalog).select("activity_id,slug").in("slug", practiceSlugs),
+        TABLES.practiceCatalog
       ),
       fetchOptional(
         client

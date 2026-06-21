@@ -421,10 +421,10 @@
     if (practiceSlugs.length) {
       const activitiesResult = await fetchOrThrow(
         client
-          .from("learning_activities")
-          .select("id,slug")
+          .from("vw_sql_practice_exercises_public")
+          .select("activity_id,slug")
           .in("slug", practiceSlugs),
-        "learning_activities completion evidence"
+        "vw_sql_practice_exercises_public completion evidence"
       );
       activities = normalizeList(activitiesResult.data);
     }
@@ -538,6 +538,7 @@
     let step = null;
     let nextPath = null;
     let nextPathStep = null;
+    let verifiedTrack = null;
 
     if (latestSession?.attempt_id) {
       const answersResult = await fetchOrThrow(
@@ -603,8 +604,8 @@
       path = pathResult.data || null;
     }
 
-    if (selectedCompletedCandidate && path?.id) {
-      const verifiedTrack = await verifyCompletedTrack(client, userId, path.id);
+    if (path?.id) {
+      verifiedTrack = await verifyCompletedTrack(client, userId, path.id);
       const reconcileProgress = globalScope.learningProgressStatus?.reconcileTrackProgress;
       if (typeof reconcileProgress !== "function") {
         throw new Error("Reconciliação de progresso da trilha indisponível.");
@@ -617,7 +618,7 @@
       }
     }
 
-    if (!step && learningProgress?.step_id) {
+    if (!verifiedTrack?.isCompleted && !step && learningProgress?.step_id) {
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
@@ -627,7 +628,7 @@
         "learning_path_steps"
       );
       step = stepResult.data || null;
-    } else if (path?.id) {
+    } else if (!verifiedTrack?.isCompleted && path?.id) {
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")

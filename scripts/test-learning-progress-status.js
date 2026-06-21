@@ -22,39 +22,39 @@ const steps = [
 }));
 
 const activities = steps.map((step, index) => ({
-  id: `activity-${index + 1}`,
+  activity_id: `activity-${index + 1}`,
   slug: step.metadata.practice_slug
 }));
 
 function run() {
-  const legacyWithoutAttempts = calculateTrackStatus({ steps, activities, attempts: [] });
-  assert.strictEqual(legacyWithoutAttempts.isVerifiable, true);
-  assert.strictEqual(legacyWithoutAttempts.isCompleted, false);
-  assert.strictEqual(legacyWithoutAttempts.progressPercent, 0);
-  assert.strictEqual(legacyWithoutAttempts.nextStep.id, "step-1");
+  const daniellyssonWithoutAttempts = calculateTrackStatus({ steps, activities, attempts: [] });
+  assert.strictEqual(daniellyssonWithoutAttempts.isVerifiable, true);
+  assert.strictEqual(daniellyssonWithoutAttempts.isCompleted, false);
+  assert.strictEqual(daniellyssonWithoutAttempts.progressPercent, 0);
+  assert.strictEqual(daniellyssonWithoutAttempts.nextStep.id, "step-1");
 
-  const validCompletedTrack = calculateTrackStatus({
+  const adminWithFiveCorrectAttempts = calculateTrackStatus({
     steps,
     activities,
     attempts: activities.map((activity) => ({
-      activity_id: activity.id,
+      activity_id: activity.activity_id,
       validation_status: "correct"
     }))
   });
-  assert.strictEqual(validCompletedTrack.isCompleted, true);
-  assert.strictEqual(validCompletedTrack.isVerifiable, true);
-  assert.strictEqual(validCompletedTrack.completedSteps, 5);
-  assert.strictEqual(validCompletedTrack.progressPercent, 100);
-  assert.strictEqual(validCompletedTrack.nextStep, null);
+  assert.strictEqual(adminWithFiveCorrectAttempts.isCompleted, true);
+  assert.strictEqual(adminWithFiveCorrectAttempts.isVerifiable, true);
+  assert.strictEqual(adminWithFiveCorrectAttempts.completedSteps, 5);
+  assert.strictEqual(adminWithFiveCorrectAttempts.progressPercent, 100);
+  assert.strictEqual(adminWithFiveCorrectAttempts.nextStep, null);
 
-  const partialAttempt = calculateTrackStatus({
+  const daniellysson08WithPartialAttempt = calculateTrackStatus({
     steps,
     activities,
     attempts: [{ activity_id: "activity-1", validation_status: "partial" }]
   });
-  assert.strictEqual(partialAttempt.isCompleted, false);
-  assert.strictEqual(partialAttempt.progressPercent, 0);
-  assert.strictEqual(partialAttempt.nextStep.id, "step-1");
+  assert.strictEqual(daniellysson08WithPartialAttempt.isCompleted, false);
+  assert.strictEqual(daniellysson08WithPartialAttempt.progressPercent, 0);
+  assert.strictEqual(daniellysson08WithPartialAttempt.nextStep.id, "step-1");
 
   const oneCorrectAttempt = calculateTrackStatus({
     steps,
@@ -97,7 +97,7 @@ function run() {
 
   const reconciledLegacyProgress = reconcileTrackProgress(
     { path_id: "path-sql", status: "completed", progress_percent: 100 },
-    legacyWithoutAttempts
+    daniellyssonWithoutAttempts
   );
   assert.strictEqual(reconciledLegacyProgress.status, "in_progress");
   assert.strictEqual(reconciledLegacyProgress.progress_percent, 0);
