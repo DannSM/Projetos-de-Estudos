@@ -61,7 +61,7 @@ const GLOBAL_NAV_ITEMS = [
   { key: "trilhas", label: "Trilhas", icon: "route", href: "index.html#trilhas", states: ["anonymous", "student", "admin"] },
   { key: "progresso", label: "Meu Progresso", icon: "line-chart", href: "meu-progresso.html", states: ["anonymous", "student", "admin"] },
   { key: "praticas-sql", label: "Práticas SQL", icon: "square-terminal", href: "praticas-sql.html?pratica=sql-essencial-filtros-where", states: ["anonymous", "student", "admin"] },
-  { key: "analytics", label: "Analytics", href: "analytics.html", states: ["admin"] }
+  { key: "analytics", label: "Analytics", icon: "chart-no-axes-combined", href: "analytics.html", states: ["admin"] }
 ];
 
 function escapeAttribute(value) {
@@ -133,8 +133,25 @@ function getAccountIdentity(session) {
   const firstName = fullName.split(/\s+/).filter(Boolean)[0] || "Conta";
   const initialSource = firstName !== "Conta" ? firstName : (emailName || "C");
   const initial = Array.from(initialSource.trim())[0]?.toLocaleUpperCase("pt-BR") || "C";
+  const identityAvatar = Array.isArray(user?.identities)
+    ? user.identities
+      .map((identity) => identity?.identity_data || {})
+      .map((identityData) => identityData.avatar_url || identityData.picture || identityData.photo_url || "")
+      .find(Boolean)
+    : "";
+  const avatarCandidate = metadata.avatar_url || metadata.picture || metadata.photo_url || identityAvatar || "";
+  let avatarUrl = "";
 
-  return { email, firstName, fullName, initial };
+  try {
+    const parsedAvatarUrl = new URL(String(avatarCandidate || ""));
+    if (parsedAvatarUrl.protocol === "https:" || parsedAvatarUrl.protocol === "http:") {
+      avatarUrl = parsedAvatarUrl.href;
+    }
+  } catch (error) {
+    avatarUrl = "";
+  }
+
+  return { avatarUrl, email, firstName, fullName, initial };
 }
 
 function renderAccountMenu(session, variant) {
@@ -144,6 +161,9 @@ function renderAccountMenu(session, variant) {
   const visibleName = isMobile ? "Conta" : identity.firstName;
   const email = identity.email
     ? `<a class="account-menu-email" href="mailto:${escapeAttribute(identity.email)}">${escapeHtml(identity.email)}</a>`
+    : "";
+  const avatarImage = identity.avatarUrl
+    ? `<img class="account-avatar-image" data-account-avatar-image src="${escapeAttribute(identity.avatarUrl)}" alt="${escapeAttribute(identity.firstName === "Conta" ? "Avatar da conta" : `Foto de ${identity.firstName}`)}">`
     : "";
 
   return `
@@ -157,7 +177,10 @@ function renderAccountMenu(session, variant) {
         aria-controls="${menuId}"
         aria-label="Abrir menu da conta de ${escapeAttribute(identity.firstName)}"
       >
-        <span class="account-avatar" aria-hidden="true">${escapeHtml(identity.initial)}</span>
+        <span class="account-avatar">
+          <span class="account-avatar-fallback" aria-hidden="true">${escapeHtml(identity.initial)}</span>
+          ${avatarImage}
+        </span>
         <span class="account-menu-name">${escapeHtml(visibleName)}</span>
         <i data-lucide="chevron-down" aria-hidden="true"></i>
       </button>
@@ -181,6 +204,15 @@ function renderAccountMenu(session, variant) {
 
 function renderAccountControl(session, variant) {
   return session ? renderAccountMenu(session, variant) : renderAuthButton(session, variant);
+}
+
+function bindAccountAvatarFallback() {
+  document.addEventListener("error", (event) => {
+    const image = event.target.closest?.("[data-account-avatar-image]");
+    if (image) {
+      image.remove();
+    }
+  }, true);
 }
 
 function renderPrimaryCta(session, variant) {
@@ -707,6 +739,7 @@ function updateHomeChallengeCount() {
 
 async function init() {
   bindHeaderHeightSync();
+  bindAccountAvatarFallback();
   setupGlobalNavigation();
   await setupAuthEntryPoints();
   await refreshAdminNavigation();
