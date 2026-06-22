@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prática guiada | Data Skill Map</title>
+  <meta name="description" content="Prática guiada para interpretar metas, resultados e desvios em indicadores de negócio.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260622-guided-practice">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="guided-practice-ui">
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="Data Skill Map">
+      <span class="brand-logo-wrap" aria-hidden="true">
+        <img class="brand-logo" src="assets/header-logo.png" alt="Data Skill Map">
+      </span>
+      <span class="brand-name">
+        <span><strong>D</strong>ata</span>
+        <span><strong>S</strong>kill</span>
+        <span><strong>M</strong>ap</span>
+      </span>
+    </a>
+    <nav class="header-nav" data-global-nav="desktop" aria-label="Navegação principal"></nav>
+    <div class="header-actions" data-global-actions="desktop"></div>
+    <button class="mobile-nav-toggle" type="button" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="mobileGlobalNav">
+      <i data-lucide="menu" aria-hidden="true"></i>
+    </button>
+  </header>
+  <div class="mobile-nav-backdrop" hidden></div>
+  <nav id="mobileGlobalNav" class="mobile-nav-panel" data-global-nav="mobile" aria-label="Menu principal"></nav>
+
+  <main class="guided-practice-page">
+    <section id="guidedPracticeMount" class="guided-practice-shell" aria-live="polite">
+      <div class="guided-practice-loading">
+        <span class="guided-practice-loading-icon"><i data-lucide="gauge" aria-hidden="true"></i></span>
+        <strong>Preparando sua prática guiada...</strong>
+        <span>Organizando cenário, indicador e decisão.</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="src/supabase-config.js"></script>
+  <script src="src/auth-service.js"></script>
+  <script src="src/auth-modal.js"></script>
+  <script src="src/app.js"></script>
+  <script src="src/guided-practice-service.js?v=20260622-guided-practice"></script>
+  <script src="src/guided-practice-page.js?v=20260622-guided-practice"></script>
+</body>
+</html>

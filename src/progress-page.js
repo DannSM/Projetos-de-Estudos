@@ -149,7 +149,7 @@
   }
 
   function isMissionUrl(value) {
-    return /(^|\/)(?:missao|praticas-sql)(?:\.html)?(?:$|[?#])/.test(String(value || ""));
+    return /(^|\/)(?:missao|praticas-sql|pratica-guiada)(?:\.html)?(?:$|[?#])/.test(String(value || ""));
   }
 
   function normalizeRecommendedPracticeHref(value) {
@@ -174,6 +174,10 @@
     if (!step) return "";
 
     const practiceSlug = step.metadata?.practice_slug || step.metadata?.activity_slug;
+    const practiceFormat = step.metadata?.format || step.metadata?.activity_format;
+    if (practiceSlug && practiceFormat === "guided_practice") {
+      return `pratica-guiada.html?atividade=${encodeURIComponent(practiceSlug)}`;
+    }
     if (practiceSlug) {
       return `praticas-sql.html?pratica=${encodeURIComponent(practiceSlug)}`;
     }
@@ -345,7 +349,9 @@
           ? "Pratique a lacuna identificada no diagnóstico com feedback imediato."
           : step.description || (path ? `Continue a trilha ${path.title}.` : "Continue sua trilha de estudos."),
         href: practiceHref || "index.html#trilhas",
-        cta: isRecommendedPractice ? "Abrir Práticas SQL" : "Ver trilhas",
+        cta: isRecommendedPractice
+          ? (practiceHref.includes("praticas-sql") ? "Abrir Práticas SQL" : "Abrir prática")
+          : "Ver trilhas",
         isRecommendedPractice,
         pathTitle: path?.title || "",
         note: isRecommendedPractice && learningProgress

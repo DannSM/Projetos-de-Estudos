@@ -13,12 +13,12 @@
       ],
       quickStudy: "Um KPI não é só um número. Ele precisa ter contexto, meta e uma leitura acionável. Dizer que a satisfação foi 82% é diferente de dizer que ficou 5 p.p. abaixo da meta e exige investigar atendimento, prazo ou qualidade da solução.",
       attention: "Primeiro entenda o que está sendo medido; depois compare com a meta e interprete o desvio.",
-      actionTitle: "Abrir trilha de Indicadores e KPIs",
-      actionMeta: "Roteiro guiado · comece pelo conceito recomendado",
-      actionDescription: "Esta trilha reúne os conceitos que você precisa consolidar antes de avançar para novas práticas.",
-      actionType: "trilha",
-      ctaLabel: "Ver trilha recomendada",
-      href: TRACK_HREF
+      actionTitle: "Começar prática: Meta e resultado",
+      actionMeta: "Indicadores e KPIs · 10 min · Prática guiada",
+      actionDescription: "Compare resultado e meta, interprete o desvio e escolha uma próxima investigação acionável.",
+      actionType: "prática guiada",
+      ctaLabel: "Começar prática recomendada",
+      href: "pratica-guiada.html?atividade=indicadores-meta-resultado"
     },
     SQL: {
       priority: "SQL",

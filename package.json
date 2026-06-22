@@ -9,6 +9,7 @@
     "test:sql-progress-seed": "node scripts/test-sql-essential-progress-seed.js",
     "test:sql-progress": "node scripts/test-sql-practice-progress.js",
     "test:sql-ai-tutor": "node scripts/test-sql-ai-tutor.js",
+    "test:guided-practice": "node scripts/test-guided-practice.js",
     "test:visual": "node scripts/visual-smoke.js"
   },
   "devDependencies": {

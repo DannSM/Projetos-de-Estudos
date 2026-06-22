@@ -1403,3 +1403,44 @@
   }
 
 }
+@media (max-width: 980px) {
+  .guided-practice-hero { grid-template-columns: minmax(0, 1fr) 170px; padding: 36px; }
+  .guided-practice-grid { grid-template-columns: minmax(0, 1fr); }
+  .guided-practice-aside { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guided-login-card { grid-column: 1 / -1; }
+}
+
+@media (max-width: 680px) {
+  .guided-practice-page { padding: 22px 14px 54px; }
+  .guided-practice-hero { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 28px 22px; border-radius: 23px; }
+  .guided-practice-hero h1 { font-size: clamp(2.25rem, 14vw, 3.25rem); }
+  .guided-practice-hero-marker { min-height: 0; padding: 17px; }
+  .guided-practice-hero-marker span { font-size: 2rem; }
+  .guided-practice-meta { align-items: flex-start; flex-direction: column; gap: 9px; }
+  .guided-section-card,
+  .guided-aside-card,
+  .guided-completion-card { padding: 21px; border-radius: 20px; }
+  .guided-section-heading,
+  .guided-question-heading { gap: 11px; }
+  .guided-section-icon,
+  .guided-step-number { width: 40px; height: 40px; }
+  .guided-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guided-option { grid-template-columns: 20px 34px minmax(0, 1fr); gap: 9px; padding: 14px 12px; }
+  .guided-option-letter { width: 32px; height: 32px; }
+  .guided-question-actions { align-items: stretch; flex-direction: column; }
+  .guided-question-actions .submit-button { width: 100%; justify-content: center; }
+  .guided-feedback { grid-template-columns: minmax(0, 1fr); }
+  .guided-feedback-icon { width: 46px; height: 46px; }
+  .guided-completion-card { grid-template-columns: minmax(0, 1fr); }
+  .guided-completion-actions { grid-column: 1; flex-direction: column; }
+  .guided-completion-actions a { width: 100%; justify-content: center; text-align: center; }
+  .guided-practice-aside { grid-template-columns: minmax(0, 1fr); }
+  .guided-login-card { grid-column: auto; }
+}
+
+@media (max-width: 390px) {
+  .guided-practice-badges { align-items: flex-start; flex-direction: column; }
+  .guided-metrics-grid { grid-template-columns: minmax(0, 1fr); }
+  .guided-section-heading h2,
+  .guided-question-heading h2 { font-size: 1.18rem; }
+}
