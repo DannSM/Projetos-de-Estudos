@@ -79,6 +79,72 @@
     }).join("");
   }
 
+  function getVisualProgress() {
+    if (state.validation?.isCorrect) {
+      return { value: 100, label: "Concluída", detail: "4 de 4 etapas concluídas", step: 3 };
+    }
+    if (state.validation || state.selectedOption) {
+      return { value: 75, label: "Em andamento", detail: "3 de 4 etapas concluídas", step: 2 };
+    }
+    return { value: 25, label: "Em andamento", detail: "1 de 4 etapas concluídas", step: 1 };
+  }
+
+  function renderPracticeRail() {
+    const progress = getVisualProgress();
+    return `
+      <aside class="guided-practice-rail" aria-label="Roteiro e status da prática">
+        <section class="guided-rail-card guided-rail-roadmap">
+          <h2>Roteiro da prática</h2>
+          <ol class="guided-roadmap-list">
+            <li class="${progress.step >= 1 ? "is-active" : ""}">
+              <span>01</span>
+              <div><strong>Observe</strong><small>Entenda o cenário e o indicador</small></div>
+            </li>
+            <li class="${progress.step >= 2 ? "is-active" : ""}">
+              <span>02</span>
+              <div><strong>Analise</strong><small>Compare meta e resultado</small></div>
+            </li>
+            <li class="${progress.step >= 3 ? "is-active" : ""}">
+              <span>03</span>
+              <div><strong>Conclua</strong><small>Leia o desvio e prossiga</small></div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="guided-rail-card guided-rail-status">
+          <h2>Status da prática</h2>
+          <div class="guided-status-pill ${progress.value === 100 ? "is-complete" : ""}">
+            <span aria-hidden="true"></span>${progress.label}
+          </div>
+          <div class="guided-progress-heading"><span>Progresso geral</span><strong>${progress.value}%</strong></div>
+          <div class="guided-progress-track" aria-label="Progresso visual da prática: ${progress.value}%">
+            <span style="width: ${progress.value}%"></span>
+          </div>
+          <small>${progress.detail}</small>
+        </section>
+
+        <section class="guided-rail-card guided-rail-tip">
+          <div class="guided-rail-tip-title"><i data-lucide="lightbulb" aria-hidden="true"></i><h2>Dica</h2></div>
+          <p>Siga o roteiro para completar a prática e registrar seu progresso.</p>
+        </section>
+      </aside>
+    `;
+  }
+
+  function renderNextAction() {
+    return `
+      <section class="guided-aside-card guided-next-card">
+        <div class="guided-aside-title">
+          <i data-lucide="rocket" aria-hidden="true"></i>
+          <div><span class="section-kicker">Próxima ação</span><h2>Acompanhe seu avanço</h2></div>
+        </div>
+        <p>Conclua a prática para registrar seu progresso. Depois, acompanhe sua evolução no Meu Progresso.</p>
+        <a class="submit-button" href="meu-progresso.html">Ver Meu Progresso <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+        <a class="guided-back-link" href="index.html#trilhas">Voltar às trilhas</a>
+      </section>
+    `;
+  }
+
   function renderFeedback(activity) {
     if (!state.validation) {
       return `
@@ -112,7 +178,7 @@
   function renderCompletion(activity) {
     if (!state.validation?.isCorrect) return "";
     return `
-      <section class="guided-completion-card" aria-labelledby="guidedCompletionTitle">
+      <section class="guided-completion-card guided-order-completion" aria-labelledby="guidedCompletionTitle">
         <div class="guided-completion-icon"><i data-lucide="badge-check" aria-hidden="true"></i></div>
         <div>
           <span class="section-kicker">Prática concluída</span>
@@ -153,15 +219,24 @@
           </div>
         </div>
         <aside class="guided-practice-hero-marker" aria-label="Etapa atual">
-          <span>01</span>
-          <strong>Observe</strong>
-          <small>Compare antes de concluir</small>
+          <div class="guided-hero-current-step">
+            <span>01</span>
+            <strong>Observe</strong>
+            <small>Entenda o cenário antes de concluir</small>
+          </div>
+          <ol class="guided-hero-track" aria-label="Etapas da prática">
+            <li class="is-active"><span>01</span><strong>Observe</strong></li>
+            <li><span>02</span><strong>Analise</strong></li>
+            <li><span>03</span><strong>Conclua</strong></li>
+          </ol>
         </aside>
       </section>
 
       <div class="guided-practice-grid">
+        ${renderPracticeRail()}
+
         <div class="guided-practice-main">
-          <section class="guided-section-card guided-scenario-card">
+          <section class="guided-section-card guided-scenario-card guided-order-scenario">
             <div class="guided-section-heading">
               <span class="guided-section-icon"><i data-lucide="briefcase-business" aria-hidden="true"></i></span>
               <div>
@@ -172,7 +247,7 @@
             <p>${escapeHtml(activity.scenario.context)}</p>
           </section>
 
-          <section class="guided-section-card" aria-labelledby="guidedIndicatorTitle">
+          <section class="guided-section-card guided-order-metrics" aria-labelledby="guidedIndicatorTitle">
             <div class="guided-section-heading">
               <span class="guided-section-icon guided-section-icon-green"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i></span>
               <div>
@@ -183,7 +258,7 @@
             <div class="guided-metrics-grid">${renderIndicatorCards(activity)}</div>
           </section>
 
-          <section class="guided-section-card guided-question-card" aria-labelledby="guidedQuestionTitle">
+          <section class="guided-section-card guided-question-card guided-order-question" aria-labelledby="guidedQuestionTitle">
             <div class="guided-question-heading">
               <span class="guided-step-number">02</span>
               <div>
@@ -206,7 +281,7 @@
             </form>
           </section>
 
-          <section class="guided-section-card guided-feedback-card" aria-label="Feedback explicativo">
+          <section class="guided-section-card guided-feedback-card guided-order-feedback ${!state.validation ? "is-empty" : ""}" aria-label="Feedback explicativo">
             ${renderFeedback(activity)}
           </section>
 
@@ -214,7 +289,7 @@
         </div>
 
         <aside class="guided-practice-aside">
-          <section class="guided-aside-card">
+          <section class="guided-aside-card guided-thinking-card guided-order-thinking">
             <span class="section-kicker">Como pensar</span>
             <h2>Três perguntas antes da conclusão</h2>
             <ol class="guided-thinking-list">
@@ -224,19 +299,21 @@
             </ol>
           </section>
 
-          <section class="guided-aside-card guided-note-card">
+          <section class="guided-aside-card guided-note-card guided-order-note">
             <div class="guided-aside-title">
               <i data-lucide="sticky-note" aria-hidden="true"></i>
               <div><span class="section-kicker">Seu espaço</span><h2>Anotação pessoal</h2></div>
             </div>
             <label class="sr-only" for="guidedPracticeNote">Anotação pessoal</label>
-            <textarea id="guidedPracticeNote" data-guided-note rows="5" placeholder="Que investigação você faria primeiro?">${escapeHtml(state.note)}</textarea>
+            <textarea id="guidedPracticeNote" data-guided-note rows="4" placeholder="Que investigação você faria primeiro?">${escapeHtml(state.note)}</textarea>
             <button class="filter-button" type="button" data-save-guided-note>Salvar neste navegador</button>
             ${state.noteStatus ? `<small>${escapeHtml(state.noteStatus)}</small>` : `<small>O registro remoto de anotações fica para uma etapa futura.</small>`}
           </section>
 
+          ${renderNextAction()}
+
           ${!state.isAuthenticated && state.validation?.isCorrect ? `
-            <section class="guided-aside-card guided-login-card">
+            <section class="guided-aside-card guided-login-card guided-order-login">
               <i data-lucide="cloud-upload" aria-hidden="true"></i>
               <h2>Guarde esta evolução</h2>
               <p>Entre para vincular as próximas práticas ao seu progresso.</p>

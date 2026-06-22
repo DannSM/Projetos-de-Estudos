@@ -1403,10 +1403,38 @@
   }
 
 }
-@media (max-width: 980px) {
-  .guided-practice-hero { grid-template-columns: minmax(0, 1fr) 170px; padding: 36px; }
+@media (max-width: 1180px) {
+  .guided-practice-hero { grid-template-columns: minmax(0, 1fr) 320px; padding: 36px; }
+  .guided-practice-hero-marker { grid-template-columns: minmax(0, 1fr) 125px; gap: 18px; }
+  .guided-practice-grid { grid-template-columns: minmax(0, 1fr) 300px; }
+  .guided-practice-rail {
+    position: static;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1.5fr) minmax(210px, 0.85fr) minmax(210px, 0.85fr);
+  }
+  .guided-practice-rail .guided-rail-card + .guided-rail-card { border-top: 0; border-left: 1px solid #e2ebe9; }
+  .guided-roadmap-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .guided-roadmap-list li { min-height: 0; }
+  .guided-roadmap-list li:not(:last-child)::after {
+    top: 17px;
+    bottom: auto;
+    left: 35px;
+    width: calc(100% - 18px);
+    height: 2px;
+  }
+}
+
+@media (max-width: 860px) {
+  .guided-practice-hero { grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; }
+  .guided-practice-hero-marker { grid-template-columns: minmax(0, 1fr); }
+  .guided-hero-track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .guided-hero-track li { grid-template-columns: 34px; justify-items: center; text-align: center; }
+  .guided-hero-track li:not(:last-child)::after { top: 16px; left: 34px; width: calc(100% - 18px); height: 1px; }
   .guided-practice-grid { grid-template-columns: minmax(0, 1fr); }
-  .guided-practice-aside { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guided-practice-rail { grid-template-columns: minmax(0, 1fr) minmax(190px, 0.8fr); }
+  .guided-rail-roadmap { grid-column: 1 / -1; }
+  .guided-practice-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guided-next-card { grid-column: 1 / -1; min-height: 0; }
   .guided-login-card { grid-column: 1 / -1; }
 }
 
@@ -1414,12 +1442,46 @@
   .guided-practice-page { padding: 22px 14px 54px; }
   .guided-practice-hero { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 28px 22px; border-radius: 23px; }
   .guided-practice-hero h1 { font-size: clamp(2.25rem, 14vw, 3.25rem); }
-  .guided-practice-hero-marker { min-height: 0; padding: 17px; }
-  .guided-practice-hero-marker span { font-size: 2rem; }
+  .guided-practice-hero-marker { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .guided-hero-current-step { min-height: 0; padding: 17px; }
+  .guided-hero-current-step > span { font-size: 2rem; }
+  .guided-hero-track { gap: 7px; }
+  .guided-hero-track strong { font-size: 0.72rem; }
   .guided-practice-meta { align-items: flex-start; flex-direction: column; gap: 9px; }
   .guided-section-card,
   .guided-aside-card,
+  .guided-rail-card,
   .guided-completion-card { padding: 21px; border-radius: 20px; }
+  .guided-practice-grid { display: flex; flex-direction: column; }
+  .guided-practice-rail,
+  .guided-practice-main,
+  .guided-practice-aside { display: contents; }
+  .guided-practice-rail .guided-rail-card {
+    border: 1px solid #dae6e3;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 12px 34px rgba(31, 61, 57, 0.06);
+  }
+  .guided-practice-rail .guided-rail-card + .guided-rail-card { border: 1px solid #dae6e3; }
+  .guided-rail-roadmap { order: 2; }
+  .guided-order-scenario { order: 3; }
+  .guided-order-metrics { order: 4; }
+  .guided-order-thinking { order: 5; }
+  .guided-order-question { order: 6; }
+  .guided-order-feedback { order: 7; }
+  .guided-order-completion { order: 8; }
+  .guided-order-note { order: 9; }
+  .guided-next-card { order: 10; }
+  .guided-order-login { order: 11; }
+  .guided-rail-status { order: 12; }
+  .guided-rail-tip { order: 13; }
+  .guided-roadmap-list { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .guided-roadmap-list li { min-height: 72px; }
+  .guided-roadmap-list li:not(:last-child)::after { top: 35px; bottom: 0; left: 17px; width: 2px; height: auto; }
+  .guided-scenario-card,
+  .guided-thinking-card,
+  .guided-note-card,
+  .guided-next-card { min-height: 0; }
   .guided-section-heading,
   .guided-question-heading { gap: 11px; }
   .guided-section-icon,
@@ -1434,8 +1496,6 @@
   .guided-completion-card { grid-template-columns: minmax(0, 1fr); }
   .guided-completion-actions { grid-column: 1; flex-direction: column; }
   .guided-completion-actions a { width: 100%; justify-content: center; text-align: center; }
-  .guided-practice-aside { grid-template-columns: minmax(0, 1fr); }
-  .guided-login-card { grid-column: auto; }
 }
 
 @media (max-width: 390px) {
