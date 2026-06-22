@@ -2,6 +2,7 @@
   "name": "data-skill-map",
   "private": true,
   "scripts": {
+    "test:diagnostic-link": "node scripts/test-diagnostic-account-link.js",
     "test:sql-missions": "node scripts/test-sql-mission-validation.js",
     "test:sql-poc": "node scripts/test-sql-poc-engine.js",
     "test:sql-seed": "node scripts/test-sql-practice-steps3-5-seed.js",

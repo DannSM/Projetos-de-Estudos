@@ -178,18 +178,20 @@ async function persistDiagnosticSessionRecord(payload) {
   try {
     const result = await persistAuthenticatedRecord("diagnosticSessions", payload);
     if (result && result.skipped) {
-      return window.supabaseDataService.saveDiagnosticSession(payload);
+      const anonymousResult = await window.supabaseDataService.saveDiagnosticSession(payload);
+      return { ...anonymousResult, authenticated: false };
     }
-    return result;
+    return { ...result, authenticated: true };
   } catch (error) {
     console.warn("[Diagnóstico] Falha ao salvar sessao; tentando gravacao anonima.", error);
-    return window.supabaseDataService.saveDiagnosticSession(payload);
+    const anonymousResult = await window.supabaseDataService.saveDiagnosticSession(payload);
+    return { ...anonymousResult, authenticated: false };
   }
 }
 
 function trackDiagnosticFunnelEvent(eventType, payload = {}) {
   if (!window.diagnosticFunnelService || typeof window.diagnosticFunnelService.trackEvent !== "function") {
-    return;
+    return Promise.resolve({ ok: false, skipped: true });
   }
 
   const answered = getTotalAnswered();
@@ -202,7 +204,7 @@ function trackDiagnosticFunnelEvent(eventType, payload = {}) {
     ...(payload.metadata || {})
   };
 
-  void window.diagnosticFunnelService.trackEvent({
+  return window.diagnosticFunnelService.trackEvent({
     attempt_id: state.currentDiagnosticAttemptId,
     anonymous_user_id: getAnonymousUserId(),
     user_id: null,
@@ -1246,7 +1248,7 @@ async function showResult({ blocked } = { blocked: false }) {
 
   renderAreaProgress(true);
 
-  trackDiagnosticFunnelEvent("generated_final_result", {
+  await trackDiagnosticFunnelEvent("generated_final_result", {
     level: "Final",
     question_index: answered ? answered - 1 : 0,
     total_questions_answered: answered,
@@ -1299,6 +1301,13 @@ async function showResult({ blocked } = { blocked: false }) {
   const sessionPersistenceResult = await persistDiagnosticSessionRecord(diagnosticSessionPayload);
   if (!sessionPersistenceResult || (!sessionPersistenceResult.ok && !sessionPersistenceResult.skipped)) {
     console.warn("[Diagnóstico] Resultado calculado, mas sessao nao confirmada no Supabase.", sessionPersistenceResult?.error || sessionPersistenceResult);
+  }
+  if (sessionPersistenceResult?.ok && sessionPersistenceResult.authenticated === false) {
+    window.diagnosticAccountLinkService?.markPendingDiagnostic({
+      attempt_id: state.currentDiagnosticAttemptId,
+      anonymous_user_id: getAnonymousUserId(),
+      result: personalizedResultPayload
+    });
   }
   void generatePersonalizedLearningBridge(personalizedResultPayload).then((result) => {
     if (result && result.ok) {

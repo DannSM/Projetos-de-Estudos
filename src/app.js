@@ -581,6 +581,10 @@ async function setupAuthEntryPoints() {
     }
 
     setAuthState(session, isAdmin);
+
+    if (session && window.diagnosticAccountLinkService?.claimPendingDiagnostic) {
+      await window.diagnosticAccountLinkService.claimPendingDiagnostic();
+    }
   };
 
   const openPasswordRecovery = async (eventSession = null) => {
