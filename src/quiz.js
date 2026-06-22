@@ -1211,37 +1211,20 @@ async function showResult({ blocked } = { blocked: false }) {
   const priorityAreaLabel = getPriorityDisplayLabel(priorityArea);
   const priorityLevelLabel = blocked && stopped ? stopped.label : null;
   const priorityLabel = priorityLevelLabel ? `${priorityAreaLabel} no ${priorityLevelLabel}` : priorityAreaLabel;
-  const priorityConceptText = getPriorityConceptText(priorityArea);
-  const priorityReason = blocked
-    ? `${priorityAreaLabel} concentrou a maior lacuna e ${getAreaImpactText(priorityArea)}`
-    : `${priorityAreaLabel} teve o menor desempenho relativo entre as áreas respondidas e ${getAreaImpactText(priorityArea)}`;
-  const priorityNextStep = blocked
-    ? `Revise ${priorityConceptText} dentro do ${stopped.label.toLowerCase()} antes de tentar liberar a próxima etapa.`
-    : `Revise ${priorityConceptText} e resolva exercícios curtos antes de avançar para novos conteúdos.`;
-  const nextActionTitle = getPriorityActionTitle({ blocked, stopped, priorityAreaLabel });
-  const priorityRecommendationText = blocked
-    ? `Prioridade recomendada: consolidar ${priorityAreaLabel.toLowerCase()} no ${stopped.label.toLowerCase()} para recuperar a base do nível.`
-    : `Prioridade recomendada: reforçar ${priorityAreaLabel.toLowerCase()} porque é a área com maior ganho potencial agora.`;
-  const evolutionCards = [
-    {
-      level: "Agora",
-      title: "Primeiro foco",
-      text: `Trabalhe ${priorityConceptText} com exemplos pequenos e correção imediata.`,
-      next: `Filtre os desafios por ${getChallengeLabelForArea(priorityArea)}.`
-    },
-    {
-      level: "Revisão",
-      title: "Conceitos para revisar",
-      text: priorityConceptText,
-      next: "Refaça primeiro as perguntas erradas e anote o motivo da alternativa correta."
-    },
-    {
-      level: profile.name,
-      title: "Sequência sugerida",
-      text: getTrackTextForProfile(profile.name, priorityArea),
-      next: "Depois conecte a revisão a um mini-projeto com pergunta de negócio e conclusão."
-    }
-  ];
+  const studyPlan = window.studyPlanContent?.getStudyPlan(priorityArea) || {
+    priority: priorityAreaLabel,
+    concept: "Fundamentos da área",
+    whyNow: `Esta é a área com maior ganho potencial no seu resultado atual.`,
+    studySteps: ["Revise o conceito principal.", "Resolva um exemplo curto.", "Confira o raciocínio usado."],
+    quickStudy: "Comece pela base conceitual e conecte cada exemplo a uma pergunta objetiva de negócio.",
+    attention: "Entenda o que está sendo medido antes de calcular ou interpretar.",
+    actionTitle: `Abrir trilha de ${priorityAreaLabel}`,
+    actionMeta: "Roteiro guiado · comece pelo conceito recomendado",
+    actionDescription: "Esta trilha reúne os conceitos que você precisa consolidar antes de avançar para novas práticas.",
+    actionType: "trilha",
+    ctaLabel: "Ver trilha recomendada",
+    href: "index.html#trilhas"
+  };
   const sqlLevel = mapPercentToLevel(getAreaPercentScore("SQL"));
   const statisticsLevel = mapPercentToLevel(getAreaPercentScore(areaGoals[1]));
   const dataLevel = getDataAreaLevel();
@@ -1309,6 +1292,7 @@ async function showResult({ blocked } = { blocked: false }) {
       result: personalizedResultPayload
     });
   }
+  const isAuthenticated = sessionPersistenceResult?.authenticated === true;
   void generatePersonalizedLearningBridge(personalizedResultPayload).then((result) => {
     if (result && result.ok) {
       window.dispatchEvent(new CustomEvent("data-skill-map-learning-updated", {
@@ -1377,32 +1361,70 @@ async function showResult({ blocked } = { blocked: false }) {
         </div>
       </div>
 
-      <div class="result-actions">
-        <button class="restart-button result-restart-button" id="restartDiagnostic">↻ Refazer diagnóstico</button>
-        <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">☆ Avaliar experiência</button>
-        <a class="filter-button result-learning-button" href="index.html#trilhas">Ver trilha recomendada</a>
-        <a class="filter-button result-learning-button" href="meu-progresso.html">Meu Progresso</a>
-      </div>
+      <section class="study-plan-section" aria-labelledby="studyPlanTitle">
+        <div class="result-section-heading result-section-heading-centered">
+          <span class="section-kicker">Seu plano agora</span>
+          <h3 id="studyPlanTitle">Seu plano de estudo começa por aqui</h3>
+          <p>Com base nas suas respostas, esta é a prioridade que mais pode acelerar sua evolução agora.</p>
+        </div>
+        <div class="study-plan-grid">
+          <article class="study-plan-card study-plan-card-focus">
+            <span class="study-plan-card-index">01</span>
+            <h4>O que estudar agora</h4>
+            <strong>${studyPlan.priority}</strong>
+            <p>Comece por: ${studyPlan.concept}</p>
+          </article>
+          <article class="study-plan-card">
+            <span class="study-plan-card-index">02</span>
+            <h4>Por que estudar isso</h4>
+            <p>${studyPlan.whyNow}</p>
+          </article>
+          <article class="study-plan-card">
+            <span class="study-plan-card-index">03</span>
+            <h4>Como estudar</h4>
+            <ol>
+              ${studyPlan.studySteps.map((step) => `<li>${step}</li>`).join("")}
+            </ol>
+          </article>
+        </div>
+      </section>
 
-      <section class="next-action-card">
-        <div>
-          <span class="section-kicker">Próxima ação</span>
-          <h3>${nextActionTitle}</h3>
-        </div>
-        <div class="next-action-grid">
+      <section class="quick-study-card" aria-labelledby="quickStudyTitle">
+        <div class="quick-study-heading">
+          <span class="quick-study-icon" aria-hidden="true">→</span>
           <div>
-            <strong>Área prioritária</strong>
-            <p>${priorityAreaLabel}</p>
-          </div>
-          <div>
-            <strong>Por que agora</strong>
-            <p>${priorityReason}</p>
-          </div>
-          <div>
-            <strong>Próximo passo prático</strong>
-            <p>${priorityNextStep}</p>
+            <span class="section-kicker">Conceito: ${studyPlan.concept}</span>
+            <h3 id="quickStudyTitle">Estudo rápido antes da prática</h3>
+            <p>Leia este resumo antes de avançar para a próxima ação.</p>
           </div>
         </div>
+        <p class="quick-study-copy">${studyPlan.quickStudy}</p>
+        <p class="quick-study-attention"><strong>Ponto de atenção:</strong> ${studyPlan.attention}</p>
+      </section>
+
+      <section class="recommended-action-card" aria-labelledby="recommendedActionTitle">
+        <div class="recommended-action-copy">
+          <span class="section-kicker">Primeira ação recomendada</span>
+          <h3 id="recommendedActionTitle">${studyPlan.actionTitle}</h3>
+          <p class="recommended-action-meta">${studyPlan.actionMeta}</p>
+          <p>${studyPlan.actionDescription}</p>
+        </div>
+        <a class="submit-button recommended-action-button" href="${studyPlan.href}">${studyPlan.ctaLabel}</a>
+      </section>
+
+      <section class="progress-connection-card" aria-labelledby="progressConnectionTitle">
+        <div class="progress-connection-heading">
+          <span class="section-kicker">Próximos passos</span>
+          <h3 id="progressConnectionTitle">Como acompanhar sua evolução</h3>
+        </div>
+        <ol class="progress-connection-steps">
+          <li><span>1</span><strong>Seu diagnóstico fica salvo</strong></li>
+          <li><span>2</span><strong>Sua prioridade aparece no Meu Progresso</strong></li>
+          <li><span>3</span><strong>Cada prática concluída atualiza sua evolução por área</strong></li>
+        </ol>
+        ${isAuthenticated
+          ? `<a class="filter-button progress-connection-button" href="meu-progresso.html">Ver Meu Progresso</a>`
+          : `<button class="filter-button progress-connection-button" type="button" id="saveStudyPlan">Entrar para salvar meu plano</button>`}
       </section>
 
       <section class="result-block">
@@ -1430,31 +1452,6 @@ async function showResult({ blocked } = { blocked: false }) {
             </div>
           `).join("")}
         </div>
-      </section>
-
-      <section class="result-block evolution-plan">
-        <div class="result-section-heading">
-          <span class="section-kicker">Plano sugerido</span>
-          <h3>Uma sequência objetiva para transformar lacunas em prática</h3>
-        </div>
-        <div class="priority-card">
-          <span class="section-kicker">Foco sugerido</span>
-          <h3>${priorityLabel}</h3>
-          <p>${priorityRecommendationText}</p>
-        </div>
-        <div class="recommendation-grid">
-          ${evolutionCards.map((item) => `
-            <article class="recommendation-card">
-              <span class="concept-tag">${item.level}</span>
-              <h3>${item.title}</h3>
-              <p>${item.text}</p>
-              <p><strong>Próximo desafio:</strong> ${item.next}</p>
-            </article>
-          `).join("")}
-        </div>
-        <ol class="evolution-steps">
-          ${recommendations.plan.map((item) => `<li>${item}</li>`).join("")}
-        </ol>
       </section>
 
       <details class="result-block error-review-block error-review-details">
@@ -1511,12 +1508,24 @@ async function showResult({ blocked } = { blocked: false }) {
         </div>
       </details>
 
+      <div class="result-actions result-utility-actions">
+        <button class="restart-button result-restart-button" id="restartDiagnostic">↻ Refazer diagnóstico</button>
+        <button class="filter-button result-feedback-button" id="openDiagnosticFeedback">☆ Avaliar experiência</button>
+      </div>
+
     </article>
   `;
 
   document.querySelector("#restartDiagnostic").addEventListener("click", resetDiagnostic);
   document.querySelector("#openDiagnosticFeedback").addEventListener("click", () => {
     openDiagnosticSatisfactionModal({ scorePercent, blocked });
+  });
+  document.querySelector("#saveStudyPlan")?.addEventListener("click", () => {
+    window.authModal?.openAuthModal({
+      mode: "login",
+      title: "Entre para salvar seu plano",
+      description: "Continue com sua conta para acompanhar a prioridade e a evolução deste diagnóstico."
+    });
   });
   resultSection.classList.remove("hidden");
   scrollToResultStart();

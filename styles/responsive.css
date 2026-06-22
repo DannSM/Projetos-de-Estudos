@@ -326,6 +326,14 @@
     grid-template-columns: 1fr;
   }
 
+  .progress-connection-card {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-connection-button {
+    width: min(100%, 20rem);
+  }
+
   .feedback-modal-sheet {
     width: min(32rem, calc(100% - 1.5rem));
   }
@@ -1209,6 +1217,43 @@
   .result-card.result-dashboard {
     gap: 0.74rem;
     padding: 0.74rem;
+  }
+
+  .study-plan-section,
+  .quick-study-card,
+  .recommended-action-card,
+  .progress-connection-card {
+    padding: 0.78rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .study-plan-grid,
+  .quick-study-card,
+  .recommended-action-card,
+  .progress-connection-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .study-plan-card {
+    min-height: 0;
+    padding: 0.78rem;
+  }
+
+  .quick-study-attention {
+    grid-column: 1;
+  }
+
+  .recommended-action-card {
+    gap: 0.78rem;
+  }
+
+  .recommended-action-button,
+  .progress-connection-button {
+    width: 100%;
+  }
+
+  .progress-connection-steps {
+    gap: 0.48rem;
   }
 
   .result-hero-panel {
