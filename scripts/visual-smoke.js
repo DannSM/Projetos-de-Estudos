@@ -24,7 +24,7 @@ const pages = [
   {
     name: "meu-progresso",
     path: "/meu-progresso",
-    waitFor: ".progress-gate-card, .progress-dashboard",
+    waitFor: ".progress-preview, .progress-dashboard",
     activeNav: "progresso",
     anonymousGate: true
   },
@@ -315,14 +315,14 @@ async function validatePage(browser, pageConfig, viewport) {
 
     if (pageConfig.anonymousGate) {
       const gateEvidence = await page.evaluate(() => ({
-        gateVisible: Boolean(document.querySelector(".progress-gate-card")),
+        gateVisible: Boolean(document.querySelector(".progress-preview")),
         dashboardCount: document.querySelectorAll(".progress-dashboard").length,
-        loginCta: document.querySelector(".progress-gate-card [data-progress-auth-open]")?.textContent.trim() || ""
+        loginCta: document.querySelector(".progress-preview [data-progress-auth-open]")?.textContent.trim() || ""
       }));
       if (
         !gateEvidence.gateVisible
         || gateEvidence.dashboardCount !== 0
-        || gateEvidence.loginCta !== "Entrar / Criar conta"
+        || gateEvidence.loginCta !== "Entrar para salvar meu progresso"
       ) {
         throw new Error(`gate anônimo de Meu Progresso inválido: ${JSON.stringify(gateEvidence)}`);
       }

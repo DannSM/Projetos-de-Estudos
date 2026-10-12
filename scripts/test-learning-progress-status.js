@@ -23,7 +23,10 @@ const steps = [
 
 const activities = steps.map((step, index) => ({
   activity_id: `activity-${index + 1}`,
-  slug: step.metadata.practice_slug
+  exercise_id: `exercise-${index + 1}`,
+  dataset_id: `dataset-${index + 1}`,
+  slug: step.metadata.practice_slug,
+  status: "active"
 }));
 
 function run() {
@@ -64,6 +67,56 @@ function run() {
   assert.strictEqual(oneCorrectAttempt.isCompleted, false);
   assert.strictEqual(oneCorrectAttempt.progressPercent, 20);
   assert.strictEqual(oneCorrectAttempt.nextStep.id, "step-2");
+
+  const persistedContinuation = calculateTrackStatus({
+    steps,
+    activities,
+    attempts: [{ activity_id: "activity-1", validation_status: "correct" }],
+    progressRows: [
+      { step_id: "step-1", status: "completed", progress_percent: 20 },
+      { step_id: "step-2", status: "in_progress", progress_percent: 20 }
+    ]
+  });
+  assert.strictEqual(persistedContinuation.nextStep.id, "step-2");
+  assert.strictEqual(persistedContinuation.unavailableNextStep, null);
+
+  const persistedInProgressPriority = calculateTrackStatus({
+    steps,
+    activities,
+    attempts: [],
+    progressRows: [{ step_id: "step-2", status: "in_progress", progress_percent: 0 }]
+  });
+  assert.strictEqual(persistedInProgressPriority.nextStep.id, "step-2");
+
+  const intermediateProgress = calculateTrackStatus({
+    steps,
+    activities,
+    attempts: activities.slice(0, 3).map((activity) => ({
+      activity_id: activity.activity_id,
+      validation_status: "correct"
+    }))
+  });
+  assert.strictEqual(intermediateProgress.progressPercent, 60);
+  assert.strictEqual(intermediateProgress.nextStep.id, "step-4");
+  assert.strictEqual(intermediateProgress.completedStepIds.has("step-2"), true);
+
+  const unavailableActivity = calculateTrackStatus({
+    steps,
+    activities: activities.map((activity) => (
+      activity.slug === "sql-essencial-count-nulos-distintos"
+        ? { ...activity, exercise_id: null, dataset_id: null }
+        : activity
+    )),
+    attempts: [{ activity_id: "activity-1", validation_status: "correct" }],
+    progressRows: [{ step_id: "step-2", status: "in_progress", progress_percent: 20 }]
+  });
+  assert.strictEqual(unavailableActivity.nextStep, null);
+  assert.strictEqual(unavailableActivity.unavailableNextStep.id, "step-2");
+
+  const loadingState = calculateTrackStatus({ steps: null, activities: null, attempts: null });
+  assert.strictEqual(loadingState.isVerifiable, false);
+  assert.strictEqual(loadingState.nextStep, null);
+  assert.strictEqual(loadingState.unavailableNextStep, null);
 
   const unmappedTrack = calculateTrackStatus({
     steps: [{ id: "lesson-1", status: "active", metadata: {} }],

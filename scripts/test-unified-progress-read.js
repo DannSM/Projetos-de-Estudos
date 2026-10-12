@@ -23,9 +23,13 @@ function run() {
   assert.doesNotMatch(home, /activities: "learning_activities"/);
 
   assert.match(progress, /activeLearningProgress \|\| completedLearningProgress/);
+  assert.match(progress, /trackProgressRows/);
+  assert.match(progress, /activity_id,exercise_id,dataset_id,slug,status/);
+  assert.match(progress, /unavailableNextStep/);
+  assert.doesNotMatch(progress, /completedLearningProgressQuery/);
   assert.match(progress, /\.from\("vw_sql_practice_exercises_public"\)/);
   assert.doesNotMatch(progress, /\.from\("learning_activities"\)/);
-  assert.match(progress, /if \(path\?\.id\) \{\s*verifiedTrack = await verifyCompletedTrack/);
+  assert.match(progress, /if \(path\?\.id\) \{[\s\S]*?verifiedTrack = await verifyCompletedTrack\(client, userId, path\.id, trackProgressRows\)/);
   assert.doesNotMatch(progress, /if \(selectedCompletedCandidate && path\?\.id\)/);
   assert.match(progress, /function buildJourneyStatus\(data\)/);
   assert.match(progress, /progress-journey-grid/);
@@ -45,6 +49,8 @@ function run() {
   assert.doesNotMatch(loadUserStateSource, /TABLES\.activities/);
   assert.match(practiceService, /status: row\.status === "coming_soon" \? "soon" : "active"/);
   assert.match(progressStatus, /activity\?\.activity_id \|\| activity\?\.id/);
+  assert.match(progressStatus, /progressByStepId/);
+  assert.match(progressStatus, /isActivityAvailable/);
 
   assert.doesNotMatch(practicePage, /practice\.status === "completed"/);
   assert.doesNotMatch(practicePage, /validada local/);

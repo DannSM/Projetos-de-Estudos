@@ -359,10 +359,12 @@ async function run() {
   assert.match(progressPageSource, /"sql-essencial-04-group-by"/);
   assert.match(progressPageSource, /"sql-essencial-05-join"/);
   assert.match(progressPageSource, /\["not_started", "in_progress", "paused"\]/);
-  assert.match(progressPageSource, /\.eq\("progress_percent", 100\)/);
+  assert.match(progressPageSource, /progress\.status === "completed" && Number\(progress\.progress_percent\) === 100/);
   assert.match(progressPageSource, /Todas as práticas concluídas/);
   assert.match(progressPageSource, /activeLearningProgress \|\| completedLearningProgress/);
   assert.match(progressPageSource, /nextLearningProgress/);
+  assert.match(progressPageSource, /unavailableNextStep/);
+  assert.match(progressPageSource, /trackProgressRows/);
   assert.match(progressPageSource, /Próxima recomendação:/);
   assert.match(progressPageSource, /100% da trilha concluída/);
 

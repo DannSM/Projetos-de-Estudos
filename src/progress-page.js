@@ -301,6 +301,7 @@
     step,
     nextPath,
     nextPathStep,
+    unavailableNextStep,
     latestSession,
     priorityArea
   }) {
@@ -357,6 +358,18 @@
         note: isRecommendedPractice && learningProgress
           ? `${formatPercent(learningProgress.progress_percent) || "0%"} da trilha concluída.`
           : ""
+      };
+    }
+
+    if (unavailableNextStep && path) {
+      return {
+        title: "Próxima prática em preparação",
+        eyebrow: "Continuidade da trilha",
+        text: "A próxima atividade desta trilha ainda não possui conteúdo disponível.",
+        href: "index.html#trilhas",
+        cta: "Ver trilha",
+        pathTitle: path.title,
+        note: "Seu progresso concluído permanece salvo."
       };
     }
 
@@ -472,7 +485,7 @@
     return { data, count };
   }
 
-  async function verifyCompletedTrack(client, userId, pathId) {
+  async function verifyCompletedTrack(client, userId, pathId, progressRows = []) {
     const calculator = globalScope.learningProgressStatus?.calculateTrackStatus;
     const getPracticeSlug = globalScope.learningProgressStatus?.getPracticeSlug;
     if (typeof calculator !== "function" || typeof getPracticeSlug !== "function") {
@@ -496,7 +509,7 @@
       const activitiesResult = await fetchOrThrow(
         client
           .from("vw_sql_practice_exercises_public")
-          .select("activity_id,slug")
+          .select("activity_id,exercise_id,dataset_id,slug,status")
           .in("slug", practiceSlugs),
         "vw_sql_practice_exercises_public completion evidence"
       );
@@ -515,7 +528,8 @@
     return calculator({
       steps,
       activities,
-      attempts: normalizeList(attemptsResult.data)
+      attempts: normalizeList(attemptsResult.data),
+      progressRows
     });
   }
 
@@ -561,39 +575,31 @@
       .from("user_learning_progress")
       .select("path_id,step_id,status,progress_percent,last_activity_at,updated_at")
       .eq("user_id", userId)
-      .in("status", ["not_started", "in_progress", "paused"])
+      .in("status", ["not_started", "in_progress", "paused", "completed"])
       .order("last_activity_at", { ascending: false, nullsFirst: false })
-      .order("updated_at", { ascending: false })
-      .limit(1);
-
-    const completedLearningProgressQuery = client
-      .from("user_learning_progress")
-      .select("path_id,step_id,status,progress_percent,last_activity_at,updated_at")
-      .eq("user_id", userId)
-      .eq("status", "completed")
-      .eq("progress_percent", 100)
-      .order("last_activity_at", { ascending: false, nullsFirst: false })
-      .order("updated_at", { ascending: false })
-      .limit(1);
+      .order("updated_at", { ascending: false });
 
     const [
       profileResult,
       sessionsResult,
       skillProgressResult,
       recommendationsResult,
-      learningProgressResult,
-      completedLearningProgressResult
+      learningProgressResult
     ] = await Promise.all([
       fetchOrThrow(profileQuery, "profiles"),
       fetchOrThrow(sessionsQuery, "diagnostic_sessions"),
       fetchOrThrow(skillProgressQuery, "user_skill_progress"),
       fetchOrThrow(learningRecommendationsQuery, "learning_recommendations"),
-      fetchOrThrow(learningProgressQuery, "user_learning_progress"),
-      fetchOrThrow(completedLearningProgressQuery, "user_learning_progress completed")
+      fetchOrThrow(learningProgressQuery, "user_learning_progress")
     ]);
 
-    const activeLearningProgress = normalizeList(learningProgressResult.data)[0] || null;
-    const completedLearningProgress = normalizeList(completedLearningProgressResult.data)[0] || null;
+    const learningProgressRows = normalizeList(learningProgressResult.data);
+    const activeLearningProgress = learningProgressRows.find((progress) => (
+      ["not_started", "in_progress", "paused"].includes(progress.status)
+    )) || null;
+    const completedLearningProgress = learningProgressRows.find((progress) => (
+      progress.status === "completed" && Number(progress.progress_percent) === 100
+    )) || null;
     let learningProgress = activeLearningProgress || completedLearningProgress;
     const selectedCompletedCandidate = learningProgress === completedLearningProgress;
     let nextLearningProgress = selectedCompletedCandidate
@@ -613,6 +619,7 @@
     let nextPath = null;
     let nextPathStep = null;
     let verifiedTrack = null;
+    let unavailableNextStep = null;
 
     if (latestSession?.attempt_id) {
       const answersResult = await fetchOrThrow(
@@ -679,7 +686,8 @@
     }
 
     if (path?.id) {
-      verifiedTrack = await verifyCompletedTrack(client, userId, path.id);
+      const trackProgressRows = learningProgressRows.filter((progress) => progress.path_id === path.id);
+      verifiedTrack = await verifyCompletedTrack(client, userId, path.id, trackProgressRows);
       const reconcileProgress = globalScope.learningProgressStatus?.reconcileTrackProgress;
       if (typeof reconcileProgress !== "function") {
         throw new Error("Reconciliação de progresso da trilha indisponível.");
@@ -689,10 +697,11 @@
       if (verifiedTrack.isVerifiable && !verifiedTrack.isCompleted) {
         nextLearningProgress = null;
         step = verifiedTrack.nextStep;
+        unavailableNextStep = verifiedTrack.unavailableNextStep;
       }
     }
 
-    if (!verifiedTrack?.isCompleted && !step && learningProgress?.step_id) {
+    if (!verifiedTrack?.isVerifiable && !step && learningProgress?.step_id) {
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
@@ -756,7 +765,8 @@
       step,
       nextLearningProgress,
       nextPath,
-      nextPathStep
+      nextPathStep,
+      unavailableNextStep
     };
   }
 
@@ -1098,6 +1108,7 @@
       step: data.step,
       nextPath: data.nextPath,
       nextPathStep: data.nextPathStep,
+      unavailableNextStep: data.unavailableNextStep,
       latestSession,
       priorityArea: data.priorityArea
     });
@@ -1212,6 +1223,14 @@
         }));
       }
     });
+  }
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+      buildNextStep,
+      getRecommendedPracticeHref,
+      renderNextStepCard
+    };
   }
 
   globalScope.addEventListener("data-skill-map-auth-changed", (event) => {
