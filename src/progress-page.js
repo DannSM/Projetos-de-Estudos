@@ -701,7 +701,11 @@
       }
     }
 
-    if (!verifiedTrack?.isVerifiable && !step && learningProgress?.step_id) {
+    const shouldUseLegacyStepFallback = !verifiedTrack?.isVerifiable
+      && !unavailableNextStep
+      && !step;
+
+    if (shouldUseLegacyStepFallback && learningProgress?.step_id) {
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
@@ -711,7 +715,9 @@
         "learning_path_steps"
       );
       step = stepResult.data || null;
-    } else if (!verifiedTrack?.isCompleted && path?.id) {
+    }
+
+    if (shouldUseLegacyStepFallback && !step && path?.id) {
       const stepResult = await fetchOrThrow(
         client
           .from("learning_path_steps")
@@ -1228,7 +1234,9 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = {
       buildNextStep,
+      fetchProgressData,
       getRecommendedPracticeHref,
+      renderAuthenticatedState,
       renderNextStepCard
     };
   }
