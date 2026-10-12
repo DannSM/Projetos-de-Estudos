@@ -10,12 +10,94 @@ const validation = require(path.join(root, "src", "sql-mission-validation.js"));
 const engine = require(path.join(root, "src", "sql-poc-engine.js"));
 const progress = require(path.join(root, "src", "learning-progress-status.js"));
 
-function loadGuidedService() {
+function loadGuidedService(overrides = {}) {
   const source = fs.readFileSync(path.join(root, "src", "guided-practice-service.js"), "utf8");
-  const window = { Project01Content: content };
+  const window = { Project01Content: content, ...overrides };
   window.window = window;
   vm.runInNewContext(source, { window, console, Date, Map, Set }, { filename: "guided-practice-service.js" });
   return window.guidedPracticeService;
+}
+
+function createMemoryQuery(table, tables) {
+  const filters = [];
+  let operation = "select";
+  let payload = null;
+  let orderColumn = "";
+  const query = {
+    select() { operation = "select"; return query; },
+    eq(column, value) { filters.push([column, value]); return query; },
+    order(column) { orderColumn = column; return query; },
+    maybeSingle() { return execute(true); },
+    insert(value) { operation = "insert"; payload = value; return execute(false); },
+    update(value) { operation = "update"; payload = value; return query; },
+    then(resolve, reject) { return execute(false).then(resolve, reject); }
+  };
+
+  async function execute(single) {
+    const rows = tables[table] || [];
+    const matches = (row) => filters.every(([column, value]) => row[column] === value);
+    if (operation === "insert") {
+      rows.push({ id: `${table}-${rows.length + 1}`, ...payload });
+      return { data: null, error: null };
+    }
+    if (operation === "update") {
+      rows.filter(matches).forEach((row) => Object.assign(row, payload));
+      return { data: null, error: null };
+    }
+    const selected = rows.filter(matches);
+    if (orderColumn) selected.sort((left, right) => Number(left[orderColumn]) - Number(right[orderColumn]));
+    return { data: single ? selected[0] || null : selected, error: null };
+  }
+
+  return query;
+}
+
+async function runGuidedPersistenceChecks() {
+  const tables = {
+    learning_paths: [{ id: "path-project", slug: "projetos-praticos", title: "Projetos Práticos", status: "active" }],
+    learning_path_steps: [
+      { id: "project-step-1", path_id: "path-project", step_key: "projetos-01-escopo-pergunta", display_order: 1, status: "active", metadata: { activity_slug: "projeto-01-escopo-pergunta", format: "guided_practice" } },
+      { id: "project-step-2", path_id: "path-project", step_key: "projetos-02-consulta-validacao", display_order: 2, status: "active", metadata: { activity_slug: "projeto-01-consulta-validacao", format: "sql_practice" } },
+      { id: "project-step-3", path_id: "path-project", step_key: "projetos-03-insight-recomendacao", display_order: 3, status: "active", metadata: { activity_slug: "projeto-01-insight-recomendacao", format: "guided_practice" } }
+    ],
+    user_learning_progress: [],
+    user_guided_practice_attempts: []
+  };
+  const client = {
+    auth: {
+      async getSession() {
+        return { data: { session: { user: { id: "user-1" } } }, error: null };
+      }
+    },
+    from(table) {
+      return createMemoryQuery(table, tables);
+    }
+  };
+  const service = loadGuidedService({
+    authService: { getClient() { return client; } }
+  });
+  const activity = {
+    ...content.GUIDED_ACTIVITIES["projeto-01-escopo-pergunta"],
+    id: "guided-activity-1"
+  };
+
+  const first = await service.saveResponse(activity, "B", "2026-10-12T10:00:00.000Z");
+  const repeated = await service.saveResponse(activity, "B", "2026-10-12T10:05:00.000Z");
+  const invalid = await service.saveResponse(activity, "A", "2026-10-12T10:10:00.000Z");
+  const progressRows = tables.user_learning_progress;
+
+  assert.strictEqual(first.attempt.ok, true);
+  assert.strictEqual(first.progress.progressPercent, 33.33);
+  assert.strictEqual(first.progress.nextStep.step_key, "projetos-02-consulta-validacao");
+  assert.strictEqual(repeated.progress.progressPercent, 33.33);
+  assert.strictEqual(invalid.validation.isCorrect, false);
+  assert.strictEqual(invalid.progress.skipped, true);
+  assert.strictEqual(tables.user_guided_practice_attempts.length, 3);
+  assert.strictEqual(tables.user_guided_practice_attempts[2].status, "submitted");
+  assert.strictEqual(progressRows.length, 2);
+  assert.strictEqual(progressRows.find((row) => row.step_id === "project-step-1").status, "completed");
+  assert.strictEqual(progressRows.find((row) => row.step_id === "project-step-2").status, "in_progress");
+  assert.strictEqual(progressRows.every((row) => Number(row.progress_percent) === 33.33), true);
 }
 
 function loadProgressPageApi() {
@@ -447,6 +529,7 @@ async function run() {
   assert.strictEqual(guidedService.validateAnswer(guidedService.LOCAL_ACTIVITY, "B").isCorrect, true);
 
   runProgressChecks();
+  await runGuidedPersistenceChecks();
   await runSqlChecks();
   await runLoadProposalChecks();
 
