@@ -1188,6 +1188,12 @@
   }
 }
 
+@media (min-width: 861px) {
+  .progress-ui .progress-journey-grid .progress-status-card--practice {
+    margin-top: 0;
+  }
+}
+
 @media (max-width: 1024px) {
   .progress-ui .progress-gate-card,
   .progress-ui .progress-hero-card {
