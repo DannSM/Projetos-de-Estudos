@@ -11,6 +11,7 @@
     "test:progress-next-practice": "node scripts/test-progress-next-practice.js",
     "test:sql-ai-tutor": "node scripts/test-sql-ai-tutor.js",
     "test:guided-practice": "node scripts/test-guided-practice.js",
+    "test:project-01": "node scripts/test-project-01-sales-analysis.js",
     "test:visual": "node scripts/visual-smoke.js"
   },
   "devDependencies": {

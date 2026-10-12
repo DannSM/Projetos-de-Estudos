@@ -12,7 +12,9 @@
     recommendations: "learning_recommendations",
     sessions: "diagnostic_sessions",
     practiceCatalog: "vw_sql_practice_exercises_public",
-    attempts: "user_practice_attempts"
+    attempts: "user_practice_attempts",
+    guidedCatalog: "vw_guided_practice_activities_public",
+    guidedAttempts: "user_guided_practice_attempts"
   };
 
   function escapeHtml(value) {
@@ -187,10 +189,14 @@
     const practiceSlugs = normalizeList(steps).map(getPracticeSlug).filter(Boolean);
     if (!practiceSlugs.length) return {};
 
-    const [activities, attempts] = await Promise.all([
+    const [sqlActivities, guidedActivities, attempts, guidedAttempts] = await Promise.all([
       fetchOptional(
         client.from(TABLES.practiceCatalog).select("activity_id,slug").in("slug", practiceSlugs),
         TABLES.practiceCatalog
+      ),
+      fetchOptional(
+        client.from(TABLES.guidedCatalog).select("id,slug,status").in("slug", practiceSlugs),
+        TABLES.guidedCatalog
       ),
       fetchOptional(
         client
@@ -199,6 +205,14 @@
           .eq("user_id", userId)
           .eq("validation_status", "correct"),
         TABLES.attempts
+      ),
+      fetchOptional(
+        client
+          .from(TABLES.guidedAttempts)
+          .select("activity_id,status,score_percent,result_payload")
+          .eq("user_id", userId)
+          .eq("status", "completed"),
+        TABLES.guidedAttempts
       )
     ]);
     const stepsByPath = indexByPathId(steps);
@@ -207,8 +221,9 @@
       pathId,
       calculator({
         steps: pathSteps,
-        activities: normalizeList(activities),
-        attempts: normalizeList(attempts)
+        activities: [...normalizeList(sqlActivities), ...normalizeList(guidedActivities)],
+        attempts: normalizeList(attempts),
+        guidedAttempts: normalizeList(guidedAttempts)
       })
     ]));
   }

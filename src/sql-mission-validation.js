@@ -281,13 +281,73 @@
     };
   }
 
+  function validateProjectSalesBySegmentSql(rawValue) {
+    const value = normalizeSql(rawValue);
+    const startsWithSelect = /^(?:with\b[\s\S]+\bselect\b|select\b)/.test(value);
+    const hasPedidos = /\bpedidos\b/.test(value);
+    const hasClientes = /\bclientes\b/.test(value);
+    const hasJoin = /\bjoin\b/.test(value);
+    const hasCustomerJoin = (
+      /\bon\s+(?:\w+\.)?cliente_id\s*=\s*(?:\w+\.)?cliente_id\b/.test(value)
+      || /\busing\s*\(\s*cliente_id\s*\)/.test(value)
+    );
+    const hasStatusPaid = (
+      /\b(?:\w+\.)?status\s*=\s*'pago'(?=\s|$|;|\))/.test(value)
+      || /\b(?:\w+\.)?status\s+in\s*\(\s*'pago'\s*\)/.test(value)
+    );
+    const hasSegment = /\b(?:\w+\.)?segmento\b/.test(value);
+    const hasOrderCount = /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value);
+    const hasDistinctCustomers = /\bcount\s*\(\s*distinct\s+(?:\w+\.)?cliente_id\s*\)/.test(value);
+    const hasRevenue = /\bsum\s*\(\s*(?:\w+\.)?valor\s*\)/.test(value);
+    const hasGroupBySegment = (
+      /\bgroup\s+by\s+(?:\w+\.)?segmento\b/.test(value)
+      || /\bgroup\s+by\s+1(?=\s|$|,|;)/.test(value)
+    );
+    const isSelectOnly = startsWithSelect && !hasDangerousSql(value);
+    const checks = {
+      startsWithSelect,
+      hasPedidos,
+      hasClientes,
+      hasJoin,
+      hasCustomerJoin,
+      hasStatusPaid,
+      hasSegment,
+      hasOrderCount,
+      hasDistinctCustomers,
+      hasRevenue,
+      hasGroupBySegment,
+      isSelectOnly
+    };
+
+    if (Object.values(checks).every(Boolean)) {
+      return { status: "correct", checks };
+    }
+
+    const coreChecks = [
+      hasJoin,
+      hasCustomerJoin,
+      hasStatusPaid,
+      hasOrderCount,
+      hasDistinctCustomers,
+      hasRevenue,
+      hasGroupBySegment
+    ].filter(Boolean).length;
+    return {
+      status: startsWithSelect && hasPedidos && hasClientes && isSelectOnly && coreChecks >= 5
+        ? "partial"
+        : "incorrect",
+      checks
+    };
+  }
+
   function validateConfiguredSql(rawValue, validator) {
     const validators = {
       count_nulls_distincts: validateCountNullsDistinctsSql,
       orders_by_category_summary: validateOrdersByCategorySummarySql,
       paid_orders_by_category: validatePaidOrdersByCategorySql,
       paid_orders_summary: validatePaidOrdersSummarySql,
-      paid_orders_with_customers: validatePaidOrdersWithCustomersSql
+      paid_orders_with_customers: validatePaidOrdersWithCustomersSql,
+      project_sales_by_segment: validateProjectSalesBySegmentSql
     };
     return (validators[validator] || validatePaidOrdersByCategorySql)(rawValue);
   }
@@ -301,6 +361,7 @@
     validatePaidOrdersSummarySql,
     validateOrdersByCategorySummarySql,
     validatePaidOrdersWithCustomersSql,
+    validateProjectSalesBySegmentSql,
     validateConfiguredSql
   };
 

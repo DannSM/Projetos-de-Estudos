@@ -8,7 +8,7 @@
   };
 
   const DEFAULT_SLUG = "indicadores-meta-resultado";
-  const LOCAL_ACTIVITY = Object.freeze({
+  const KPI_ACTIVITY = Object.freeze({
     id: null,
     slug: DEFAULT_SLUG,
     activityType: "practice",
@@ -43,6 +43,11 @@
     attention: "Não avalie um KPI apenas pelo número isolado. Um indicador precisa de contexto, meta e leitura de impacto.",
     conclusion: "Você praticou como transformar um percentual em diagnóstico de negócio: resultado, meta, desvio e próxima investigação."
   });
+  const LOCAL_ACTIVITIES = Object.freeze({
+    [DEFAULT_SLUG]: KPI_ACTIVITY,
+    ...(globalScope.Project01Content?.GUIDED_ACTIVITIES || {})
+  });
+  const LOCAL_ACTIVITY = KPI_ACTIVITY;
 
   function getClient() {
     return globalScope.authService?.getClient?.() || null;
@@ -61,29 +66,35 @@
   }
 
   function normalizeActivity(row) {
+    const localActivity = LOCAL_ACTIVITIES[row?.slug] || KPI_ACTIVITY;
     const metadata = row?.metadata || {};
     return {
-      ...LOCAL_ACTIVITY,
+      ...localActivity,
       id: row?.id || null,
-      slug: row?.slug || LOCAL_ACTIVITY.slug,
-      activityType: row?.activity_type || LOCAL_ACTIVITY.activityType,
-      title: row?.title || LOCAL_ACTIVITY.title,
-      subtitle: row?.subtitle || LOCAL_ACTIVITY.subtitle,
-      trackSlug: row?.track_slug || LOCAL_ACTIVITY.trackSlug,
-      trackTitle: row?.track_title || LOCAL_ACTIVITY.trackTitle,
-      level: row?.level_label || LOCAL_ACTIVITY.level,
-      estimatedMinutes: row?.estimated_minutes || LOCAL_ACTIVITY.estimatedMinutes,
-      stepKey: metadata.step_key || LOCAL_ACTIVITY.stepKey,
-      objective: metadata.objective || LOCAL_ACTIVITY.objective,
-      contentVersion: metadata.content_version || LOCAL_ACTIVITY.contentVersion,
-      scenario: metadata.scenario || LOCAL_ACTIVITY.scenario,
-      indicatorData: Array.isArray(metadata.indicator_data) ? metadata.indicator_data : LOCAL_ACTIVITY.indicatorData,
-      question: metadata.question || LOCAL_ACTIVITY.question,
-      options: Array.isArray(metadata.options) ? metadata.options : LOCAL_ACTIVITY.options,
-      correctOption: metadata.correct_option || LOCAL_ACTIVITY.correctOption,
-      feedback: metadata.feedback || LOCAL_ACTIVITY.feedback,
-      attention: metadata.attention || LOCAL_ACTIVITY.attention,
-      conclusion: metadata.conclusion || LOCAL_ACTIVITY.conclusion
+      slug: row?.slug || localActivity.slug,
+      activityType: row?.activity_type || localActivity.activityType,
+      title: row?.title || localActivity.title,
+      subtitle: row?.subtitle || localActivity.subtitle,
+      trackSlug: row?.track_slug || localActivity.trackSlug,
+      trackTitle: row?.track_title || localActivity.trackTitle,
+      level: row?.level_label || localActivity.level,
+      estimatedMinutes: row?.estimated_minutes || localActivity.estimatedMinutes,
+      stepKey: metadata.step_key || localActivity.stepKey,
+      objective: metadata.objective || localActivity.objective,
+      contentVersion: metadata.content_version || localActivity.contentVersion,
+      scenario: metadata.scenario || localActivity.scenario,
+      indicatorTitle: metadata.indicator_title || localActivity.indicatorTitle,
+      indicatorDescription: metadata.indicator_description || localActivity.indicatorDescription,
+      indicatorData: Array.isArray(metadata.indicator_data) ? metadata.indicator_data : localActivity.indicatorData,
+      question: metadata.question || localActivity.question,
+      options: Array.isArray(metadata.options) ? metadata.options : localActivity.options,
+      correctOption: metadata.correct_option || localActivity.correctOption,
+      feedback: metadata.feedback || localActivity.feedback,
+      attention: metadata.attention || localActivity.attention,
+      conclusion: metadata.conclusion || localActivity.conclusion,
+      completionTitle: metadata.completion_title || localActivity.completionTitle,
+      competencies: Array.isArray(metadata.competencies) ? metadata.competencies : localActivity.competencies,
+      nextAction: metadata.next_action || localActivity.nextAction
     };
   }
 
@@ -96,7 +107,7 @@
   }
 
   async function loadActivity(slug = DEFAULT_SLUG) {
-    const localActivity = slug === DEFAULT_SLUG ? LOCAL_ACTIVITY : null;
+    const localActivity = LOCAL_ACTIVITIES[slug] || null;
     const client = getClient();
     if (!client) {
       return localActivity
@@ -311,6 +322,7 @@
   globalScope.guidedPracticeService = Object.freeze({
     DEFAULT_SLUG,
     LOCAL_ACTIVITY,
+    LOCAL_ACTIVITIES,
     loadActivity,
     validateAnswer,
     getAuthenticatedUser,

@@ -293,6 +293,10 @@
       return validatePaidOrdersWithCustomersResult(result, query, expectedResult?.rows);
     }
 
+    if (validationConfig?.validator === "project_sales_by_segment") {
+      return validateProjectSalesBySegmentResult(result, query, expectedResult?.rows);
+    }
+
     return false;
   }
 
@@ -371,8 +375,11 @@
       /\bpedidos\b/.test(value),
       /\bclientes\b/.test(value),
       /\bjoin\b/.test(value),
-      /\bon\s+(?:\w+\.)?cliente_id\s*=\s*(?:\w+\.)?cliente_id\b/.test(value),
-      /\bwhere\b[\s\S]*\b(?:\w+\.)?status\s*=\s*'pago'/.test(value),
+      (
+        /\bon\s+(?:\w+\.)?cliente_id\s*=\s*(?:\w+\.)?cliente_id\b/.test(value)
+        || /\busing\s*\(\s*cliente_id\s*\)/.test(value)
+      ),
+      /\bwhere\b[\s\S]*\b(?:\w+\.)?status\s*(?:=\s*'pago'|in\s*\(\s*'pago'\s*\))/.test(value),
       /\b(?:\w+\.)?pedido_id\b/.test(value),
       /\b(?:\w+\.)?nome\b/.test(value),
       /\b(?:\w+\.)?valor\b/.test(value),
@@ -387,6 +394,40 @@
         [104, "Carla", 90],
         [106, "Bruno", 150]
       ]);
+  }
+
+  function validateProjectSalesBySegmentResult(result, query, expectedRows) {
+    const value = normalizeSqlForValidation(query);
+    const rows = normalizeComparableRows(result);
+    const hasCorrectStructure = [
+      /\bpedidos\b/.test(value),
+      /\bclientes\b/.test(value),
+      /\bjoin\b/.test(value),
+      (
+        /\bon\s+(?:\w+\.)?cliente_id\s*=\s*(?:\w+\.)?cliente_id\b/.test(value)
+        || /\busing\s*\(\s*cliente_id\s*\)/.test(value)
+      ),
+      /\bwhere\b[\s\S]*\b(?:\w+\.)?status\s*(?:=\s*'pago'|in\s*\(\s*'pago'\s*\))/.test(value),
+      /\b(?:\w+\.)?segmento\b/.test(value),
+      /\bcount\s*\(\s*(?:\*|1|(?:\w+\.)?pedido_id)\s*\)/.test(value),
+      /\bcount\s*\(\s*distinct\s+(?:\w+\.)?cliente_id\s*\)/.test(value),
+      /\bsum\s*\(\s*(?:\w+\.)?valor\s*\)/.test(value),
+      (
+        /\bgroup\s+by\s+(?:\w+\.)?segmento\b/.test(value)
+        || /\bgroup\s+by\s+1(?=\s|$|,|;)/.test(value)
+      ),
+      !hasFabricatedRows(value)
+    ].every(Boolean);
+    const fallbackExpectedRows = [
+      ["Corporativo", 10, 3, 18250],
+      ["Pequenas empresas", 12, 3, 9610],
+      ["Varejo", 16, 4, 4750]
+    ];
+
+    return rows.length === 3
+      && rows.every((row) => row.length === 4)
+      && hasCorrectStructure
+      && compareRowsIgnoringOrder(rows, expectedRows || fallbackExpectedRows);
   }
 
   function validateCountNullsDistinctsQueryStructure(query) {
@@ -512,6 +553,7 @@
     validatePaidOrdersSummaryResult,
     validateOrdersByCategorySummaryResult,
     validatePaidOrdersWithCustomersResult,
+    validateProjectSalesBySegmentResult,
     validateConfiguredResult,
     validateMissionQueryStructure,
     validateMissionResult

@@ -25,7 +25,8 @@
     "sql-essencial-count-nulos-distintos": "count_nulls_distincts",
     "sql-essencial-filtro-antes-agregacao": "paid_orders_summary",
     "sql-essencial-group-by": "orders_by_category_summary",
-    "sql-essencial-join": "paid_orders_with_customers"
+    "sql-essencial-join": "paid_orders_with_customers",
+    "projeto-01-consulta-validacao": "project_sales_by_segment"
   };
 
   let practices = [
@@ -158,6 +159,9 @@
       note: "em breve"
     }
   ];
+  if (globalScope.Project01Content?.SQL_PRACTICE) {
+    practices.push(globalScope.Project01Content.SQL_PRACTICE);
+  }
 
   const activePracticeIndex = Math.max(1, getInitialPracticeIndex());
 
@@ -304,7 +308,12 @@
 
   function getPracticeRecordCount(practice) {
     return getPracticeDatasetTables(practice)
-      .reduce((total, table) => total + (Array.isArray(table.sampleRows) ? table.sampleRows.length : 0), 0);
+      .reduce((total, table) => {
+        const rows = Array.isArray(table.seedData) && table.seedData.length
+          ? table.seedData
+          : table.sampleRows;
+        return total + (Array.isArray(rows) ? rows.length : 0);
+      }, 0);
   }
 
   function getAttemptCount(practice) {
@@ -358,16 +367,27 @@
   }
 
   function renderSidebar() {
+    const activePractice = getActivePractice();
+    const activeTrackSlug = activePractice?.trackSlug
+      || (activePractice?.slug?.startsWith("projeto-01-") ? "projetos-praticos" : "sql-essencial");
+    const visiblePractices = practices
+      .map((practice, index) => ({ practice, index }))
+      .filter(({ practice }) => {
+        const practiceTrackSlug = practice.trackSlug
+          || (practice.slug?.startsWith("projeto-01-") ? "projetos-praticos" : "sql-essencial");
+        return practiceTrackSlug === activeTrackSlug;
+      });
+    const trackTitle = activePractice?.trackTitle || (activeTrackSlug === "projetos-praticos" ? "Projetos Práticos" : "SQL Essencial");
     return `
-      <aside class="sql-practice-sidebar" aria-label="Roteiro SQL Essencial">
+      <aside class="sql-practice-sidebar" aria-label="Roteiro ${escapeHtml(trackTitle)}">
         <div class="sql-practice-sidebar__header">
           <div>
             <span>Práticas SQL</span>
-            <h1>SQL Essencial</h1>
+            <h1>${escapeHtml(trackTitle)}</h1>
           </div>
         </div>
         <nav class="sql-practice-steps" aria-label="Etapas da Central SQL">
-          ${practices.map((practice, index) => {
+          ${visiblePractices.map(({ practice, index }) => {
             const status = getSidebarStatus(practice, index);
             const isLocked = status === "locked";
             return `
@@ -677,6 +697,17 @@
         "join clientes",
         "  on ... = ...",
         "where ...;"
+      ].join("\n"),
+      project_sales_by_segment: [
+        "select",
+        "  dimensao,",
+        "  count(...),",
+        "  count(distinct ...),",
+        "  sum(...) ",
+        "from clientes",
+        "join pedidos on ... = ...",
+        "where ...",
+        "group by ...;"
       ].join("\n"),
       orders_by_category_summary: [
         "select",
@@ -1038,6 +1069,10 @@
       return "Relacione pedidos e clientes por cliente_id, filtre os pedidos pagos e retorne pedido_id, nome e valor.";
     }
 
+    if (practice.validationConfig?.validator === "project_sales_by_segment") {
+      return "Relacione clientes e pedidos por cliente_id, filtre apenas os pagos e retorne segmento, quantidade de pedidos, clientes distintos e faturamento.";
+    }
+
     const checks = sqlValidation.validatePaidOrdersByCategorySql(query).checks;
     const normalizedQuery = sqlValidation.normalizeSql(query);
 
@@ -1095,11 +1130,19 @@
     }
 
     const icon = state.feedback.status === "correct" ? "check-circle-2" : "circle-alert";
+    const practice = getActivePractice();
+    const nextAction = state.feedback.status === "correct" ? practice.nextAction : null;
     return `
       <div class="mission-feedback mission-feedback--${escapeHtml(state.feedback.status)}" data-feedback-card>
         <strong><i data-lucide="${icon}" aria-hidden="true"></i>${escapeHtml(state.feedback.title)}</strong>
         <p>${escapeHtml(state.feedback.message)}</p>
         <div class="mission-feedback__actions">
+          ${nextAction ? `
+            <a class="button button-primary" href="${escapeHtml(nextAction.href)}">
+              <i data-lucide="arrow-right" aria-hidden="true"></i>
+              <span>${escapeHtml(nextAction.label)}</span>
+            </a>
+          ` : ""}
           <a class="button button-secondary" href="meu-progresso.html">
             <i data-lucide="line-chart" aria-hidden="true"></i>
             <span>Ver Meu Progresso</span>
@@ -1469,7 +1512,8 @@
             orders_by_category_summary: "Correto. Você resumiu quantidade e valor total por categoria.",
             paid_orders_by_category: "Correto. Você filtrou os pedidos pagos antes do agrupamento e contou os pedidos por categoria.",
             paid_orders_summary: "Correto. Você filtrou os pedidos pagos antes de calcular as métricas.",
-            paid_orders_with_customers: "Correto. Você relacionou pedidos e clientes e manteve apenas os pedidos pagos."
+            paid_orders_with_customers: "Correto. Você relacionou pedidos e clientes e manteve apenas os pedidos pagos.",
+            project_sales_by_segment: "Correto. Você relacionou clientes e pedidos e calculou as três métricas por segmento com o recorte de pedidos pagos."
           }[validator] || "Correto. A consulta respondeu ao exercício.",
           details: validationDetails.checks
         }

@@ -131,18 +131,43 @@
     `;
   }
 
-  function renderNextAction() {
+  function renderNextAction(activity) {
+    const nextAction = state.validation?.isCorrect ? activity.nextAction : null;
     return `
       <section class="guided-aside-card guided-next-card">
         <div class="guided-aside-title">
           <i data-lucide="rocket" aria-hidden="true"></i>
-          <div><span class="section-kicker">Próxima ação</span><h2>Acompanhe seu avanço</h2></div>
+          <div><span class="section-kicker">Próxima ação</span><h2>${escapeHtml(nextAction?.title || "Acompanhe seu avanço")}</h2></div>
         </div>
-        <p>Conclua a prática para registrar seu progresso. Depois, acompanhe sua evolução no Meu Progresso.</p>
-        <a class="submit-button" href="meu-progresso.html">Ver Meu Progresso <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+        <p>${escapeHtml(nextAction
+          ? "A resposta foi validada. Você já pode continuar pelo próximo passo do projeto."
+          : "Conclua a prática para registrar seu progresso. Depois, acompanhe sua evolução no Meu Progresso.")}</p>
+        <a class="submit-button" href="${escapeHtml(nextAction?.href || "meu-progresso.html")}">${escapeHtml(nextAction?.label || "Ver Meu Progresso")} <i data-lucide="arrow-right" aria-hidden="true"></i></a>
         <a class="guided-back-link" href="index.html#trilhas">Voltar às trilhas</a>
       </section>
     `;
+  }
+
+  function getThinkingSteps(activity) {
+    if (activity.slug === "projeto-01-escopo-pergunta") {
+      return [
+        ["Qual é a métrica?", "Faturamento realizado."],
+        ["Qual é o recorte?", "Somente pedidos pagos."],
+        ["Qual é a dimensão?", "Segmento do cliente."]
+      ];
+    }
+    if (activity.slug === "projeto-01-insight-recomendacao") {
+      return [
+        ["O que se destaca?", "Corporativo lidera em faturamento."],
+        ["Qual é a ressalva?", "O valor está concentrado em três clientes."],
+        ["O que recomendar?", "Investigar e reter antes de escalar."]
+      ];
+    }
+    return [
+      ["O que foi medido?", "Taxa de satisfação."],
+      ["Qual era a referência?", "Meta de 85%."],
+      ["O que fazer com o desvio?", "Investigar causas."]
+    ];
   }
 
   function renderFeedback(activity) {
@@ -181,13 +206,18 @@
       <section class="guided-completion-card guided-order-completion" aria-labelledby="guidedCompletionTitle">
         <div class="guided-completion-icon"><i data-lucide="badge-check" aria-hidden="true"></i></div>
         <div>
-          <span class="section-kicker">Prática concluída</span>
-          <h2 id="guidedCompletionTitle">Do percentual ao diagnóstico</h2>
+          <span class="section-kicker">${activity.activityType === "project" ? "Etapa concluída" : "Prática concluída"}</span>
+          <h2 id="guidedCompletionTitle">${escapeHtml(activity.completionTitle || "Do percentual ao diagnóstico")}</h2>
           <p>${escapeHtml(activity.conclusion)}</p>
+          ${Array.isArray(activity.competencies) && activity.competencies.length ? `
+            <ul class="guided-completion-competencies" aria-label="Competências demonstradas">
+              ${activity.competencies.map((competency) => `<li>${escapeHtml(competency)}</li>`).join("")}
+            </ul>
+          ` : ""}
           ${state.saveStatus ? `<p class="guided-save-status">${escapeHtml(state.saveStatus)}</p>` : ""}
         </div>
         <div class="guided-completion-actions">
-          <a class="submit-button" href="meu-progresso.html">Ver Meu Progresso</a>
+          <a class="submit-button" href="${escapeHtml(activity.nextAction?.href || "meu-progresso.html")}">${escapeHtml(activity.nextAction?.label || "Ver Meu Progresso")}</a>
           <a class="filter-button" href="index.html#trilhas">Voltar às trilhas</a>
         </div>
       </section>
@@ -251,8 +281,9 @@
             <div class="guided-section-heading">
               <span class="guided-section-icon guided-section-icon-green"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i></span>
               <div>
-                <span class="section-kicker">Dados do indicador</span>
-                <h2 id="guidedIndicatorTitle">Leia o resultado no contexto da meta</h2>
+                <span class="section-kicker">Dados da análise</span>
+                <h2 id="guidedIndicatorTitle">${escapeHtml(activity.indicatorTitle || "Leia o resultado no contexto da meta")}</h2>
+                ${activity.indicatorDescription ? `<p>${escapeHtml(activity.indicatorDescription)}</p>` : ""}
               </div>
             </div>
             <div class="guided-metrics-grid">${renderIndicatorCards(activity)}</div>
@@ -264,7 +295,7 @@
               <div>
                 <span class="section-kicker">Sua análise</span>
                 <h2 id="guidedQuestionTitle">${escapeHtml(activity.question)}</h2>
-                <p>Escolha a alternativa que melhor conecta resultado, meta e próxima decisão.</p>
+                <p>Escolha a alternativa que melhor conecta os dados à decisão.</p>
               </div>
             </div>
             <form data-guided-practice-form>
@@ -293,9 +324,9 @@
             <span class="section-kicker">Como pensar</span>
             <h2>Três perguntas antes da conclusão</h2>
             <ol class="guided-thinking-list">
-              <li><span>1</span><p><strong>O que foi medido?</strong> Taxa de satisfação.</p></li>
-              <li><span>2</span><p><strong>Qual era a referência?</strong> Meta de 85%.</p></li>
-              <li><span>3</span><p><strong>O que fazer com o desvio?</strong> Investigar causas.</p></li>
+              ${getThinkingSteps(activity).map(([question, answer], index) => `
+                <li><span>${index + 1}</span><p><strong>${escapeHtml(question)}</strong> ${escapeHtml(answer)}</p></li>
+              `).join("")}
             </ol>
           </section>
 
@@ -310,7 +341,7 @@
             ${state.noteStatus ? `<small>${escapeHtml(state.noteStatus)}</small>` : `<small>O registro remoto de anotações fica para uma etapa futura.</small>`}
           </section>
 
-          ${renderNextAction()}
+          ${renderNextAction(activity)}
 
           ${!state.isAuthenticated && state.validation?.isCorrect ? `
             <section class="guided-aside-card guided-login-card guided-order-login">

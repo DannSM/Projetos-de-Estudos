@@ -318,14 +318,15 @@
     const progressPercent = clampPercent(learningProgress?.progress_percent);
     if (learningProgress?.status === "completed" && progressPercent === 100 && path) {
       if (nextPath || nextPathStep) {
+        const nextHref = getRecommendedPracticeHref(nextPathStep);
         return {
           title: nextPath?.title || nextPathStep?.title || "Continue sua evolução",
           eyebrow: "Próximo passo",
           text: nextPathStep?.title
             ? `Comece por: ${nextPathStep.title}.`
             : "Uma nova trilha já está pronta para você continuar evoluindo.",
-          href: "index.html#trilhas",
-          cta: "Ver próxima trilha",
+          href: nextHref || "index.html#trilhas",
+          cta: nextHref && nextPath?.slug === "projetos-praticos" ? "Iniciar Projeto 01" : "Ver próxima trilha",
           pathTitle: nextPath?.title || "",
           note: "Próxima recomendação: nova trilha disponível."
         };
@@ -506,29 +507,52 @@
     let activities = [];
 
     if (practiceSlugs.length) {
-      const activitiesResult = await fetchOrThrow(
-        client
-          .from("vw_sql_practice_exercises_public")
-          .select("activity_id,exercise_id,dataset_id,slug,status")
-          .in("slug", practiceSlugs),
-        "vw_sql_practice_exercises_public completion evidence"
-      );
-      activities = normalizeList(activitiesResult.data);
+      const [sqlActivitiesResult, guidedActivitiesResult] = await Promise.all([
+        fetchOrThrow(
+          client
+            .from("vw_sql_practice_exercises_public")
+            .select("activity_id,exercise_id,dataset_id,slug,status")
+            .in("slug", practiceSlugs),
+          "vw_sql_practice_exercises_public completion evidence"
+        ),
+        fetchOrThrow(
+          client
+            .from("vw_guided_practice_activities_public")
+            .select("id,slug,status")
+            .in("slug", practiceSlugs),
+          "vw_guided_practice_activities_public completion evidence"
+        )
+      ]);
+      activities = [
+        ...normalizeList(sqlActivitiesResult.data),
+        ...normalizeList(guidedActivitiesResult.data)
+      ];
     }
 
-    const attemptsResult = await fetchOrThrow(
-      client
-        .from("user_practice_attempts")
-        .select("activity_id,validation_status")
-        .eq("user_id", userId)
-        .eq("validation_status", "correct"),
-      "user_practice_attempts completion evidence"
-    );
+    const [attemptsResult, guidedAttemptsResult] = await Promise.all([
+      fetchOrThrow(
+        client
+          .from("user_practice_attempts")
+          .select("activity_id,validation_status")
+          .eq("user_id", userId)
+          .eq("validation_status", "correct"),
+        "user_practice_attempts completion evidence"
+      ),
+      fetchOrThrow(
+        client
+          .from("user_guided_practice_attempts")
+          .select("activity_id,status,score_percent,result_payload")
+          .eq("user_id", userId)
+          .eq("status", "completed"),
+        "user_guided_practice_attempts completion evidence"
+      )
+    ]);
 
     return calculator({
       steps,
       activities,
       attempts: normalizeList(attemptsResult.data),
+      guidedAttempts: normalizeList(guidedAttemptsResult.data),
       progressRows
     });
   }
@@ -701,6 +725,26 @@
       }
     }
 
+    if (selectedCompletedCandidate && !nextLearningProgress && path?.id) {
+      const projectPathResult = await fetchOrThrow(
+        client
+          .from("learning_paths")
+          .select("id,slug,title,description,skill_area,level,estimated_minutes,status")
+          .eq("slug", "projetos-praticos")
+          .eq("status", "active")
+          .maybeSingle(),
+        "learning_paths project availability"
+      );
+      const projectPath = projectPathResult.data || null;
+      if (projectPath?.id && projectPath.id !== path.id) {
+        const projectTrack = await verifyCompletedTrack(client, userId, projectPath.id, []);
+        if (projectTrack.nextStep) {
+          nextPath = projectPath;
+          nextPathStep = projectTrack.nextStep;
+        }
+      }
+    }
+
     const shouldUseLegacyStepFallback = !verifiedTrack?.isVerifiable
       && !unavailableNextStep
       && !step;
@@ -735,7 +779,7 @@
       const nextPathResult = await fetchOrThrow(
         client
           .from("learning_paths")
-          .select("id,title,description,skill_area,level,estimated_minutes,status")
+          .select("id,slug,title,description,skill_area,level,estimated_minutes,status")
           .eq("id", nextLearningProgress.path_id)
           .maybeSingle(),
         "learning_paths next"
@@ -755,6 +799,24 @@
       nextPathStep = nextStepResult.data || null;
     }
 
+    const completedPathIds = [...new Set(
+      learningProgressRows
+        .filter((progress) => progress.status === "completed" && Number(progress.progress_percent) === 100)
+        .map((progress) => progress.path_id)
+        .filter(Boolean)
+    )];
+    let completedPaths = [];
+    if (completedPathIds.length) {
+      const completedPathsResult = await fetchOrThrow(
+        client
+          .from("learning_paths")
+          .select("id,slug,title,description,skill_area,level,status")
+          .in("id", completedPathIds),
+        "learning_paths completed"
+      );
+      completedPaths = normalizeList(completedPathsResult.data);
+    }
+
     return {
       profile: profileResult.data || null,
       diagnosticSessions: normalizeList(sessionsResult.data),
@@ -772,7 +834,8 @@
       nextLearningProgress,
       nextPath,
       nextPathStep,
-      unavailableNextStep
+      unavailableNextStep,
+      completedPaths
     };
   }
 
@@ -992,8 +1055,18 @@
       ? "Todas as práticas concluídas"
       : data.step?.title || data.learningRecommendation?.description || "Primeiro passo ainda não definido.";
     const hasPractice = !isCompleted && Boolean(getRecommendedPracticeHref(data.step));
+    const completedPaths = normalizeList(data.completedPaths)
+      .filter((completedPath) => !isCompleted || completedPath.id !== data.path?.id);
 
     return `
+      ${completedPaths.length ? `
+        <div class="progress-completed-paths" aria-label="Trilhas concluídas">
+          <span>Trilhas concluídas</span>
+          ${completedPaths.map((completedPath) => `
+            <strong><i data-lucide="circle-check" aria-hidden="true"></i>${escapeHtml(completedPath.title)}</strong>
+          `).join("")}
+        </div>
+      ` : ""}
       <div class="progress-path-card">
         <div class="progress-path-summary">
           <strong>${escapeHtml(title)}</strong>

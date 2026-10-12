@@ -11,6 +11,10 @@
     return activity?.activity_id || activity?.id || null;
   }
 
+  function getStepFormat(step) {
+    return String(step?.metadata?.format || step?.metadata?.activity_format || "sql_practice").trim();
+  }
+
   function isActivityAvailable(activity) {
     if (!getActivityId(activity)) return false;
 
@@ -23,15 +27,16 @@
   }
 
   function isStepAvailable(step, activityBySlug) {
+    const activitySlug = getPracticeSlug(step);
+    if (activitySlug) {
+      return isActivityAvailable(activityBySlug.get(activitySlug));
+    }
     if (String(step?.content_url || "").trim()) return true;
 
-    const format = String(step?.metadata?.format || step?.metadata?.activity_format || "").trim();
-    if (format === "guided_practice") return Boolean(getPracticeSlug(step));
-
-    return isActivityAvailable(activityBySlug.get(getPracticeSlug(step)));
+    return false;
   }
 
-  function calculateTrackStatus({ steps, activities, attempts, progressRows }) {
+  function calculateTrackStatus({ steps, activities, attempts, guidedAttempts, progressRows }) {
     const allActiveSteps = normalizeList(steps)
       .filter((step) => step?.status === "active")
       .sort((left, right) => Number(left.display_order || 0) - Number(right.display_order || 0));
@@ -46,6 +51,15 @@
         .map((attempt) => attempt.activity_id)
         .filter(Boolean)
     );
+    const completedGuidedActivityIds = new Set(
+      normalizeList(guidedAttempts)
+        .filter((attempt) => (
+          attempt?.status === "completed"
+          && (Number(attempt?.score_percent) === 100 || attempt?.result_payload?.is_correct === true)
+        ))
+        .map((attempt) => attempt.activity_id)
+        .filter(Boolean)
+    );
     const completedStepIds = new Set();
     const progressByStepId = new Map(
       normalizeList(progressRows)
@@ -56,7 +70,11 @@
     activeSteps.forEach((step) => {
       const activity = activityBySlug.get(getPracticeSlug(step));
       const activityId = getActivityId(activity);
-      if (activityId && correctActivityIds.has(activityId)) {
+      const isGuidedPractice = getStepFormat(step) === "guided_practice";
+      const hasValidCompletion = isGuidedPractice
+        ? completedGuidedActivityIds.has(activityId)
+        : correctActivityIds.has(activityId);
+      if (activityId && hasValidCompletion) {
         completedStepIds.add(step.id);
       }
     });
@@ -105,6 +123,7 @@
     calculateTrackStatus,
     getActivityId,
     getPracticeSlug,
+    getStepFormat,
     isActivityAvailable,
     reconcileTrackProgress
   };

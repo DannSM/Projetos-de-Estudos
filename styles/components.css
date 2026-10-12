@@ -8152,6 +8152,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 .guided-completion-card { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 18px; padding: 30px; border-color: #9edbc7; background: linear-gradient(135deg, #edfbf6, #fff); }
 .guided-completion-icon { width: 58px; height: 58px; background: #11946f; color: #fff; border-radius: 19px; }
 .guided-completion-card p { margin: 10px 0 0; color: #4c6661; line-height: 1.6; }
+.guided-completion-competencies { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; margin: 16px 0 0; padding: 0; list-style: none; }
+.guided-completion-competencies li { position: relative; padding-left: 20px; color: #284b45; font-size: .9rem; font-weight: 700; }
+.guided-completion-competencies li::before { content: "✓"; position: absolute; left: 0; color: #0f8b69; }
 .guided-save-status { font-weight: 700; color: #176a55 !important; }
 .guided-completion-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
 

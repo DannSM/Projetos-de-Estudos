@@ -7,7 +7,9 @@
     feedback: "user_activity_feedback",
     paths: "learning_paths",
     steps: "learning_path_steps",
-    learningProgress: "user_learning_progress"
+    learningProgress: "user_learning_progress",
+    guidedCatalog: "vw_guided_practice_activities_public",
+    guidedAttempts: "user_guided_practice_attempts"
   };
 
   const PRACTICE_PROGRESS_FALLBACK_MAPPINGS = {
@@ -30,6 +32,10 @@
     "sql-essencial-join": {
       pathSlug: "sql-essencial",
       stepKey: "sql-essencial-05-join"
+    },
+    "projeto-01-consulta-validacao": {
+      pathSlug: "projetos-praticos",
+      stepKey: "projetos-02-consulta-validacao"
     }
   };
 
@@ -214,27 +220,48 @@
         const practiceSlugs = (stepsResult.data || [])
           .map((step) => step.metadata?.practice_slug || step.metadata?.activity_slug)
           .filter(Boolean);
-        const [activitiesResult, correctAttemptsResult] = await Promise.all([
+        const hasGuidedPractices = (stepsResult.data || []).some((step) => (
+          (step.metadata?.format || step.metadata?.activity_format) === "guided_practice"
+        ));
+        const [activitiesResult, guidedActivitiesResult, correctAttemptsResult, guidedAttemptsResult] = await Promise.all([
           client
             .from(TABLES.publicExercises)
             .select("activity_id,slug")
             .in("slug", practiceSlugs),
+          hasGuidedPractices
+            ? client
+              .from(TABLES.guidedCatalog)
+              .select("id,slug,status")
+              .in("slug", practiceSlugs)
+            : Promise.resolve({ data: [], error: null }),
           client
             .from(TABLES.attempts)
             .select("activity_id,validation_status")
             .eq("user_id", user.id)
-            .eq("validation_status", "correct")
+            .eq("validation_status", "correct"),
+          hasGuidedPractices
+            ? client
+              .from(TABLES.guidedAttempts)
+              .select("activity_id,status,score_percent,result_payload")
+              .eq("user_id", user.id)
+              .eq("status", "completed")
+            : Promise.resolve({ data: [], error: null })
         ]);
 
-        const progressError = stepsResult.error || activitiesResult.error || correctAttemptsResult.error;
+        const progressError = stepsResult.error
+          || activitiesResult.error
+          || guidedActivitiesResult.error
+          || correctAttemptsResult.error
+          || guidedAttemptsResult.error;
         if (progressError) {
           return { ok: false, authenticated: true, user, error: progressError };
         }
 
         const verifiedTrack = globalScope.learningProgressStatus?.calculateTrackStatus?.({
           steps: stepsResult.data || [],
-          activities: activitiesResult.data || [],
-          attempts: correctAttemptsResult.data || []
+          activities: [...(activitiesResult.data || []), ...(guidedActivitiesResult.data || [])],
+          attempts: correctAttemptsResult.data || [],
+          guidedAttempts: guidedAttemptsResult.data || []
         });
         const completedStepIds = verifiedTrack?.completedStepIds || new Set();
         practiceProgress = Object.fromEntries(

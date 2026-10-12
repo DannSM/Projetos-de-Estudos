@@ -1494,6 +1494,7 @@
   .guided-feedback { grid-template-columns: minmax(0, 1fr); }
   .guided-feedback-icon { width: 46px; height: 46px; }
   .guided-completion-card { grid-template-columns: minmax(0, 1fr); }
+  .guided-completion-competencies { grid-template-columns: minmax(0, 1fr); }
   .guided-completion-actions { grid-column: 1; flex-direction: column; }
   .guided-completion-actions a { width: 100%; justify-content: center; text-align: center; }
 }
