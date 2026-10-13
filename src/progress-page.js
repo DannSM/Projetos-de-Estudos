@@ -732,6 +732,40 @@
       completedPaths = normalizeList(completedPathsResult.data);
     }
 
+    const completedProjectPath = completedPaths.find((completedPath) => (
+      completedPath.slug === "projetos-praticos"
+    ));
+    if (completedProjectPath) {
+      const projectCompletionResult = await fetchOrThrow(
+        client
+          .from("vw_guided_practice_activities_public")
+          .select("slug,subtitle,status,metadata")
+          .eq("slug", "projeto-01-insight-recomendacao")
+          .eq("status", "active")
+          .maybeSingle(),
+        "vw_guided_practice_activities_public project completion"
+      );
+      const projectCompletionActivity = projectCompletionResult.data || null;
+      const projectCompetencies = normalizeList(projectCompletionActivity?.metadata?.competencies)
+        .map((competency) => String(competency || "").trim())
+        .filter(Boolean);
+
+      if (projectCompletionActivity?.subtitle && projectCompetencies.length) {
+        completedPaths = completedPaths.map((completedPath) => (
+          completedPath.id === completedProjectPath.id
+            ? {
+                ...completedPath,
+                completionDetails: {
+                  title: projectCompletionActivity.subtitle,
+                  progressPercent: 100,
+                  competencies: projectCompetencies
+                }
+              }
+            : completedPath
+        ));
+      }
+    }
+
     if (learningProgress?.path_id) {
       const pathResult = await fetchOrThrow(
         client
@@ -1078,13 +1112,42 @@
     const completedPaths = normalizeList(data.completedPaths)
       .filter((completedPath) => !isCompleted || completedPath.id !== data.path?.id);
 
+    const renderCompletedPath = (completedPath) => {
+      const completionDetails = completedPath?.completionDetails;
+      const competencies = normalizeList(completionDetails?.competencies);
+      const isDetailedProject = completedPath?.slug === "projetos-praticos"
+        && completionDetails?.progressPercent === 100
+        && completionDetails?.title
+        && competencies.length;
+
+      if (!isDetailedProject) {
+        return `
+          <div class="progress-completed-path progress-completed-path--compact">
+            <strong><i data-lucide="circle-check" aria-hidden="true"></i>${escapeHtml(completedPath.title)}</strong>
+          </div>
+        `;
+      }
+
+      return `
+        <article class="progress-completed-path progress-completed-path--project">
+          <div class="progress-completed-path__heading">
+            <strong><i data-lucide="circle-check" aria-hidden="true"></i>${escapeHtml(completionDetails.title)}</strong>
+            <span class="progress-completed-path__badge">100% concluído</span>
+          </div>
+          <ul class="progress-completed-path__competencies" aria-label="Competências demonstradas">
+            ${competencies.map((competency) => `
+              <li><i data-lucide="check" aria-hidden="true"></i>${escapeHtml(competency)}</li>
+            `).join("")}
+          </ul>
+        </article>
+      `;
+    };
+
     return `
       ${completedPaths.length ? `
         <div class="progress-completed-paths" aria-label="Trilhas concluídas">
           <span>Trilhas concluídas</span>
-          ${completedPaths.map((completedPath) => `
-            <strong><i data-lucide="circle-check" aria-hidden="true"></i>${escapeHtml(completedPath.title)}</strong>
-          `).join("")}
+          ${completedPaths.map(renderCompletedPath).join("")}
         </div>
       ` : ""}
       <div class="progress-path-card">

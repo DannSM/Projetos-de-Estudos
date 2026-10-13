@@ -100,7 +100,7 @@ function loadProgressPage(client) {
   return { api: sandbox.module.exports, mount };
 }
 
-function createProgressTables({ projectPublished }) {
+function createProgressTables({ projectPublished, projectCompleted = false }) {
   const kpiSteps = Array.from({ length: 4 }, (_, index) => ({
     id: `kpi-step-${index + 1}`,
     path_id: "path-kpi",
@@ -183,7 +183,16 @@ function createProgressTables({ projectPublished }) {
         progress_percent: 100,
         last_activity_at: "2026-10-11T12:00:00.000Z",
         updated_at: "2026-10-11T12:00:00.000Z"
-      }
+      },
+      ...(projectCompleted ? [{
+        user_id: "user-1",
+        path_id: "path-project",
+        step_id: "project-step-3",
+        status: "completed",
+        progress_percent: 100,
+        last_activity_at: "2026-10-12T13:00:00.000Z",
+        updated_at: "2026-10-12T13:00:00.000Z"
+      }] : [])
     ],
     learning_paths: [
       { id: "path-kpi", slug: "kpis", title: "KPIs para Negócios", status: "active" },
@@ -203,14 +212,47 @@ function createProgressTables({ projectPublished }) {
     ],
     vw_guided_practice_activities_public: projectPublished ? [
       { id: "project-guided-1", slug: "projeto-01-escopo-pergunta", status: "active" },
-      { id: "project-guided-3", slug: "projeto-01-insight-recomendacao", status: "active" }
+      {
+        id: "project-guided-3",
+        slug: "projeto-01-insight-recomendacao",
+        subtitle: "Projeto 01 — Análise de Vendas",
+        status: "active",
+        metadata: {
+          competencies: [
+            "Definição de escopo e métrica",
+            "JOIN, filtro e agregação em SQL",
+            "Validação de resultados",
+            "Comunicação de insight e recomendação"
+          ]
+        }
+      }
     ] : [],
-    user_practice_attempts: [{
-      user_id: "user-1",
-      activity_id: "kpi-activity-1",
-      validation_status: "correct"
-    }],
-    user_guided_practice_attempts: []
+    user_practice_attempts: [
+      {
+        user_id: "user-1",
+        activity_id: "kpi-activity-1",
+        validation_status: "correct"
+      },
+      ...(projectCompleted ? [{
+        user_id: "user-1",
+        activity_id: "project-sql-activity",
+        validation_status: "correct"
+      }] : [])
+    ],
+    user_guided_practice_attempts: projectCompleted ? [
+      {
+        user_id: "user-1",
+        activity_id: "project-guided-1",
+        status: "completed",
+        score_percent: 100
+      },
+      {
+        user_id: "user-1",
+        activity_id: "project-guided-3",
+        status: "completed",
+        score_percent: 100
+      }
+    ] : []
   };
 }
 
@@ -235,12 +277,41 @@ async function testProjectContinuity(projectPublished) {
     assert.match(mount.innerHTML, />Iniciar Projeto 01</);
     assert.match(mount.innerHTML, /pratica-guiada\.html\?atividade=projeto-01-escopo-pergunta/);
     assert.strictEqual((mount.innerHTML.match(/>Iniciar Projeto 01</g) || []).length, 1);
+    assert.doesNotMatch(mount.innerHTML, /100% concluído/);
+    assert.doesNotMatch(mount.innerHTML, /Comunicação de insight e recomendação/);
   } else {
     assert.strictEqual(data.nextPath, null);
     assert.strictEqual(data.nextPathStep, null);
     assert.doesNotMatch(mount.innerHTML, />Iniciar Projeto 01</);
     assert.doesNotMatch(mount.innerHTML, /atividade=projeto-01-escopo-pergunta/);
   }
+}
+
+async function testCompletedProjectPresentation() {
+  const tables = createProgressTables({ projectPublished: true, projectCompleted: true });
+  const client = { from(table) { return createQuery(table, tables); } };
+  const { api, mount } = loadProgressPage(client);
+  const user = { id: "user-1", email: "pessoa@example.com" };
+  const data = await api.fetchProgressData(user);
+
+  api.renderAuthenticatedState({ user }, data);
+
+  const completedProject = data.completedPaths.find((pathRow) => pathRow.slug === "projetos-praticos");
+  assert.strictEqual(data.path.id, "path-kpi");
+  assert.strictEqual(data.learningProgress.progress_percent, 25);
+  assert.strictEqual(completedProject.completionDetails.title, "Projeto 01 — Análise de Vendas");
+  assert.strictEqual(completedProject.completionDetails.progressPercent, 100);
+  assert.strictEqual(completedProject.completionDetails.competencies.length, 4);
+  assert.match(mount.innerHTML, /Projeto 01 — Análise de Vendas/);
+  assert.strictEqual((mount.innerHTML.match(/100% concluído/g) || []).length, 1);
+  assert.match(mount.innerHTML, /Definição de escopo e métrica/);
+  assert.match(mount.innerHTML, /JOIN, filtro e agregação em SQL/);
+  assert.match(mount.innerHTML, /Validação de resultados/);
+  assert.match(mount.innerHTML, /Comunicação de insight e recomendação/);
+  assert.match(mount.innerHTML, /SQL Essencial/);
+  assert.match(mount.innerHTML, /25% da trilha concluída/);
+  assert.match(mount.innerHTML, />KPI 2</);
+  assert.doesNotMatch(mount.innerHTML, />Iniciar Projeto 01</);
 }
 
 function loadSqlPracticeService(tables) {
@@ -314,6 +385,7 @@ function testRestrictedSqlUpdate() {
 async function run() {
   await testProjectContinuity(true);
   await testProjectContinuity(false);
+  await testCompletedProjectPresentation();
   await testSqlCatalogFiltering();
   testRestrictedSqlUpdate();
   console.log("Project 01 final adjustment tests passed");
