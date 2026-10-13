@@ -315,6 +315,23 @@
       };
     }
 
+    const projectHref = nextPath?.slug === "projetos-praticos"
+      ? getRecommendedPracticeHref(nextPathStep)
+      : "";
+    if (projectHref) {
+      return {
+        title: "Projeto 01 — Análise de Vendas",
+        eyebrow: "Próximo passo",
+        text: nextPathStep?.title
+          ? `SQL Essencial concluída. Comece por: ${nextPathStep.title}.`
+          : "SQL Essencial concluída. O Projeto 01 já está disponível para você.",
+        href: projectHref,
+        cta: "Iniciar Projeto 01",
+        pathTitle: nextPath.title || "",
+        note: "Próxima recomendação: projeto prático disponível."
+      };
+    }
+
     const progressPercent = clampPercent(learningProgress?.progress_percent);
     if (learningProgress?.status === "completed" && progressPercent === 100 && path) {
       if (nextPath || nextPathStep) {
@@ -644,6 +661,7 @@
     let nextPathStep = null;
     let verifiedTrack = null;
     let unavailableNextStep = null;
+    let completedPaths = [];
 
     if (latestSession?.attempt_id) {
       const answersResult = await fetchOrThrow(
@@ -697,6 +715,23 @@
       diagnosticRecommendation = normalizeList(diagnosticRecommendationResult.data)[0] || null;
     }
 
+    const completedPathIds = [...new Set(
+      learningProgressRows
+        .filter((progress) => progress.status === "completed" && Number(progress.progress_percent) === 100)
+        .map((progress) => progress.path_id)
+        .filter(Boolean)
+    )];
+    if (completedPathIds.length) {
+      const completedPathsResult = await fetchOrThrow(
+        client
+          .from("learning_paths")
+          .select("id,slug,title,description,skill_area,level,status")
+          .in("id", completedPathIds),
+        "learning_paths completed"
+      );
+      completedPaths = normalizeList(completedPathsResult.data);
+    }
+
     if (learningProgress?.path_id) {
       const pathResult = await fetchOrThrow(
         client
@@ -725,7 +760,10 @@
       }
     }
 
-    if (selectedCompletedCandidate && !nextLearningProgress && path?.id) {
+    const hasCompletedSqlEssential = completedPaths.some((completedPath) => (
+      completedPath.slug === "sql-essencial"
+    ));
+    if (hasCompletedSqlEssential) {
       const projectPathResult = await fetchOrThrow(
         client
           .from("learning_paths")
@@ -797,24 +835,6 @@
         "learning_path_steps next"
       );
       nextPathStep = nextStepResult.data || null;
-    }
-
-    const completedPathIds = [...new Set(
-      learningProgressRows
-        .filter((progress) => progress.status === "completed" && Number(progress.progress_percent) === 100)
-        .map((progress) => progress.path_id)
-        .filter(Boolean)
-    )];
-    let completedPaths = [];
-    if (completedPathIds.length) {
-      const completedPathsResult = await fetchOrThrow(
-        client
-          .from("learning_paths")
-          .select("id,slug,title,description,skill_area,level,status")
-          .in("id", completedPathIds),
-        "learning_paths completed"
-      );
-      completedPaths = normalizeList(completedPathsResult.data);
     }
 
     return {

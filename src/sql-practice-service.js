@@ -74,6 +74,10 @@
     };
   }
 
+  function isFunctionalSqlActivity(row) {
+    return Boolean(row?.activity_id && row?.exercise_id && row?.dataset_id);
+  }
+
   function normalizePractice(row) {
     const support = row.theoretical_support || {};
     const schema = row.schema_config || {};
@@ -161,7 +165,9 @@
       return {
         ok: true,
         practice: normalizePractice(practiceRow),
-        catalog: (catalog || []).map(normalizeCatalogActivity)
+        catalog: (catalog || [])
+          .filter(isFunctionalSqlActivity)
+          .map(normalizeCatalogActivity)
       };
     } catch (error) {
       console.warn("[Central SQL] Falha ao carregar pratica do Supabase.", error);

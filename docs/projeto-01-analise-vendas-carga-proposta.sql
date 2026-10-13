@@ -367,6 +367,11 @@ where step_key in (
   'projetos-01-escopo-pergunta',
   'projetos-02-consulta-validacao',
   'projetos-03-insight-recomendacao'
+)
+and path_id in (
+  select id
+  from public.learning_paths
+  where slug = 'projetos-praticos'
 );
 
 -- Verificações de revisão antes da aplicação:
