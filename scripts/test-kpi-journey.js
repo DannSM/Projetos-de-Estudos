@@ -9,7 +9,7 @@ const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "u
 const content = require(path.join(root, "src", "kpi-guided-content.js"));
 const projectContent = require(path.join(root, "src", "project-01-content.js"));
 
-function createMemoryQuery(table, tables) {
+function createMemoryQuery(table, tables, failures = {}) {
   const filters = [];
   let operation = "select";
   let payload = null;
@@ -32,6 +32,7 @@ function createMemoryQuery(table, tables) {
     const rows = tables[table] || [];
     const matches = (row) => filters.every(([column, value]) => row[column] === value);
     if (operation === "insert") {
+      if (failures[table]) return { data: null, error: failures[table] };
       rows.push({ id: `${table}-${rows.length + 1}`, ...payload });
       return { data: null, error: null };
     }
@@ -119,6 +120,20 @@ function runContentAndMathChecks() {
 }
 
 async function runProgressChecks() {
+  const anonymousService = loadService();
+  const anonymousActivity = {
+    ...content.GUIDED_ACTIVITIES["indicadores-definicao-consistente"],
+    id: "activity-anonymous"
+  };
+  const anonymous = await anonymousService.saveResponse(
+    anonymousActivity,
+    correctAnswers(anonymousActivity),
+    "2026-10-17T09:55:00.000Z"
+  );
+  assert.strictEqual(anonymous.validation.isCorrect, true);
+  assert.strictEqual(anonymous.attempt.authenticated, false);
+  assert.strictEqual(anonymous.progress.skipped, true);
+
   const tables = {
     learning_paths: [{ id: "path-kpi", slug: "indicadores-e-kpis", title: "Indicadores e KPIs", status: "active" }],
     learning_path_steps: [1, 2, 3, 4].map((order) => ({
@@ -145,9 +160,10 @@ async function runProgressChecks() {
     }],
     user_guided_practice_attempts: []
   };
+  const failures = {};
   const client = {
     auth: { async getSession() { return { data: { session: { user: { id: "user-1" } } }, error: null }; } },
-    from(table) { return createMemoryQuery(table, tables); }
+    from(table) { return createMemoryQuery(table, tables, failures); }
   };
   const service = loadService(client);
   const activities = [
@@ -171,6 +187,20 @@ async function runProgressChecks() {
   assert.strictEqual(incomplete.progress.skipped, true);
   assert.strictEqual(tables.user_learning_progress.length, 1);
 
+  failures.user_guided_practice_attempts = { message: "Falha simulada ao salvar tentativa" };
+  const failedAttempt = await service.saveResponse(
+    activities[0],
+    correctAnswers(activities[0]),
+    "2026-10-17T10:07:00.000Z"
+  );
+  delete failures.user_guided_practice_attempts;
+  assert.strictEqual(failedAttempt.validation.isCorrect, true);
+  assert.strictEqual(failedAttempt.attempt.ok, false);
+  assert.strictEqual(failedAttempt.progress.skipped, true);
+  assert.strictEqual(failedAttempt.progress.reason, "attempt_not_saved");
+  assert.strictEqual(failedAttempt.progress.error.message, "Falha simulada ao salvar tentativa");
+  assert.strictEqual(tables.user_learning_progress.length, 1);
+
   const expectedProgress = [50, 75, 100];
   for (let index = 0; index < activities.length; index += 1) {
     const result = await service.saveResponse(
@@ -179,6 +209,8 @@ async function runProgressChecks() {
       `2026-10-17T10:${10 + index}:00.000Z`
     );
     assert.strictEqual(result.validation.isCorrect, true);
+    assert.strictEqual(result.attempt.ok, true);
+    assert.strictEqual(result.progress.ok, true);
     assert.strictEqual(result.progress.progressPercent, expectedProgress[index]);
   }
 
@@ -198,6 +230,7 @@ async function runSqlProposalChecks() {
   assert.doesNotMatch(proposal, /\(\s*'indicadores-meta-resultado'\s*,\s*'practice'/i);
   assert.match(proposal, /where path_id = target_path_id[\s\S]*indicadores-04-funil-conversao/);
   assert.match(proposal, /linked_step_count <> 3/);
+  assert.match(proposal, /original_step_count <> 1/);
   assert.match(proposal, /estimated_minutes = 55/);
 
   const db = new PGlite("memory://");
@@ -249,19 +282,35 @@ async function runSqlProposalChecks() {
         'indicadores-meta-resultado', 'practice', 'Meta e resultado',
         'indicadores-e-kpis', 1, 'active', true, '{"preserved": true}'::jsonb
       );
-      insert into public.learning_path_steps (path_id, step_key, content_type)
-      select path.id, step_key, 'lesson'
+      insert into public.learning_path_steps (
+        path_id, step_key, content_type, content_url, estimated_minutes, metadata
+      )
+      select path.id, steps.step_key, 'lesson', steps.content_url,
+             steps.estimated_minutes, steps.metadata
       from public.learning_paths path
       cross join (values
-        ('indicadores-01-meta-resultado'),
-        ('indicadores-02-definicao-consistente'),
-        ('indicadores-03-decomposicao-kpi'),
-        ('indicadores-04-funil-conversao')
-      ) steps(step_key)
+        (
+          'indicadores-01-meta-resultado',
+          'pratica-guiada.html?atividade=indicadores-meta-resultado',
+          25,
+          '{"activity_slug": "indicadores-meta-resultado", "preserved": true}'::jsonb
+        ),
+        ('indicadores-02-definicao-consistente', null, 25, '{}'::jsonb),
+        ('indicadores-03-decomposicao-kpi', null, 40, '{}'::jsonb),
+        ('indicadores-04-funil-conversao', null, 35, '{}'::jsonb)
+      ) steps(step_key, content_url, estimated_minutes, metadata)
       where path.slug = 'indicadores-e-kpis';
       insert into public.learning_path_steps (path_id, step_key, content_type)
       select id, 'indicadores-02-definicao-consistente', 'lesson'
       from public.learning_paths where slug = 'trilha-controle';
+    `);
+
+    const originalStepBefore = await db.query(`
+      select step.id, step.step_key, step.content_url, step.metadata
+      from public.learning_path_steps step
+      join public.learning_paths path on path.id = step.path_id
+      where path.slug = 'indicadores-e-kpis'
+        and step.step_key = 'indicadores-01-meta-resultado'
     `);
 
     await db.exec(proposal);
@@ -288,6 +337,27 @@ async function runSqlProposalChecks() {
       select estimated_minutes from public.learning_paths where slug = 'indicadores-e-kpis'
     `);
     assert.strictEqual(pathResult.rows[0].estimated_minutes, 55);
+    const steps = await db.query(`
+      select step.id, step.step_key, step.content_type, step.content_url,
+             step.estimated_minutes, step.metadata
+      from public.learning_path_steps step
+      join public.learning_paths path on path.id = step.path_id
+      where path.slug = 'indicadores-e-kpis'
+      order by step.step_key
+    `);
+    assert.deepStrictEqual(steps.rows.map((step) => step.estimated_minutes), [10, 15, 15, 15]);
+    assert.strictEqual(
+      steps.rows.reduce((total, step) => total + step.estimated_minutes, 0),
+      55
+    );
+    assert.ok(steps.rows.every((step) => step.content_type === "practice"));
+    assert.strictEqual(steps.rows[0].id, originalStepBefore.rows[0].id);
+    assert.strictEqual(steps.rows[0].step_key, originalStepBefore.rows[0].step_key);
+    assert.strictEqual(
+      steps.rows[0].content_url,
+      originalStepBefore.rows[0].content_url
+    );
+    assert.deepStrictEqual(steps.rows[0].metadata, originalStepBefore.rows[0].metadata);
     const linked = await db.query(`
       select count(*)::integer as total
       from public.learning_path_steps step
@@ -295,7 +365,7 @@ async function runSqlProposalChecks() {
       where path.slug = 'indicadores-e-kpis'
         and step.content_url is not null
     `);
-    assert.strictEqual(linked.rows[0].total, 3);
+    assert.strictEqual(linked.rows[0].total, 4);
     const control = await db.query(`
       select content_url
       from public.learning_path_steps step

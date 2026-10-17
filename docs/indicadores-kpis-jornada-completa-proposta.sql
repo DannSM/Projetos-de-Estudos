@@ -357,6 +357,7 @@ on conflict (slug) do update set
 do $link_steps$
 declare
   target_path_id uuid;
+  original_step_count integer;
   linked_step_count integer;
 begin
   select id
@@ -380,6 +381,19 @@ begin
     updated_at = now()
   where id = target_path_id
     and slug = 'indicadores-e-kpis';
+
+  update public.learning_path_steps
+  set
+    content_type = 'practice',
+    estimated_minutes = 10,
+    updated_at = now()
+  where path_id = target_path_id
+    and step_key = 'indicadores-01-meta-resultado';
+
+  get diagnostics original_step_count = row_count;
+  if original_step_count <> 1 then
+    raise exception 'Esperada a etapa original da trilha indicadores-e-kpis; encontradas %.', original_step_count;
+  end if;
 
   update public.learning_path_steps
   set

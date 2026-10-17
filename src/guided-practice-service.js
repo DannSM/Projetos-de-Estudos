@@ -326,7 +326,7 @@
       const { error } = await client.from(TABLES.attempts).insert(payload);
       if (!error) return { ok: true, authenticated: true };
       if (isMissingGuidedPracticeStructure(error)) {
-        console.info("[Prática guiada] Migration de tentativas ainda não aplicada; progresso seguirá pelo consolidado existente.");
+        console.info("[Prática guiada] Migration de tentativas ainda não aplicada; progresso oficial não será atualizado.");
         return { ok: false, authenticated: true, migrationPending: true, error };
       }
       return { ok: false, authenticated: true, error };
@@ -446,9 +446,21 @@
   async function saveResponse(activity, answers, startedAt) {
     const validation = validateSubmission(activity, answers);
     const attempt = await saveAttempt(activity, validation, startedAt);
-    const progress = validation.isCorrect
-      ? await saveLearningProgress(activity)
-      : { ok: false, skipped: true, authenticated: attempt.authenticated };
+    let progress = { ok: false, skipped: true, authenticated: attempt.authenticated };
+
+    if (validation.isCorrect && attempt.authenticated && attempt.ok) {
+      progress = await saveLearningProgress(activity);
+    } else if (validation.isCorrect && attempt.authenticated) {
+      progress = {
+        ok: false,
+        skipped: true,
+        authenticated: true,
+        reason: "attempt_not_saved",
+        migrationPending: Boolean(attempt.migrationPending),
+        error: attempt.error || null
+      };
+    }
+
     return { validation, attempt, progress };
   }
 
