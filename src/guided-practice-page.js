@@ -3,6 +3,12 @@
   const service = globalScope.guidedPracticeService;
   if (!mount || !service) return;
 
+  const REFINED_KPI_SLUGS = new Set([
+    "indicadores-definicao-consistente",
+    "indicadores-decomposicao-kpi",
+    "indicadores-funil-conversao"
+  ]);
+
   const state = {
     activity: null,
     currentCheckpointIndex: 0,
@@ -232,6 +238,7 @@
 
     const correct = state.checkpointValidation.isCorrect;
     const hasNext = state.currentCheckpointIndex < getCheckpoints().length - 1;
+    const showAttention = correct || !REFINED_KPI_SLUGS.has(state.activity.slug);
     return `
       <div class="guided-feedback ${correct ? "guided-feedback-correct" : "guided-feedback-incorrect"}" role="status">
         <span class="guided-feedback-icon"><i data-lucide="${correct ? "check-circle-2" : "search"}" aria-hidden="true"></i></span>
@@ -239,10 +246,12 @@
           <span class="section-kicker">${correct ? "Checkpoint validado" : "Nova tentativa disponível"}</span>
           <h3>${escapeHtml(correct ? checkpoint.correctTitle : checkpoint.incorrectTitle)}</h3>
           <p>${escapeHtml(correct ? checkpoint.correctFeedback : checkpoint.incorrectFeedback)}</p>
-          <div class="guided-attention">
-            <i data-lucide="lightbulb" aria-hidden="true"></i>
-            <span><strong>Ponto de atenção:</strong> ${escapeHtml(checkpoint.attention)}</span>
-          </div>
+          ${showAttention ? `
+            <div class="guided-attention">
+              <i data-lucide="lightbulb" aria-hidden="true"></i>
+              <span><strong>Ponto de atenção:</strong> ${escapeHtml(checkpoint.attention)}</span>
+            </div>
+          ` : ""}
           ${correct && hasNext ? `<button class="filter-button guided-checkpoint-next" type="button" data-next-checkpoint>Continuar para a próxima decisão <i data-lucide="arrow-right" aria-hidden="true"></i></button>` : ""}
           ${!correct ? `<small class="guided-retry-hint">Escolha outra alternativa e confira novamente. Esta tentativa não concluiu a atividade.</small>` : ""}
         </div>

@@ -19,11 +19,11 @@
       responseSchema: "checkpoint_sequence",
       completionProgressPercent: 50,
       scenario: {
-        title: "A mesma satisfação, duas metodologias",
-        context: "As equipes Alfa e Beta divulgaram taxas de satisfação do mesmo período, mas o relatório da Beta dividiu avaliações positivas por todos os atendimentos, enquanto a regra correta usa somente respostas válidas."
+        title: "Duas equipes, critérios distintos",
+        context: "As equipes Alfa e Beta publicaram taxas de satisfação para o mesmo período. As bases registram avaliações positivas, respostas válidas e total de atendimentos, mas os percentuais divulgados foram calculados com critérios diferentes."
       },
       indicatorTitle: "Compare somente métricas com a mesma definição",
-      indicatorDescription: "Avaliações positivas são o numerador. Respostas válidas, no mesmo período, formam o denominador elegível.",
+      indicatorDescription: "Use os volumes apresentados para decidir quais registros representam o evento medido e a população comparável em cada equipe.",
       indicatorData: [
         { label: "Alfa", value: "92 positivas / 115 válidas" },
         { label: "Beta", value: "96 positivas / 120 válidas" },
@@ -113,11 +113,11 @@
       responseSchema: "checkpoint_sequence",
       completionProgressPercent: 75,
       scenario: {
-        title: "O consolidado caiu, mas os canais divergiram",
-        context: "A satisfação combinada de Chat e App piorou entre dois períodos. O App melhorou, enquanto o Chat recebeu mais respostas e apresentou queda."
+        title: "Dois períodos, diferentes composições",
+        context: "Chat e App registraram avaliações positivas e respostas válidas em dois períodos. A liderança quer comparar o resultado total e entender como a composição dos canais mudou."
       },
-      indicatorTitle: "Use numeradores e denominadores no consolidado",
-      indicatorDescription: "A média simples das taxas ignora que o Chat passou de 100 para 200 respostas válidas.",
+      indicatorTitle: "Compare os dois períodos por canal e no total",
+      indicatorDescription: "Os canais têm volumes distintos em cada período. Considere os quatro pares de avaliações positivas e respostas válidas ao analisar o consolidado.",
       indicatorData: [
         { label: "Chat anterior", value: "80 / 100 = 80%" },
         { label: "Chat atual", value: "144 / 200 = 72%", tone: "alert" },
@@ -208,10 +208,10 @@
       completionProgressPercent: 100,
       scenario: {
         title: "Onde investigar o funil do comércio eletrônico?",
-        context: "Uma loja virtual quer priorizar uma oportunidade de melhoria. O funil registra visitantes, visualizações de produto, carrinhos, checkouts e compras concluídas."
+        context: "Uma loja virtual registrou os volumes alcançados em cinco etapas, da visita à compra concluída, e quer decidir onde aprofundar a análise."
       },
-      indicatorTitle: "Cada etapa usa a anterior como denominador",
-      indicatorDescription: "Taxas condicionais mostram a passagem entre etapas; a conversão total compara visitantes e compras.",
+      indicatorTitle: "Observe os volumes ao longo do funil",
+      indicatorDescription: "Os valores mostram quantas pessoas chegaram a cada etapa. Compare as transições e diferencie a leitura entre etapas da visão do funil completo.",
       indicatorData: [
         { label: "Visitantes", value: "10.000" },
         { label: "Visualizaram produtos", value: "4.000" },

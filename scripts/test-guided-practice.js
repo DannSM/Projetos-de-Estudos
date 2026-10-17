@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const kpiContent = require(path.join(__dirname, "..", "src", "kpi-guided-content.js"));
+const projectContent = require(path.join(__dirname, "..", "src", "project-01-content.js"));
 
 const root = path.resolve(__dirname, "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -42,8 +43,8 @@ assert.match(html, /id="guidedPracticeMount"/);
 assert.match(html, /src\/guided-practice-service\.js/);
 assert.match(html, /src\/guided-practice-page\.js/);
 assert.match(html, /style\.css\?v=20261017-kpi-refino/);
-assert.match(html, /src\/kpi-guided-content\.js\?v=20261017-kpi-refino/);
-assert.match(html, /src\/guided-practice-page\.js\?v=20261017-kpi-refino/);
+assert.match(html, /src\/kpi-guided-content\.js\?v=20261017-kpi-refino-gabarito/);
+assert.match(html, /src\/guided-practice-page\.js\?v=20261017-kpi-refino-gabarito/);
 assert.match(read("style.css"), /styles\/components\.css\?v=20261017-kpi-refino/);
 assert.match(read("style.css"), /styles\/responsive\.css\?v=20261017-kpi-refino/);
 assert.match(pageSource, /data-guided-practice-form/);
@@ -255,15 +256,23 @@ async function runFeedbackAndPendingStateChecks() {
   assert.doesNotMatch(sequence.mount.innerHTML, /class="submit-button" href="meu-progresso\.html"/);
   assert.doesNotMatch(sequence.mount.innerHTML, /<label[^>]*>Anotação pessoal<\/label>/);
   assert.match(sequence.mount.innerHTML, /textarea[^>]*aria-label="Anotação pessoal"/);
+  assert.match(sequence.mount.innerHTML, /Duas equipes, critérios distintos/);
+  assert.match(sequence.mount.innerHTML, /Use os volumes apresentados para decidir/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /Ponto de atenção:/);
 
   await sequence.answer("D");
   assert.match(sequence.mount.innerHTML, /guided-option is-selected is-incorrect/);
   assert.doesNotMatch(sequence.mount.innerHTML, /guided-option[^\"]*is-correct/);
   assert.match(sequence.mount.innerHTML, /Volte à definição do indicador/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /Ponto de atenção:/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /A taxa de satisfação usa avaliações positivas como numerador/);
   assert.match(sequence.mount.innerHTML, /Conferir esta decisão/);
 
   await sequence.answer("A");
   assert.match(sequence.mount.innerHTML, /guided-option is-selected is-correct/);
+  assert.match(sequence.mount.innerHTML, /A taxa de satisfação usa avaliações positivas como numerador/);
+  assert.match(sequence.mount.innerHTML, /Ponto de atenção:/);
+  assert.match(sequence.mount.innerHTML, /O denominador deve representar quem realmente podia contribuir/);
   assert.match(sequence.mount.innerHTML, /data-next-checkpoint/);
 
   const original = await createPageHarness({
@@ -279,8 +288,27 @@ async function runFeedbackAndPendingStateChecks() {
   await original.answer("A");
   assert.match(original.mount.innerHTML, /guided-option is-selected is-incorrect/);
   assert.doesNotMatch(original.mount.innerHTML, /guided-option[^\"]*is-correct/);
+  assert.match(original.mount.innerHTML, /Ponto de atenção:/);
   await original.answer("B");
   assert.match(original.mount.innerHTML, /guided-option is-selected is-correct/);
+
+  const projectActivity = {
+    ...projectContent.GUIDED_ACTIVITIES["projeto-01-insight-recomendacao"],
+    id: "feedback-project-01"
+  };
+  const project = await createPageHarness({
+    activity: projectActivity,
+    saveHandler({ validation }) {
+      return {
+        validation,
+        attempt: { ok: true, authenticated: true },
+        progress: skippedProgress(true)
+      };
+    }
+  });
+  await project.answer("A");
+  assert.match(project.mount.innerHTML, /guided-option is-selected is-incorrect/);
+  assert.match(project.mount.innerHTML, /Ponto de atenção:/);
 }
 
 (async () => {

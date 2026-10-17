@@ -1,9 +1,10 @@
 -- PROPOSTA COMPLEMENTAR — NÃO EXECUTADA
--- Indicadores e KPIs — refinamento pedagógico dos feedbacks.
+-- Indicadores e KPIs — refinamento pedagógico antes e depois da resposta.
 --
--- Atualiza somente os campos incorrect_feedback e thinking_steps das três
--- práticas novas já existentes. IDs, slugs, demais metadados, vínculos,
--- tentativas e progresso dos usuários permanecem preservados.
+-- Atualiza somente scenario.title, scenario.context, indicator_title, indicator_description,
+-- incorrect_feedback e thinking_steps das três práticas novas já existentes.
+-- IDs, slugs, demais metadados, vínculos, tentativas e progresso dos usuários
+-- permanecem preservados.
 
 begin;
 
@@ -11,7 +12,59 @@ do $$
 declare
   updated_activity_count integer;
 begin
-  with feedback_updates(activity_slug, checkpoint_id, incorrect_feedback) as (
+  with content_updates(
+    activity_slug,
+    scenario_title,
+    scenario_context,
+    indicator_title,
+    indicator_description,
+    thinking_steps
+  ) as (
+    values
+      (
+        'indicadores-definicao-consistente',
+        'Duas equipes, critérios distintos',
+        'As equipes Alfa e Beta publicaram taxas de satisfação para o mesmo período. As bases registram avaliações positivas, respostas válidas e total de atendimentos, mas os percentuais divulgados foram calculados com critérios diferentes.',
+        'Compare somente métricas com a mesma definição',
+        'Use os volumes apresentados para decidir quais registros representam o evento medido e a população comparável em cada equipe.',
+        $json$
+          [
+            {"question": "O que a taxa pretende medir?", "answer": "Separe o evento contado da população que poderia produzi-lo."},
+            {"question": "As bases são comparáveis?", "answer": "Confira definição, elegibilidade e período antes de calcular."},
+            {"question": "A diferença é de desempenho ou método?", "answer": "Questione se a comparação mudaria com uma regra única."}
+          ]
+        $json$::jsonb
+      ),
+      (
+        'indicadores-decomposicao-kpi',
+        'Dois períodos, diferentes composições',
+        'Chat e App registraram avaliações positivas e respostas válidas em dois períodos. A liderança quer comparar o resultado total e entender como a composição dos canais mudou.',
+        'Compare os dois períodos por canal e no total',
+        'Os canais têm volumes distintos em cada período. Considere os quatro pares de avaliações positivas e respostas válidas ao analisar o consolidado.',
+        $json$
+          [
+            {"question": "Os grupos têm o mesmo peso?", "answer": "Observe os volumes antes de escolher como consolidar."},
+            {"question": "Desempenho e participação mudaram?", "answer": "Compare as duas dimensões sem assumir qual canal explica o total."},
+            {"question": "O dado observa ou explica?", "answer": "Diferencie sinal medido de hipótese causal."}
+          ]
+        $json$::jsonb
+      ),
+      (
+        'indicadores-funil-conversao',
+        'Onde investigar o funil do comércio eletrônico?',
+        'Uma loja virtual registrou os volumes alcançados em cinco etapas, da visita à compra concluída, e quer decidir onde aprofundar a análise.',
+        'Observe os volumes ao longo do funil',
+        'Os valores mostram quantas pessoas chegaram a cada etapa. Compare as transições e diferencie a leitura entre etapas da visão do funil completo.',
+        $json$
+          [
+            {"question": "Quem podia avançar nesta transição?", "answer": "Associe cada etapa ao grupo exposto à decisão seguinte."},
+            {"question": "Você compara volume ou proporção?", "answer": "Defina o critério antes de apontar a maior perda."},
+            {"question": "O funil observa ou explica?", "answer": "Use o padrão como ponto de partida para uma hipótese testável."}
+          ]
+        $json$::jsonb
+      )
+  ),
+  feedback_updates(activity_slug, checkpoint_id, incorrect_feedback) as (
     values
       (
         'indicadores-definicao-consistente',
@@ -95,40 +148,39 @@ begin
     set
       metadata = jsonb_set(
         jsonb_set(
-          activity.metadata,
-          '{checkpoints}',
-          rebuilt.checkpoints,
+          jsonb_set(
+            jsonb_set(
+              jsonb_set(
+                jsonb_set(
+                  activity.metadata,
+                  '{checkpoints}',
+                  rebuilt.checkpoints,
+                  true
+                ),
+                '{thinking_steps}',
+                content.thinking_steps,
+                true
+              ),
+              '{scenario,title}',
+              to_jsonb(content.scenario_title),
+              true
+            ),
+            '{scenario,context}',
+            to_jsonb(content.scenario_context),
+            true
+          ),
+          '{indicator_title}',
+          to_jsonb(content.indicator_title),
           true
         ),
-        '{thinking_steps}',
-        case rebuilt.slug
-          when 'indicadores-definicao-consistente' then $json$
-            [
-              {"question": "O que a taxa pretende medir?", "answer": "Separe o evento contado da população que poderia produzi-lo."},
-              {"question": "As bases são comparáveis?", "answer": "Confira definição, elegibilidade e período antes de calcular."},
-              {"question": "A diferença é de desempenho ou método?", "answer": "Questione se a comparação mudaria com uma regra única."}
-            ]
-          $json$::jsonb
-          when 'indicadores-decomposicao-kpi' then $json$
-            [
-              {"question": "Os grupos têm o mesmo peso?", "answer": "Observe os volumes antes de escolher como consolidar."},
-              {"question": "Desempenho e participação mudaram?", "answer": "Compare as duas dimensões sem assumir qual canal explica o total."},
-              {"question": "O dado observa ou explica?", "answer": "Diferencie sinal medido de hipótese causal."}
-            ]
-          $json$::jsonb
-          when 'indicadores-funil-conversao' then $json$
-            [
-              {"question": "Quem podia avançar nesta transição?", "answer": "Associe cada etapa ao grupo exposto à decisão seguinte."},
-              {"question": "Você compara volume ou proporção?", "answer": "Defina o critério antes de apontar a maior perda."},
-              {"question": "O funil observa ou explica?", "answer": "Use o padrão como ponto de partida para uma hipótese testável."}
-            ]
-          $json$::jsonb
-        end,
+        '{indicator_description}',
+        to_jsonb(content.indicator_description),
         true
       ),
       updated_at = now()
-    from rebuilt_checkpoints rebuilt
+    from rebuilt_checkpoints rebuilt, content_updates content
     where activity.id = rebuilt.id
+      and content.activity_slug = rebuilt.slug
       and activity.track_slug = 'indicadores-e-kpis'
       and rebuilt.matched_feedback_count = 3
     returning activity.id

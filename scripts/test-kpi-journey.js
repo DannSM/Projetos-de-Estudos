@@ -95,10 +95,24 @@ function runContentAndMathChecks() {
   const pedagogicalCopy = slugs.map((slug) => {
     const activity = content.GUIDED_ACTIVITIES[slug];
     return {
+      scenario: `${activity.scenario.title} ${activity.scenario.context}`,
+      indicator: `${activity.indicatorTitle} ${activity.indicatorDescription}`,
       feedbacks: activity.checkpoints.map((checkpoint) => checkpoint.incorrectFeedback).join(" "),
       thinking: activity.thinkingSteps.flat().join(" ")
     };
   });
+  assert.doesNotMatch(
+    `${pedagogicalCopy[0].scenario} ${pedagogicalCopy[0].indicator}`,
+    /mesma satisfação|regra correta|são o numerador|formam o denominador|92 ÷ 115|96 ÷ 120/i
+  );
+  assert.doesNotMatch(
+    `${pedagogicalCopy[1].scenario} ${pedagogicalCopy[1].indicator}`,
+    /consolidado caiu|App melhorou|Chat.*(queda|piorou)|média simples|some numeradores|239\/300|79,67%/i
+  );
+  assert.doesNotMatch(
+    `${pedagogicalCopy[2].scenario} ${pedagogicalCopy[2].indicator}`,
+    /etapa usa a anterior|etapa imediatamente anterior|conversão total compara|25%|75%/i
+  );
   assert.doesNotMatch(pedagogicalCopy[0].feedbacks, /92 ÷ 115|96 ÷ 120|os dois resultados são 80%/i);
   assert.doesNotMatch(pedagogicalCopy[1].feedbacks, /\(80 \+ 90\)|239\/300|83,5%|queda está associada ao Chat/i);
   assert.doesNotMatch(pedagogicalCopy[2].feedbacks, /volume da etapa atual pelo volume da etapa anterior|1 menos a taxa de conversão/i);
@@ -112,6 +126,14 @@ function runContentAndMathChecks() {
   assert.strictEqual(96 / 120, 0.8);
   assert.strictEqual(96 / 160, 0.6);
   assert.match(definition.checkpoints[1].correctFeedback, /92 ÷ 115 = 80%/);
+  assert.match(
+    content.GUIDED_ACTIVITIES["indicadores-decomposicao-kpi"].checkpoints[0].correctFeedback,
+    /170\/200 = 85%/
+  );
+  assert.match(
+    content.GUIDED_ACTIVITIES["indicadores-funil-conversao"].checkpoints[0].correctFeedback,
+    /4\.000\/10\.000 = 40%/
+  );
 
   const previous = (80 + 90) / (100 + 100) * 100;
   const current = (144 + 95) / (200 + 100) * 100;
@@ -361,6 +383,13 @@ async function runSqlProposalChecks() {
 
     await db.exec(proposal);
     await db.exec(proposal);
+    const metadataBeforeRefinement = await db.query(`
+      select slug, metadata
+      from public.learning_activities
+      where track_slug = 'indicadores-e-kpis'
+        and slug <> 'indicadores-meta-resultado'
+      order by step_order
+    `);
     await db.exec(refinement);
     await db.exec(refinement);
 
@@ -385,6 +414,11 @@ async function runSqlProposalChecks() {
     `);
     refinedActivities.rows.forEach((row) => {
       const localActivity = content.GUIDED_ACTIVITIES[row.slug];
+      const metadataBefore = metadataBeforeRefinement.rows.find((item) => item.slug === row.slug).metadata;
+      assert.strictEqual(row.metadata.scenario.title, localActivity.scenario.title);
+      assert.strictEqual(row.metadata.scenario.context, localActivity.scenario.context);
+      assert.strictEqual(row.metadata.indicator_title, localActivity.indicatorTitle);
+      assert.strictEqual(row.metadata.indicator_description, localActivity.indicatorDescription);
       assert.deepStrictEqual(
         row.metadata.checkpoints.map((checkpoint) => checkpoint.incorrect_feedback),
         localActivity.checkpoints.map((checkpoint) => checkpoint.incorrectFeedback)
@@ -393,6 +427,9 @@ async function runSqlProposalChecks() {
         row.metadata.thinking_steps,
         localActivity.thinkingSteps.map(([question, answer]) => ({ question, answer }))
       );
+      ["objective", "indicator_data", "completion_progress_percent", "next_action"].forEach((field) => {
+        assert.deepStrictEqual(row.metadata[field], metadataBefore[field]);
+      });
     });
     const original = await db.query(`
       select metadata from public.learning_activities where slug = 'indicadores-meta-resultado'
