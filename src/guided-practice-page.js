@@ -13,6 +13,8 @@
     officialProgressPercent: null,
     isAuthenticated: false,
     isSaving: false,
+    persistenceStatus: "idle",
+    completionAttemptSaved: false,
     saveStatus: "",
     startedAt: new Date().toISOString(),
     note: "",
@@ -104,16 +106,33 @@
     };
   }
 
+  function hasValidatedAnswers() {
+    return Boolean(state.submissionValidation?.isCorrect);
+  }
+
+  function hasConfirmedCompletion() {
+    if (!hasValidatedAnswers()) return false;
+    return !state.isAuthenticated || state.persistenceStatus === "saved";
+  }
+
+  function hasPendingSave() {
+    return hasValidatedAnswers() && state.isAuthenticated && state.persistenceStatus !== "saved";
+  }
+
   function renderPracticeRail() {
     const progress = getInternalProgress();
+    const completionConfirmed = hasConfirmedCompletion();
+    const savePending = hasPendingSave();
     const targetProgress = state.activity.completionProgressPercent;
     const officialLabel = state.officialProgressPercent !== null
       ? `${state.officialProgressPercent}% confirmado`
       : progress.isComplete && !state.isAuthenticated
         ? "Não salvo na conta"
-        : targetProgress
-          ? `Até ${targetProgress}% após salvar`
-          : "Atualiza após conclusão válida";
+        : savePending
+          ? "Salvamento pendente"
+          : targetProgress
+            ? `Até ${targetProgress}% após salvar`
+            : "Atualiza após conclusão válida";
 
     return `
       <aside class="guided-practice-rail" aria-label="Roteiro e status da prática">
@@ -135,8 +154,8 @@
 
         <section class="guided-rail-card guided-rail-status">
           <h2>Conclusão da atividade</h2>
-          <div class="guided-status-pill ${progress.isComplete ? "is-complete" : ""}">
-            <span aria-hidden="true"></span>${progress.isComplete ? "Concluída" : "Pendente"}
+          <div class="guided-status-pill ${completionConfirmed ? "is-complete" : ""}">
+            <span aria-hidden="true"></span>${completionConfirmed ? (!state.isAuthenticated ? "Concluída localmente" : "Concluída") : savePending ? "Salvamento pendente" : "Pendente"}
           </div>
           <div class="guided-progress-heading"><span>Roteiro interno</span><strong>${progress.value}%</strong></div>
           <div class="guided-progress-track" aria-label="Roteiro interno da atividade: ${progress.value}%">
@@ -158,7 +177,20 @@
   }
 
   function renderNextAction(activity) {
-    const complete = Boolean(state.submissionValidation?.isCorrect);
+    const complete = hasConfirmedCompletion();
+    if (hasPendingSave()) {
+      return `
+        <section class="guided-aside-card guided-next-card">
+          <div class="guided-aside-title">
+            <i data-lucide="lock-keyhole" aria-hidden="true"></i>
+            <div><span class="section-kicker">Próxima ação</span><h2>Salvamento pendente</h2></div>
+          </div>
+          <p>Suas respostas foram validadas. Confirme o salvamento na conta para liberar o próximo passo.</p>
+          <button class="submit-button" type="button" disabled>Próximo passo bloqueado</button>
+          <a class="guided-back-link" href="index.html#trilhas">Voltar às trilhas</a>
+        </section>
+      `;
+    }
     const nextAction = complete ? activity.nextAction : null;
     return `
       <section class="guided-aside-card guided-next-card">
@@ -207,7 +239,23 @@
   }
 
   function renderCompletion(activity) {
-    if (!state.submissionValidation?.isCorrect) return "";
+    if (!hasValidatedAnswers()) return "";
+    if (hasPendingSave()) {
+      return `
+        <section class="guided-completion-card guided-completion-save-error guided-order-completion" aria-labelledby="guidedCompletionTitle" role="alert">
+          <div class="guided-completion-icon"><i data-lucide="cloud-alert" aria-hidden="true"></i></div>
+          <div>
+            <span class="section-kicker">Respostas validadas</span>
+            <h2 id="guidedCompletionTitle">Não foi possível confirmar a conclusão na sua conta</h2>
+            <p>${escapeHtml(state.saveStatus || "Suas respostas continuam preenchidas. Tente salvar novamente para concluir esta atividade oficialmente.")}</p>
+          </div>
+          <div class="guided-completion-actions">
+            <button class="submit-button" type="button" data-retry-guided-save ${state.isSaving ? "disabled" : ""}>${state.isSaving ? "Salvando novamente..." : "Tentar salvar novamente"}</button>
+            <a class="filter-button" href="index.html#trilhas">Voltar às trilhas</a>
+          </div>
+        </section>
+      `;
+    }
     return `
       <section class="guided-completion-card guided-order-completion" aria-labelledby="guidedCompletionTitle">
         <div class="guided-completion-icon"><i data-lucide="badge-check" aria-hidden="true"></i></div>
@@ -242,7 +290,8 @@
     if (!activity) return;
     const checkpoints = getCheckpoints();
     const checkpoint = getCurrentCheckpoint();
-    const complete = Boolean(state.submissionValidation?.isCorrect);
+    const complete = hasConfirmedCompletion();
+    const savePending = hasPendingSave();
 
     mount.innerHTML = `
       <nav class="guided-breadcrumb" aria-label="Navegação estrutural">
@@ -266,9 +315,9 @@
         </div>
         <aside class="guided-practice-hero-marker" aria-label="Decisão atual">
           <div class="guided-hero-current-step">
-            <span>${complete ? "✓" : String(state.currentCheckpointIndex + 1).padStart(2, "0")}</span>
-            <strong>${complete ? "Concluída" : escapeHtml(checkpoint.title)}</strong>
-            <small>${complete ? "Todos os checkpoints foram validados" : `Decisão ${state.currentCheckpointIndex + 1} de ${checkpoints.length}`}</small>
+            <span>${complete ? "✓" : savePending ? "!" : String(state.currentCheckpointIndex + 1).padStart(2, "0")}</span>
+            <strong>${complete ? "Concluída" : savePending ? "Salvamento pendente" : escapeHtml(checkpoint.title)}</strong>
+            <small>${complete ? "Todos os checkpoints foram validados" : savePending ? "Respostas validadas; conclusão ainda não salva" : `Decisão ${state.currentCheckpointIndex + 1} de ${checkpoints.length}`}</small>
           </div>
           <ol class="guided-hero-track" aria-label="Checkpoints da prática">${renderHeroRoadmap(checkpoints)}</ol>
         </aside>
@@ -366,34 +415,61 @@
     refreshIcons();
   }
 
+  async function persistResponse({ retry = false } = {}) {
+    state.isSaving = true;
+    render();
+
+    try {
+      const result = await service.saveResponse(
+        state.activity,
+        state.answers,
+        state.startedAt,
+        { attemptAlreadySaved: retry && state.completionAttemptSaved }
+      );
+      state.submissionValidation = result.validation;
+      state.isAuthenticated = Boolean(state.isAuthenticated || result.attempt.authenticated || result.progress.authenticated);
+
+      if (result.validation.isCorrect) {
+        state.completionAttemptSaved = Boolean(result.attempt.ok);
+        if (!state.isAuthenticated) {
+          state.persistenceStatus = "local";
+          state.saveStatus = "Atividade concluída neste navegador. Entre para salvar o progresso oficial na conta.";
+        } else if (result.progress.ok && result.attempt.ok) {
+          state.persistenceStatus = "saved";
+          state.officialProgressPercent = result.progress.progressPercent;
+          state.saveStatus = `Tentativa válida salva. Progresso oficial da trilha: ${result.progress.progressPercent}%.`;
+        } else {
+          state.persistenceStatus = "failed";
+          state.saveStatus = result.attempt.ok
+            ? "A tentativa foi salva, mas o progresso oficial não pôde ser atualizado. Tente novamente."
+            : "As respostas foram validadas, mas a tentativa não pôde ser salva. Tente novamente.";
+        }
+      } else {
+        state.persistenceStatus = "idle";
+        state.completionAttemptSaved = false;
+        state.saveStatus = "";
+      }
+    } catch (error) {
+      state.submissionValidation = service.validateSubmission(state.activity, state.answers);
+      state.persistenceStatus = "failed";
+      state.saveStatus = "As respostas foram validadas, mas ocorreu uma falha ao salvar. Tente novamente.";
+    } finally {
+      state.isSaving = false;
+      render();
+    }
+  }
+
   async function submitAnswer() {
     if (!state.selectedOption || state.isSaving) return;
     const checkpoint = getCurrentCheckpoint();
     state.answers[checkpoint.id] = state.selectedOption;
     state.checkpointValidation = service.validateCheckpoint(state.activity, state.currentCheckpointIndex, state.selectedOption);
-    state.isSaving = true;
-    render();
+    await persistResponse();
+  }
 
-    const result = await service.saveResponse(state.activity, state.answers, state.startedAt);
-    state.submissionValidation = result.validation;
-    state.isSaving = false;
-    state.isAuthenticated = Boolean(result.attempt.authenticated || result.progress.authenticated);
-    if (result.progress.ok) state.officialProgressPercent = result.progress.progressPercent;
-
-    if (result.validation.isCorrect) {
-      if (!state.isAuthenticated) {
-        state.saveStatus = "Atividade concluída neste navegador. Entre para salvar o progresso oficial na conta.";
-      } else if (result.progress.ok && result.attempt.ok) {
-        state.saveStatus = `Tentativa válida salva. Progresso oficial da trilha: ${result.progress.progressPercent}%.`;
-      } else if (result.progress.ok) {
-        state.saveStatus = `Progresso oficial salvo em ${result.progress.progressPercent}%. O histórico detalhado não foi confirmado agora.`;
-      } else {
-        state.saveStatus = "Todos os checkpoints foram validados, mas não foi possível confirmar o progresso remoto agora.";
-      }
-    } else {
-      state.saveStatus = "";
-    }
-    render();
+  async function retrySave() {
+    if (!hasPendingSave() || state.isSaving) return;
+    await persistResponse({ retry: true });
   }
 
   function goToNextCheckpoint() {
@@ -435,6 +511,10 @@
     }
     if (event.target.closest("[data-save-guided-note]")) {
       saveLocalNote();
+      return;
+    }
+    if (event.target.closest("[data-retry-guided-save]")) {
+      void retrySave();
       return;
     }
     if (event.target.closest("[data-guided-login]")) {

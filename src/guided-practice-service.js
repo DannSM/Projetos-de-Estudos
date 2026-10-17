@@ -443,9 +443,11 @@
     }
   }
 
-  async function saveResponse(activity, answers, startedAt) {
+  async function saveResponse(activity, answers, startedAt, options = {}) {
     const validation = validateSubmission(activity, answers);
-    const attempt = await saveAttempt(activity, validation, startedAt);
+    const attempt = options.attemptAlreadySaved
+      ? { ok: true, authenticated: true, reused: true }
+      : await saveAttempt(activity, validation, startedAt);
     let progress = { ok: false, skipped: true, authenticated: attempt.authenticated };
 
     if (validation.isCorrect && attempt.authenticated && attempt.ok) {

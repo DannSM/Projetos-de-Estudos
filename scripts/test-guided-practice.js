@@ -2,6 +2,7 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const kpiContent = require(path.join(__dirname, "..", "src", "kpi-guided-content.js"));
 
 const root = path.resolve(__dirname, "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -49,6 +50,7 @@ assert.match(studyPlanSource, /pratica-guiada\.html\?atividade=indicadores-meta-
 assert.match(progressSource, /practiceFormat === "guided_practice"/);
 assert.match(progressSource, /Abrir prática/);
 assert.match(componentsCss, /\.guided-practice-grid/);
+assert.match(componentsCss, /\.guided-completion-card\.guided-completion-save-error/);
 assert.match(responsiveCss, /@media \(max-width: 390px\)/);
 assert.match(responsiveCss, /\.guided-metrics-grid \{ grid-template-columns: minmax\(0, 1fr\)/);
 
@@ -63,4 +65,167 @@ assert.doesNotMatch(migration, /drop table/i);
 assert.doesNotMatch(migration, /drop constraint/i);
 assert.doesNotMatch(migration, /delete from/i);
 
-console.log("Guided practice MVP checks passed.");
+function waitForPage() {
+  return new Promise((resolve) => setImmediate(() => setImmediate(resolve)));
+}
+
+async function createPageHarness({ activity, authenticated = true, saveHandler }) {
+  const listeners = {};
+  const saveCalls = [];
+  const mount = {
+    innerHTML: "",
+    addEventListener(type, listener) {
+      listeners[type] = listener;
+    },
+    querySelector() {
+      return { scrollIntoView() {} };
+    }
+  };
+  const pageService = {
+    DEFAULT_SLUG: activity.slug,
+    getCheckpoints: service.getCheckpoints,
+    validateCheckpoint: service.validateCheckpoint,
+    validateSubmission: service.validateSubmission,
+    async loadActivity() {
+      return { ok: true, activity };
+    },
+    async getAuthenticatedUser() {
+      return authenticated ? { id: "user-1" } : null;
+    },
+    async saveResponse(currentActivity, answers, startedAt, options) {
+      const validation = service.validateSubmission(currentActivity, answers);
+      const call = { validation, answers: { ...answers }, startedAt, options: { ...options } };
+      saveCalls.push(call);
+      return saveHandler({ call, callIndex: saveCalls.length - 1, validation });
+    }
+  };
+  const pageWindow = {
+    guidedPracticeService: pageService,
+    location: { search: `?atividade=${activity.slug}` },
+    localStorage: { getItem() { return null; }, setItem() {} }
+  };
+  pageWindow.window = pageWindow;
+  vm.runInNewContext(pageSource, {
+    window: pageWindow,
+    document: { getElementById() { return mount; } },
+    console,
+    Date,
+    Set,
+    URLSearchParams
+  }, { filename: "guided-practice-page.js" });
+  await waitForPage();
+
+  return {
+    mount,
+    saveCalls,
+    async answer(option) {
+      listeners.change({
+        target: {
+          value: option,
+          matches(selector) { return selector === 'input[name="guidedPracticeAnswer"]'; }
+        }
+      });
+      listeners.submit({
+        target: { matches(selector) { return selector === "[data-guided-practice-form]"; } },
+        preventDefault() {}
+      });
+      await waitForPage();
+    },
+    nextCheckpoint() {
+      listeners.click({ target: { closest(selector) { return selector === "[data-next-checkpoint]" ? {} : null; } } });
+    },
+    async retrySave() {
+      listeners.click({ target: { closest(selector) { return selector === "[data-retry-guided-save]" ? {} : null; } } });
+      await waitForPage();
+    }
+  };
+}
+
+function skippedProgress(authenticated) {
+  return { ok: false, skipped: true, authenticated };
+}
+
+async function runPageSaveRecoveryChecks() {
+  const singleChoiceActivity = {
+    ...service.LOCAL_ACTIVITY,
+    id: "single-choice-activity",
+    nextAction: { title: "Próxima etapa single", description: "Continue.", label: "NEXT_SINGLE", href: "next-single.html" }
+  };
+  let singleFinalCall = 0;
+  const single = await createPageHarness({
+    activity: singleChoiceActivity,
+    saveHandler({ validation }) {
+      singleFinalCall += 1;
+      if (singleFinalCall === 1) {
+        return { validation, attempt: { ok: true, authenticated: true }, progress: { ok: false, authenticated: true, error: { message: "progress failed" } } };
+      }
+      return { validation, attempt: { ok: true, authenticated: true, reused: true }, progress: { ok: true, authenticated: true, progressPercent: 25 } };
+    }
+  });
+  await single.answer("B");
+  assert.match(single.mount.innerHTML, /Respostas validadas/);
+  assert.match(single.mount.innerHTML, /guided-completion-save-error/);
+  assert.match(single.mount.innerHTML, /Tentar salvar novamente/);
+  assert.match(single.mount.innerHTML, /Próximo passo bloqueado/);
+  assert.doesNotMatch(single.mount.innerHTML, /NEXT_SINGLE/);
+  await single.retrySave();
+  assert.strictEqual(single.saveCalls[1].options.attemptAlreadySaved, true);
+  assert.match(single.mount.innerHTML, /Tentativa válida salva/);
+  assert.match(single.mount.innerHTML, /NEXT_SINGLE/);
+  assert.doesNotMatch(single.mount.innerHTML, /Tentar salvar novamente/);
+
+  const sequenceActivity = {
+    ...kpiContent.GUIDED_ACTIVITIES["indicadores-definicao-consistente"],
+    id: "checkpoint-sequence-activity",
+    nextAction: { title: "Próxima etapa sequence", description: "Continue.", label: "NEXT_SEQUENCE", href: "next-sequence.html" }
+  };
+  let finalSequenceCall = 0;
+  const sequence = await createPageHarness({
+    activity: sequenceActivity,
+    saveHandler({ validation }) {
+      if (!validation.isCorrect) {
+        return { validation, attempt: { ok: true, authenticated: true }, progress: skippedProgress(true) };
+      }
+      finalSequenceCall += 1;
+      if (finalSequenceCall === 1) {
+        return { validation, attempt: { ok: false, authenticated: true, error: { message: "attempt failed" } }, progress: skippedProgress(true) };
+      }
+      return { validation, attempt: { ok: true, authenticated: true }, progress: { ok: true, authenticated: true, progressPercent: 50 } };
+    }
+  });
+  for (let index = 0; index < sequenceActivity.checkpoints.length; index += 1) {
+    await sequence.answer(sequenceActivity.checkpoints[index].correctOption);
+    if (index < sequenceActivity.checkpoints.length - 1) sequence.nextCheckpoint();
+  }
+  assert.match(sequence.mount.innerHTML, /tentativa não pôde ser salva/i);
+  assert.match(sequence.mount.innerHTML, /Tentar salvar novamente/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /NEXT_SEQUENCE/);
+  await sequence.retrySave();
+  assert.strictEqual(sequence.saveCalls.at(-1).options.attemptAlreadySaved, false);
+  assert.match(sequence.mount.innerHTML, /NEXT_SEQUENCE/);
+
+  const anonymousActivity = {
+    ...service.LOCAL_ACTIVITY,
+    id: "anonymous-activity",
+    nextAction: { title: "Próxima etapa local", description: "Continue.", label: "NEXT_ANONYMOUS", href: "next-anonymous.html" }
+  };
+  const anonymous = await createPageHarness({
+    activity: anonymousActivity,
+    authenticated: false,
+    saveHandler({ validation }) {
+      return { validation, attempt: { ok: false, skipped: true, authenticated: false }, progress: skippedProgress(false) };
+    }
+  });
+  await anonymous.answer("B");
+  assert.match(anonymous.mount.innerHTML, /Concluída localmente/);
+  assert.match(anonymous.mount.innerHTML, /Entrar para salvar/);
+  assert.match(anonymous.mount.innerHTML, /NEXT_ANONYMOUS/);
+}
+
+(async () => {
+  await runPageSaveRecoveryChecks();
+  console.log("Guided practice MVP checks passed.");
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

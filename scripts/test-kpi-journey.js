@@ -201,8 +201,32 @@ async function runProgressChecks() {
   assert.strictEqual(failedAttempt.progress.error.message, "Falha simulada ao salvar tentativa");
   assert.strictEqual(tables.user_learning_progress.length, 1);
 
-  const expectedProgress = [50, 75, 100];
-  for (let index = 0; index < activities.length; index += 1) {
+  const attemptsBeforeProgressFailure = tables.user_guided_practice_attempts.length;
+  failures.user_learning_progress = { message: "Falha simulada ao salvar progresso" };
+  const failedProgress = await service.saveResponse(
+    activities[0],
+    correctAnswers(activities[0]),
+    "2026-10-17T10:08:00.000Z"
+  );
+  delete failures.user_learning_progress;
+  assert.strictEqual(failedProgress.attempt.ok, true);
+  assert.strictEqual(failedProgress.progress.ok, false);
+  assert.strictEqual(tables.user_guided_practice_attempts.length, attemptsBeforeProgressFailure + 1);
+  assert.strictEqual(tables.user_learning_progress.length, 1);
+
+  const recoveredProgress = await service.saveResponse(
+    activities[0],
+    correctAnswers(activities[0]),
+    "2026-10-17T10:08:00.000Z",
+    { attemptAlreadySaved: true }
+  );
+  assert.strictEqual(recoveredProgress.attempt.reused, true);
+  assert.strictEqual(recoveredProgress.progress.ok, true);
+  assert.strictEqual(recoveredProgress.progress.progressPercent, 50);
+  assert.strictEqual(tables.user_guided_practice_attempts.length, attemptsBeforeProgressFailure + 1);
+
+  const expectedProgress = [75, 100];
+  for (let index = 1; index < activities.length; index += 1) {
     const result = await service.saveResponse(
       activities[index],
       correctAnswers(activities[index]),
@@ -211,7 +235,7 @@ async function runProgressChecks() {
     assert.strictEqual(result.validation.isCorrect, true);
     assert.strictEqual(result.attempt.ok, true);
     assert.strictEqual(result.progress.ok, true);
-    assert.strictEqual(result.progress.progressPercent, expectedProgress[index]);
+    assert.strictEqual(result.progress.progressPercent, expectedProgress[index - 1]);
   }
 
   const finalRows = tables.user_learning_progress.filter((row) => row.status === "completed");

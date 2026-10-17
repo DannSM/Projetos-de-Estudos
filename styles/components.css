@@ -8161,6 +8161,9 @@ body.analytics-auth-locked .analytics-hero-copy {
 
 .guided-completion-card { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 18px; padding: 30px; border-color: #9edbc7; background: linear-gradient(135deg, #edfbf6, #fff); }
 .guided-completion-icon { width: 58px; height: 58px; background: #11946f; color: #fff; border-radius: 19px; }
+.guided-completion-card.guided-completion-save-error { border-color: #efc7bd; background: linear-gradient(135deg, #fff4f0, #fff); }
+.guided-completion-save-error .guided-completion-icon { background: #b74e3a; }
+.guided-completion-save-error .section-kicker { color: #9a3f31; }
 .guided-completion-card p { margin: 10px 0 0; color: #4c6661; line-height: 1.6; }
 .guided-completion-competencies { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; margin: 16px 0 0; padding: 0; list-style: none; }
 .guided-completion-competencies li { position: relative; padding-left: 20px; color: #284b45; font-size: .9rem; font-weight: 700; }
