@@ -21,14 +21,18 @@
     estimatedMinutes: 10,
     objective: "Treinar a diferença entre resultado observado, meta esperada e interpretação do desvio.",
     contentVersion: 1,
+    responseSchema: "single_choice",
+    completionProgressPercent: 25,
     scenario: {
       title: "Satisfação abaixo da meta",
       context: "Uma equipe acompanha a taxa de satisfação dos atendimentos. A meta do mês é 85%, mas o resultado atual ficou em 78%."
     },
+    indicatorTitle: "Leia o resultado no contexto da meta",
+    indicatorDescription: "Resultado, referência e volume devem ser observados juntos antes de recomendar uma ação.",
     indicatorData: [
       { label: "Meta", value: "85%" },
       { label: "Resultado atual", value: "78%" },
-      { label: "Desvio", value: "-7 p.p." },
+      { label: "Desvio", value: "-7 p.p.", tone: "alert" },
       { label: "Volume analisado", value: "420 atendimentos" }
     ],
     question: "Qual é a melhor leitura desse indicador?",
@@ -41,10 +45,23 @@
     correctOption: "B",
     feedback: "A melhor leitura compara resultado com meta e transforma a diferença em uma interpretação acionável. Como 78% está 7 p.p. abaixo da meta de 85%, a análise deve investigar causas do desvio, como prazo, qualidade da solução, comunicação ou perfil dos atendimentos.",
     attention: "Não avalie um KPI apenas pelo número isolado. Um indicador precisa de contexto, meta e leitura de impacto.",
-    conclusion: "Você praticou como transformar um percentual em diagnóstico de negócio: resultado, meta, desvio e próxima investigação."
+    thinkingSteps: [
+      ["O que foi medido?", "Taxa de satisfação."],
+      ["Qual era a referência?", "Meta de 85%."],
+      ["O que fazer com o desvio?", "Investigar causas."]
+    ],
+    conclusion: "Você praticou como transformar um percentual em diagnóstico de negócio: resultado, meta, desvio e próxima investigação.",
+    nextAction: {
+      href: "pratica-guiada.html?atividade=indicadores-definicao-consistente",
+      label: "Continuar para definição consistente",
+      title: "Etapa 2 — Definição consistente",
+      description: "Agora você vai padronizar numerador, denominador e população elegível."
+    }
   });
+
   const LOCAL_ACTIVITIES = Object.freeze({
     [DEFAULT_SLUG]: KPI_ACTIVITY,
+    ...(globalScope.KpiGuidedContent?.GUIDED_ACTIVITIES || {}),
     ...(globalScope.Project01Content?.GUIDED_ACTIVITIES || {})
   });
   const LOCAL_ACTIVITY = KPI_ACTIVITY;
@@ -65,9 +82,41 @@
     }
   }
 
+  function normalizeCheckpoint(checkpoint, index) {
+    return {
+      id: checkpoint?.id || `decisao-${index + 1}`,
+      title: checkpoint?.title || `Decisão ${index + 1}`,
+      question: checkpoint?.question || "",
+      options: Array.isArray(checkpoint?.options) ? checkpoint.options : [],
+      correctOption: checkpoint?.correctOption || checkpoint?.correct_option || "",
+      correctTitle: checkpoint?.correctTitle || checkpoint?.correct_title || "Leitura validada",
+      incorrectTitle: checkpoint?.incorrectTitle || checkpoint?.incorrect_title || "Revise sua leitura",
+      correctFeedback: checkpoint?.correctFeedback || checkpoint?.correct_feedback || checkpoint?.feedback || "",
+      incorrectFeedback: checkpoint?.incorrectFeedback || checkpoint?.incorrect_feedback || checkpoint?.feedback || "",
+      attention: checkpoint?.attention || "",
+      required: checkpoint?.required !== false
+    };
+  }
+
+  function normalizeThinkingSteps(value, fallback) {
+    const source = Array.isArray(value) && value.length ? value : fallback;
+    return (Array.isArray(source) ? source : []).map((item) => (
+      Array.isArray(item)
+        ? [item[0] || "", item[1] || ""]
+        : [item?.question || "", item?.answer || ""]
+    ));
+  }
+
   function normalizeActivity(row) {
     const localActivity = LOCAL_ACTIVITIES[row?.slug] || KPI_ACTIVITY;
     const metadata = row?.metadata || {};
+    const metadataCheckpoints = Array.isArray(metadata.checkpoints)
+      ? metadata.checkpoints.map(normalizeCheckpoint)
+      : null;
+    const localCheckpoints = Array.isArray(localActivity.checkpoints)
+      ? localActivity.checkpoints.map(normalizeCheckpoint)
+      : null;
+
     return {
       ...localActivity,
       id: row?.id || null,
@@ -82,20 +131,42 @@
       stepKey: metadata.step_key || localActivity.stepKey,
       objective: metadata.objective || localActivity.objective,
       contentVersion: metadata.content_version || localActivity.contentVersion,
+      responseSchema: metadata.response_schema || localActivity.responseSchema || "single_choice",
+      completionProgressPercent: Number(metadata.completion_progress_percent || localActivity.completionProgressPercent) || null,
       scenario: metadata.scenario || localActivity.scenario,
       indicatorTitle: metadata.indicator_title || localActivity.indicatorTitle,
       indicatorDescription: metadata.indicator_description || localActivity.indicatorDescription,
       indicatorData: Array.isArray(metadata.indicator_data) ? metadata.indicator_data : localActivity.indicatorData,
+      checkpoints: metadataCheckpoints || localCheckpoints,
       question: metadata.question || localActivity.question,
       options: Array.isArray(metadata.options) ? metadata.options : localActivity.options,
       correctOption: metadata.correct_option || localActivity.correctOption,
       feedback: metadata.feedback || localActivity.feedback,
       attention: metadata.attention || localActivity.attention,
+      thinkingSteps: normalizeThinkingSteps(metadata.thinking_steps, localActivity.thinkingSteps),
       conclusion: metadata.conclusion || localActivity.conclusion,
       completionTitle: metadata.completion_title || localActivity.completionTitle,
       competencies: Array.isArray(metadata.competencies) ? metadata.competencies : localActivity.competencies,
       nextAction: metadata.next_action || localActivity.nextAction
     };
+  }
+
+  function getCheckpoints(activity) {
+    if (Array.isArray(activity?.checkpoints) && activity.checkpoints.length) {
+      return activity.checkpoints.map(normalizeCheckpoint);
+    }
+    return [normalizeCheckpoint({
+      id: "resposta",
+      title: "Sua análise",
+      question: activity?.question,
+      options: activity?.options,
+      correctOption: activity?.correctOption,
+      correctTitle: "Você conectou número e decisão",
+      incorrectTitle: "Revise sua leitura",
+      correctFeedback: activity?.feedback,
+      incorrectFeedback: activity?.feedback,
+      attention: activity?.attention
+    }, 0)];
   }
 
   function isMissingGuidedPracticeStructure(error) {
@@ -146,47 +217,109 @@
     }
   }
 
-  function validateAnswer(activity, selectedOption) {
+  function normalizeAnswers(activity, answers) {
+    const checkpoints = getCheckpoints(activity);
+    if (typeof answers === "string") return { [checkpoints[0].id]: answers };
+    if (Array.isArray(answers)) {
+      return Object.fromEntries(answers.map((answer) => [
+        answer?.checkpointId || answer?.checkpoint_id,
+        answer?.selectedOption || answer?.selected_option
+      ]).filter(([id]) => id));
+    }
+    return answers && typeof answers === "object" ? answers : {};
+  }
+
+  function validateCheckpoint(activity, checkpointIndex, selectedOption) {
+    const checkpoint = getCheckpoints(activity)[checkpointIndex];
+    if (!checkpoint) return null;
     const selected = String(selectedOption || "").toUpperCase();
-    const correct = String(activity?.correctOption || "").toUpperCase();
+    const correct = String(checkpoint.correctOption || "").toUpperCase();
     return {
+      checkpointId: checkpoint.id,
+      checkpointIndex,
       isCorrect: Boolean(selected && correct && selected === correct),
       selectedOption: selected,
-      correctOption: correct,
-      scorePercent: selected === correct ? 100 : 0
+      correctOption: correct
+    };
+  }
+
+  function validateSubmission(activity, answers) {
+    const checkpoints = getCheckpoints(activity);
+    const responseMap = normalizeAnswers(activity, answers);
+    const checkpointResults = checkpoints.map((checkpoint, index) => {
+      const result = validateCheckpoint(activity, index, responseMap[checkpoint.id]);
+      return { ...result, required: checkpoint.required };
+    });
+    const requiredResults = checkpointResults.filter((result) => result.required);
+    const correctRequired = requiredResults.filter((result) => result.isCorrect).length;
+    const allRequiredAnswered = requiredResults.every((result) => Boolean(result.selectedOption));
+    const isCorrect = Boolean(requiredResults.length)
+      && allRequiredAnswered
+      && correctRequired === requiredResults.length;
+
+    return {
+      isCorrect,
+      allRequiredAnswered,
+      selectedOption: checkpointResults[0]?.selectedOption || "",
+      correctOption: checkpointResults[0]?.correctOption || "",
+      scorePercent: requiredResults.length ? Math.round((correctRequired / requiredResults.length) * 10000) / 100 : 0,
+      checkpointResults,
+      completedCheckpointIds: checkpointResults.filter((result) => result.isCorrect).map((result) => result.checkpointId),
+      responseSchema: checkpoints.length > 1 ? "checkpoint_sequence" : (activity?.responseSchema || "single_choice")
+    };
+  }
+
+  function validateAnswer(activity, selectedOption) {
+    if (selectedOption && typeof selectedOption === "object") return validateSubmission(activity, selectedOption);
+    const result = validateCheckpoint(activity, 0, selectedOption);
+    return {
+      isCorrect: Boolean(result?.isCorrect),
+      selectedOption: result?.selectedOption || "",
+      correctOption: result?.correctOption || "",
+      scorePercent: result?.isCorrect ? 100 : 0
     };
   }
 
   async function saveAttempt(activity, validation, startedAt) {
     const client = getClient();
     const user = await getAuthenticatedUser();
-    if (!client || !user) {
-      return { ok: false, skipped: true, authenticated: false };
-    }
-    if (!activity?.id) {
-      return { ok: false, skipped: true, authenticated: true, migrationPending: true };
-    }
+    if (!client || !user) return { ok: false, skipped: true, authenticated: false };
+    if (!activity?.id) return { ok: false, skipped: true, authenticated: true, migrationPending: true };
 
-    const completedAt = new Date().toISOString();
+    const checkpoints = getCheckpoints(activity);
+    const submittedAt = new Date().toISOString();
+    const responses = validation.checkpointResults
+      .filter((result) => result.selectedOption)
+      .map((result) => ({ checkpoint_id: result.checkpointId, selected_option: result.selectedOption }));
+    const isSingleChoice = checkpoints.length === 1;
+    const resultPayload = {
+      is_correct: validation.isCorrect,
+      all_required_answered: validation.allRequiredAnswered,
+      completed_checkpoint_ids: validation.completedCheckpointIds,
+      checkpoint_results: validation.checkpointResults.map((result) => ({
+        checkpoint_id: result.checkpointId,
+        selected_option: result.selectedOption,
+        correct_option: result.correctOption,
+        is_correct: result.isCorrect
+      }))
+    };
+    if (isSingleChoice) resultPayload.correct_option = validation.correctOption;
+
     const payload = {
       user_id: user.id,
       activity_id: activity.id,
       attempt_payload: {
         activity_slug: activity.slug,
         content_version: activity.contentVersion,
-        response_schema: "single_choice"
+        response_schema: validation.responseSchema,
+        required_checkpoint_ids: checkpoints.filter((checkpoint) => checkpoint.required).map((checkpoint) => checkpoint.id)
       },
-      answer_payload: {
-        selected_option: validation.selectedOption
-      },
-      result_payload: {
-        correct_option: validation.correctOption,
-        is_correct: validation.isCorrect
-      },
+      answer_payload: isSingleChoice ? { selected_option: validation.selectedOption } : { responses },
+      result_payload: resultPayload,
       score_percent: validation.scorePercent,
       status: validation.isCorrect ? "completed" : "submitted",
       started_at: startedAt,
-      completed_at: completedAt
+      completed_at: validation.isCorrect ? submittedAt : null
     };
 
     try {
@@ -205,9 +338,7 @@
   async function saveLearningProgress(activity) {
     const client = getClient();
     const user = await getAuthenticatedUser();
-    if (!client || !user) {
-      return { ok: false, skipped: true, authenticated: false };
-    }
+    if (!client || !user) return { ok: false, skipped: true, authenticated: false };
 
     try {
       const { data: path, error: pathError } = await client
@@ -264,7 +395,9 @@
           source: "guided_practice_completion",
           activity_slug: activity.slug,
           content_version: activity.contentVersion,
-          completed_step_key: completedStep.step_key
+          completed_step_key: completedStep.step_key,
+          completed_checkpoint_ids: getCheckpoints(activity).map((checkpoint) => checkpoint.id),
+          ...(progressPercent === 100 && Array.isArray(activity.competencies) ? { competencies: activity.competencies } : {})
         },
         updated_at: now
       };
@@ -310,8 +443,8 @@
     }
   }
 
-  async function saveResponse(activity, selectedOption, startedAt) {
-    const validation = validateAnswer(activity, selectedOption);
+  async function saveResponse(activity, answers, startedAt) {
+    const validation = validateSubmission(activity, answers);
     const attempt = await saveAttempt(activity, validation, startedAt);
     const progress = validation.isCorrect
       ? await saveLearningProgress(activity)
@@ -324,6 +457,9 @@
     LOCAL_ACTIVITY,
     LOCAL_ACTIVITIES,
     loadActivity,
+    getCheckpoints,
+    validateCheckpoint,
+    validateSubmission,
     validateAnswer,
     getAuthenticatedUser,
     saveResponse

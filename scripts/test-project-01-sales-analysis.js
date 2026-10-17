@@ -277,17 +277,29 @@ async function runLoadProposalChecks() {
         is_active boolean,
         updated_at timestamptz default now()
       );
+      create table public.learning_paths (
+        id uuid primary key default gen_random_uuid(),
+        slug text not null unique
+      );
       create table public.learning_path_steps (
         id uuid primary key default gen_random_uuid(),
-        step_key text not null unique,
+        path_id uuid not null references public.learning_paths(id),
+        step_key text not null,
         content_url text,
         metadata jsonb,
-        updated_at timestamptz default now()
+        updated_at timestamptz default now(),
+        unique (path_id, step_key)
       );
-      insert into public.learning_path_steps (step_key, metadata) values
-        ('projetos-01-escopo-pergunta', '{}'::jsonb),
-        ('projetos-02-consulta-validacao', '{}'::jsonb),
-        ('projetos-03-insight-recomendacao', '{}'::jsonb);
+      insert into public.learning_paths (slug) values ('projetos-praticos');
+      insert into public.learning_path_steps (path_id, step_key, metadata)
+      select path.id, step_key, '{}'::jsonb
+      from public.learning_paths path
+      cross join (values
+        ('projetos-01-escopo-pergunta'),
+        ('projetos-02-consulta-validacao'),
+        ('projetos-03-insight-recomendacao')
+      ) steps(step_key)
+      where path.slug = 'projetos-praticos';
     `);
     await db.exec(proposal);
     await db.exec(proposal);

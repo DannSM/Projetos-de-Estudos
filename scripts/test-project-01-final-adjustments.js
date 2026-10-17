@@ -314,6 +314,21 @@ async function testCompletedProjectPresentation() {
   assert.doesNotMatch(mount.innerHTML, />Iniciar Projeto 01</);
 }
 
+async function testMissingAttemptsDoNotShowCompletion() {
+  const tables = createProgressTables({ projectPublished: true, projectCompleted: true });
+  tables.user_guided_practice_attempts = [];
+  const client = { from(table) { return createQuery(table, tables); } };
+  const { api, mount } = loadProgressPage(client);
+  const user = { id: "user-1", email: "pessoa@example.com" };
+  const data = await api.fetchProgressData(user);
+
+  api.renderAuthenticatedState({ user }, data);
+
+  assert.strictEqual(data.completedPaths.some((pathRow) => pathRow.slug === "projetos-praticos"), false);
+  assert.doesNotMatch(mount.innerHTML, /100% concluído/);
+  assert.doesNotMatch(mount.innerHTML, /Comunicação de insight e recomendação/);
+}
+
 function loadSqlPracticeService(tables) {
   const source = fs.readFileSync(path.join(root, "src", "sql-practice-service.js"), "utf8");
   const client = { from(table) { return createQuery(table, tables); } };
@@ -386,6 +401,7 @@ async function run() {
   await testProjectContinuity(true);
   await testProjectContinuity(false);
   await testCompletedProjectPresentation();
+  await testMissingAttemptsDoNotShowCompletion();
   await testSqlCatalogFiltering();
   testRestrictedSqlUpdate();
   console.log("Project 01 final adjustment tests passed");

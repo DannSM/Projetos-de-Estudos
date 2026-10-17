@@ -117,6 +117,7 @@
       estimatedMinutes: 10,
       objective: "Definir o recorte correto para calcular o faturamento efetivamente realizado.",
       contentVersion: 1,
+      responseSchema: "single_choice",
       scenario: {
         title: "Quais segmentos sustentam o faturamento?",
         context: "Uma empresa de comércio eletrônico quer identificar quais segmentos de clientes geram mais faturamento e quais resultados merecem investigação. A base reúne 50 pedidos pagos, pendentes e cancelados."
@@ -139,12 +140,18 @@
       correctOption: "B",
       feedback: "O faturamento realizado deve considerar somente pedidos com status pago. Pedidos pendentes ainda não viraram receita confirmada e pedidos cancelados não geraram faturamento.",
       attention: "Misturar pedidos pendentes ou cancelados infla a métrica e pode mudar indevidamente a comparação entre segmentos.",
+      thinkingSteps: [
+        ["Qual é a métrica?", "Faturamento realizado."],
+        ["Qual é o recorte?", "Somente pedidos pagos."],
+        ["Qual é a dimensão?", "Segmento do cliente."]
+      ],
       conclusion: "Você definiu a população correta da análise: pedidos pagos, relacionados aos clientes e resumidos por segmento.",
       completionTitle: "Escopo analítico definido",
       nextAction: {
         href: "praticas-sql.html?pratica=projeto-01-consulta-validacao",
         label: "Continuar para a consulta SQL",
-        title: "Etapa 2 — Consulta e validação"
+        title: "Etapa 2 — Consulta e validação",
+        description: "Use SQL para relacionar clientes e pedidos e validar as métricas do projeto."
       }
     },
     "projeto-01-insight-recomendacao": {
@@ -160,6 +167,7 @@
       estimatedMinutes: 10,
       objective: "Transformar o resultado segmentado em uma recomendação de negócio defensável.",
       contentVersion: 1,
+      responseSchema: "single_choice",
       scenario: {
         title: "Do resultado SQL à decisão",
         context: "A consulta validada mostrou que o segmento Corporativo tem o maior faturamento, mesmo com menos pedidos do que Varejo. A decisão deve reconhecer o valor do segmento sem ignorar a concentração em poucos clientes."
@@ -182,6 +190,11 @@
       correctOption: "B",
       feedback: "Corporativo responde por R$ 18.250 de R$ 32.610, cerca de 56% do faturamento realizado. Como esse valor vem de apenas três clientes, a melhor recomendação combina retenção, análise de concentração e investigação antes de escalar a estratégia.",
       attention: "O resultado indica prioridade de investigação, não causalidade. O dataset não explica sozinho margem, recorrência futura ou custo de aquisição.",
+      thinkingSteps: [
+        ["O que se destaca?", "Corporativo lidera em faturamento."],
+        ["Qual é a ressalva?", "O valor está concentrado em três clientes."],
+        ["O que recomendar?", "Investigar e reter antes de escalar."]
+      ],
       conclusion: "Você conectou regra de negócio, consulta validada e recomendação com ressalvas sobre concentração e limites da análise.",
       completionTitle: "Projeto 01 concluído",
       competencies: [
@@ -193,7 +206,8 @@
       nextAction: {
         href: "meu-progresso.html",
         label: "Ver projeto em Meu Progresso",
-        title: "Competências demonstradas"
+        title: "Competências demonstradas",
+        description: "Confira a conclusão do projeto e as competências demonstradas no seu histórico."
       }
     }
   });
