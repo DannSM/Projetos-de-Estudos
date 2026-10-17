@@ -41,6 +41,11 @@ assert.strictEqual(statisticsPlan.href, "index.html#trilhas");
 assert.match(html, /id="guidedPracticeMount"/);
 assert.match(html, /src\/guided-practice-service\.js/);
 assert.match(html, /src\/guided-practice-page\.js/);
+assert.match(html, /style\.css\?v=20261017-kpi-refino/);
+assert.match(html, /src\/kpi-guided-content\.js\?v=20261017-kpi-refino/);
+assert.match(html, /src\/guided-practice-page\.js\?v=20261017-kpi-refino/);
+assert.match(read("style.css"), /styles\/components\.css\?v=20261017-kpi-refino/);
+assert.match(read("style.css"), /styles\/responsive\.css\?v=20261017-kpi-refino/);
 assert.match(pageSource, /data-guided-practice-form/);
 assert.match(pageSource, /Ver Meu Progresso/);
 assert.match(pageSource, /Entrar para salvar/);
@@ -50,9 +55,14 @@ assert.match(studyPlanSource, /pratica-guiada\.html\?atividade=indicadores-meta-
 assert.match(progressSource, /practiceFormat === "guided_practice"/);
 assert.match(progressSource, /Abrir prática/);
 assert.match(componentsCss, /\.guided-practice-grid/);
+assert.match(componentsCss, /\.guided-practice-page \.sr-only/);
 assert.match(componentsCss, /\.guided-completion-card\.guided-completion-save-error/);
+assert.match(componentsCss, /\.guided-next-card-pending/);
+assert.match(componentsCss, /\.guided-pending-label/);
+assert.match(componentsCss, /\.guided-option\.is-incorrect[^{]*\{[^}]*box-shadow:/s);
 assert.match(responsiveCss, /@media \(max-width: 390px\)/);
 assert.match(responsiveCss, /\.guided-metrics-grid \{ grid-template-columns: minmax\(0, 1fr\)/);
+assert.match(responsiveCss, /\.guided-section-card,[\s\S]*width: 100%; max-width: 100%; min-width: 0;/);
 
 assert.match(migration, /create table if not exists public\.user_guided_practice_attempts/);
 assert.match(migration, /alter table public\.user_guided_practice_attempts enable row level security/);
@@ -222,7 +232,59 @@ async function runPageSaveRecoveryChecks() {
   assert.match(anonymous.mount.innerHTML, /NEXT_ANONYMOUS/);
 }
 
+async function runFeedbackAndPendingStateChecks() {
+  const sequenceActivity = {
+    ...kpiContent.GUIDED_ACTIVITIES["indicadores-definicao-consistente"],
+    id: "feedback-sequence-activity"
+  };
+  const sequence = await createPageHarness({
+    activity: sequenceActivity,
+    saveHandler({ validation }) {
+      return {
+        validation,
+        attempt: { ok: true, authenticated: true },
+        progress: skippedProgress(true)
+      };
+    }
+  });
+
+  assert.match(sequence.mount.innerHTML, /guided-next-card-pending/);
+  assert.match(sequence.mount.innerHTML, /Continuidade ainda bloqueada/);
+  assert.match(sequence.mount.innerHTML, /Consultar Meu Progresso/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /Ver Meu Progresso/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /class="submit-button" href="meu-progresso\.html"/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /<label[^>]*>Anotação pessoal<\/label>/);
+  assert.match(sequence.mount.innerHTML, /textarea[^>]*aria-label="Anotação pessoal"/);
+
+  await sequence.answer("D");
+  assert.match(sequence.mount.innerHTML, /guided-option is-selected is-incorrect/);
+  assert.doesNotMatch(sequence.mount.innerHTML, /guided-option[^\"]*is-correct/);
+  assert.match(sequence.mount.innerHTML, /Volte à definição do indicador/);
+  assert.match(sequence.mount.innerHTML, /Conferir esta decisão/);
+
+  await sequence.answer("A");
+  assert.match(sequence.mount.innerHTML, /guided-option is-selected is-correct/);
+  assert.match(sequence.mount.innerHTML, /data-next-checkpoint/);
+
+  const original = await createPageHarness({
+    activity: { ...service.LOCAL_ACTIVITY, id: "feedback-single-choice" },
+    saveHandler({ validation }) {
+      return {
+        validation,
+        attempt: { ok: true, authenticated: true },
+        progress: skippedProgress(true)
+      };
+    }
+  });
+  await original.answer("A");
+  assert.match(original.mount.innerHTML, /guided-option is-selected is-incorrect/);
+  assert.doesNotMatch(original.mount.innerHTML, /guided-option[^\"]*is-correct/);
+  await original.answer("B");
+  assert.match(original.mount.innerHTML, /guided-option is-selected is-correct/);
+}
+
 (async () => {
+  await runFeedbackAndPendingStateChecks();
   await runPageSaveRecoveryChecks();
   console.log("Guided practice MVP checks passed.");
 })().catch((error) => {

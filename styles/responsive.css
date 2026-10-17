@@ -1418,8 +1418,8 @@
   .guided-roadmap-list li:not(:last-child)::after {
     top: 17px;
     bottom: auto;
-    left: 35px;
-    width: calc(100% - 18px);
+    left: 36px;
+    width: calc(100% - 20px);
     height: 2px;
   }
 }
@@ -1428,8 +1428,8 @@
   .guided-practice-hero { grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; }
   .guided-practice-hero-marker { grid-template-columns: minmax(0, 1fr); }
   .guided-hero-track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .guided-hero-track li { grid-template-columns: 34px; justify-items: center; text-align: center; }
-  .guided-hero-track li:not(:last-child)::after { top: 16px; left: 34px; width: calc(100% - 18px); height: 1px; }
+  .guided-hero-track li { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+  .guided-hero-track li:not(:last-child)::after { top: 16px; bottom: auto; left: calc(50% + 17px); width: calc(100% + var(--guided-hero-track-gap) - 34px); height: 2px; }
   .guided-practice-grid { grid-template-columns: minmax(0, 1fr); }
   .guided-practice-rail { grid-template-columns: minmax(0, 1fr) minmax(190px, 0.8fr); }
   .guided-rail-roadmap { grid-column: 1 / -1; }
@@ -1445,14 +1445,14 @@
   .guided-practice-hero-marker { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .guided-hero-current-step { min-height: 0; padding: 17px; }
   .guided-hero-current-step > span { font-size: 2rem; }
-  .guided-hero-track { gap: 7px; }
+  .guided-hero-track { --guided-hero-track-gap: 7px; }
   .guided-hero-track strong { font-size: 0.72rem; }
   .guided-practice-meta { align-items: flex-start; flex-direction: column; gap: 9px; }
   .guided-section-card,
   .guided-aside-card,
   .guided-rail-card,
   .guided-completion-card { padding: 21px; border-radius: 20px; }
-  .guided-practice-grid { display: flex; flex-direction: column; }
+  .guided-practice-grid { display: flex; width: 100%; min-width: 0; flex-direction: column; }
   .guided-practice-rail,
   .guided-practice-main,
   .guided-practice-aside { display: contents; }
@@ -1477,7 +1477,11 @@
   .guided-rail-tip { order: 13; }
   .guided-roadmap-list { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .guided-roadmap-list li { min-height: 72px; }
-  .guided-roadmap-list li:not(:last-child)::after { top: 35px; bottom: 0; left: 17px; width: 2px; height: auto; }
+  .guided-roadmap-list li:not(:last-child)::after { top: 36px; bottom: 0; left: 17px; width: 2px; height: auto; }
+  .guided-section-card,
+  .guided-aside-card,
+  .guided-rail-card,
+  .guided-completion-card { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; }
   .guided-scenario-card,
   .guided-thinking-card,
   .guided-note-card,

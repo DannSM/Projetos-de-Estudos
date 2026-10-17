@@ -92,6 +92,21 @@ function runContentAndMathChecks() {
     assert.doesNotMatch(activity.scenario.context, /Satisfação abaixo da meta/);
   });
 
+  const pedagogicalCopy = slugs.map((slug) => {
+    const activity = content.GUIDED_ACTIVITIES[slug];
+    return {
+      feedbacks: activity.checkpoints.map((checkpoint) => checkpoint.incorrectFeedback).join(" "),
+      thinking: activity.thinkingSteps.flat().join(" ")
+    };
+  });
+  assert.doesNotMatch(pedagogicalCopy[0].feedbacks, /92 ÷ 115|96 ÷ 120|os dois resultados são 80%/i);
+  assert.doesNotMatch(pedagogicalCopy[1].feedbacks, /\(80 \+ 90\)|239\/300|83,5%|queda está associada ao Chat/i);
+  assert.doesNotMatch(pedagogicalCopy[2].feedbacks, /volume da etapa atual pelo volume da etapa anterior|1 menos a taxa de conversão/i);
+  assert.doesNotMatch(
+    pedagogicalCopy.map((item) => item.thinking).join(" "),
+    /Somente avaliações positivas|respostas válidas do mesmo período|Some numeradores|dois terços das respostas|volume da etapa imediatamente anterior/i
+  );
+
   const definition = content.GUIDED_ACTIVITIES["indicadores-definicao-consistente"];
   assert.strictEqual(92 / 115, 0.8);
   assert.strictEqual(96 / 120, 0.8);
@@ -249,6 +264,7 @@ async function runProgressChecks() {
 
 async function runSqlProposalChecks() {
   const proposal = read("docs/indicadores-kpis-jornada-completa-proposta.sql");
+  const refinement = read("docs/indicadores-kpis-refino-pedagogico-proposta.sql");
   assert.doesNotMatch(proposal, /\b(create|alter|drop)\s+(table|view|policy|schema)\b/i);
   assert.doesNotMatch(proposal, /\b(delete|truncate|grant|revoke)\b/i);
   assert.doesNotMatch(proposal, /\(\s*'indicadores-meta-resultado'\s*,\s*'practice'/i);
@@ -256,6 +272,12 @@ async function runSqlProposalChecks() {
   assert.match(proposal, /linked_step_count <> 3/);
   assert.match(proposal, /original_step_count <> 1/);
   assert.match(proposal, /estimated_minutes = 55/);
+  assert.match(refinement, /PROPOSTA COMPLEMENTAR — NÃO EXECUTADA/);
+  assert.match(refinement, /activity\.track_slug = 'indicadores-e-kpis'/);
+  assert.match(refinement, /updated_activity_count <> 3/);
+  assert.doesNotMatch(refinement, /\b(create|alter|drop)\s+(table|view|policy|schema)\b/i);
+  assert.doesNotMatch(refinement, /\b(delete|truncate|grant|revoke)\b/i);
+  assert.doesNotMatch(refinement, /user_guided_practice_attempts|user_learning_progress/i);
 
   const db = new PGlite("memory://");
   await db.waitReady;
@@ -339,6 +361,8 @@ async function runSqlProposalChecks() {
 
     await db.exec(proposal);
     await db.exec(proposal);
+    await db.exec(refinement);
+    await db.exec(refinement);
 
     const activities = await db.query(`
       select slug, metadata ->> 'response_schema' as response_schema,
@@ -352,6 +376,24 @@ async function runSqlProposalChecks() {
       activities.rows.slice(1).map((row) => [row.response_schema, row.checkpoint_count]),
       [["checkpoint_sequence", 3], ["checkpoint_sequence", 3], ["checkpoint_sequence", 3]]
     );
+    const refinedActivities = await db.query(`
+      select slug, metadata
+      from public.learning_activities
+      where track_slug = 'indicadores-e-kpis'
+        and slug <> 'indicadores-meta-resultado'
+      order by step_order
+    `);
+    refinedActivities.rows.forEach((row) => {
+      const localActivity = content.GUIDED_ACTIVITIES[row.slug];
+      assert.deepStrictEqual(
+        row.metadata.checkpoints.map((checkpoint) => checkpoint.incorrect_feedback),
+        localActivity.checkpoints.map((checkpoint) => checkpoint.incorrectFeedback)
+      );
+      assert.deepStrictEqual(
+        row.metadata.thinking_steps,
+        localActivity.thinkingSteps.map(([question, answer]) => ({ question, answer }))
+      );
+    });
     const original = await db.query(`
       select metadata from public.learning_activities where slug = 'indicadores-meta-resultado'
     `);

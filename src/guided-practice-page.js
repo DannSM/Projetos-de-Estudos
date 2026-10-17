@@ -76,12 +76,10 @@
   function renderOptions(checkpoint) {
     return checkpoint.options.map((option) => {
       const selected = state.selectedOption === option.id;
-      const optionClass = state.checkpointValidation
-        ? option.id === checkpoint.correctOption
+      const optionClass = state.checkpointValidation && selected
+        ? state.checkpointValidation.isCorrect
           ? "is-correct"
-          : selected
-            ? "is-incorrect"
-            : ""
+          : "is-incorrect"
         : "";
       return `
         <label class="guided-option ${selected ? "is-selected" : ""} ${optionClass}">
@@ -191,7 +189,21 @@
         </section>
       `;
     }
-    const nextAction = complete ? activity.nextAction : null;
+    if (!complete) {
+      return `
+        <section class="guided-aside-card guided-next-card guided-next-card-pending">
+          <div class="guided-aside-title">
+            <i data-lucide="circle-dashed" aria-hidden="true"></i>
+            <div><span class="section-kicker">Próxima ação</span><h2>Conclua os checkpoints</h2></div>
+          </div>
+          <p>Valide todas as decisões obrigatórias para liberar a próxima atividade e atualizar o progresso oficial.</p>
+          <span class="guided-pending-label"><i data-lucide="lock-keyhole" aria-hidden="true"></i> Continuidade ainda bloqueada</span>
+          <a class="guided-back-link" href="meu-progresso.html">Consultar Meu Progresso</a>
+          <a class="guided-back-link" href="index.html#trilhas">Voltar às trilhas</a>
+        </section>
+      `;
+    }
+    const nextAction = activity.nextAction;
     return `
       <section class="guided-aside-card guided-next-card">
         <div class="guided-aside-title">
@@ -393,8 +405,7 @@
               <i data-lucide="sticky-note" aria-hidden="true"></i>
               <div><span class="section-kicker">Seu espaço</span><h2>Anotação pessoal</h2></div>
             </div>
-            <label class="sr-only" for="guidedPracticeNote">Anotação pessoal</label>
-            <textarea id="guidedPracticeNote" data-guided-note rows="4" placeholder="Registre seu cálculo ou hipótese de investigação.">${escapeHtml(state.note)}</textarea>
+            <textarea id="guidedPracticeNote" data-guided-note rows="4" aria-label="Anotação pessoal" placeholder="Registre seu cálculo ou hipótese de investigação.">${escapeHtml(state.note)}</textarea>
             <button class="filter-button" type="button" data-save-guided-note>Salvar neste navegador</button>
             ${state.noteStatus ? `<small>${escapeHtml(state.noteStatus)}</small>` : `<small>O registro remoto de anotações fica para uma etapa futura.</small>`}
           </section>

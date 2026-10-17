@@ -45,7 +45,7 @@
           correctTitle: "Definição alinhada",
           incorrectTitle: "Revise numerador e população elegível",
           correctFeedback: "A taxa de satisfação usa avaliações positivas como numerador e respostas válidas como denominador. Aplicar a mesma regra e o mesmo período torna a comparação defensável.",
-          incorrectFeedback: "Atendimentos sem resposta não pertencem à população elegível dessa taxa. As duas equipes precisam usar avaliações positivas divididas por respostas válidas no mesmo período.",
+          incorrectFeedback: "Volte à definição do indicador: identifique o evento medido e quem realmente teve oportunidade de responder antes de escolher o denominador.",
           attention: "O denominador deve representar quem realmente podia contribuir para a medida calculada."
         },
         {
@@ -62,7 +62,7 @@
           correctTitle: "Cálculo consistente",
           incorrectTitle: "Use o mesmo denominador conceitual",
           correctFeedback: "Alfa: 92 ÷ 115 = 80%. Beta: 96 ÷ 120 = 80%. O valor de 60% da Beta vem da fórmula inconsistente 96 ÷ 160.",
-          incorrectFeedback: "Aplique positivas ÷ respostas válidas: 92 ÷ 115 e 96 ÷ 120. Os dois resultados são 80%.",
+          incorrectFeedback: "Refaça cada taxa com a definição escolhida no checkpoint anterior e confira se numerador, população elegível e período são comparáveis.",
           attention: "Uma taxa matematicamente calculada ainda pode estar conceitualmente errada se usar a população inadequada."
         },
         {
@@ -79,14 +79,14 @@
           correctTitle: "Comparação corrigida",
           incorrectTitle: "A diferença observada foi criada pela metodologia",
           correctFeedback: "Com a definição padronizada, Alfa e Beta têm 80%. Não há evidência de diferença de satisfação nesse recorte; o primeiro ajuste é documentar e aplicar a mesma metodologia.",
-          incorrectFeedback: "O aparente 80% versus 60% compara denominadores diferentes. Corrigida a regra, as duas equipes ficam em 80%.",
+          incorrectFeedback: "Antes de concluir que uma equipe foi melhor, verifique se a diferença permanece quando as duas taxas seguem exatamente a mesma definição.",
           attention: "Decisões baseadas em métricas inconsistentes podem premiar ou penalizar equipes sem evidência real."
         }
       ],
       thinkingSteps: [
-        ["O que conta no numerador?", "Somente avaliações positivas."],
-        ["Quem é elegível no denominador?", "As respostas válidas do mesmo período."],
-        ["A comparação usa a mesma regra?", "Só depois de padronizar a metodologia."]
+        ["O que a taxa pretende medir?", "Separe o evento contado da população que poderia produzi-lo."],
+        ["As bases são comparáveis?", "Confira definição, elegibilidade e período antes de calcular."],
+        ["A diferença é de desempenho ou método?", "Questione se a comparação mudaria com uma regra única."]
       ],
       conclusion: "Você definiu um indicador comparável ao alinhar numerador, denominador, população elegível e período de referência.",
       completionTitle: "Definição do indicador validada",
@@ -139,7 +139,7 @@
           correctTitle: "Consolidado ponderado corretamente",
           incorrectTitle: "Não use a média simples das taxas",
           correctFeedback: "Some primeiro os numeradores e os denominadores: 170/200 = 85% e 239/300 ≈ 79,67%. A queda é de aproximadamente 5,33 pontos percentuais.",
-          incorrectFeedback: "O consolidado precisa respeitar os volumes: (80 + 90)/(100 + 100) e (144 + 95)/(200 + 100). A média simples atual, 83,5%, superestima o resultado.",
+          incorrectFeedback: "Evite tratar taxas de grupos com volumes diferentes como se tivessem o mesmo peso. Procure um cálculo que preserve a contribuição de cada grupo.",
           attention: "Taxas de grupos com tamanhos diferentes devem ser combinadas pelos seus numeradores e denominadores."
         },
         {
@@ -156,7 +156,7 @@
           correctTitle: "Peso e desempenho conectados",
           incorrectTitle: "Observe taxa e representatividade juntas",
           correctFeedback: "O Chat perdeu 8 p.p. e dobrou seu volume, passando a representar dois terços das respostas atuais. O App melhorou 5 p.p., mas manteve 100 respostas.",
-          incorrectFeedback: "A queda está associada ao Chat: sua taxa piorou e sua participação no total aumentou. O App melhorou, portanto compensou parte da perda.",
+          incorrectFeedback: "Compare, para cada canal, duas dimensões ao mesmo tempo: mudança de desempenho e participação no volume total.",
           attention: "Contribuir para a variação do consolidado não prova a causa operacional da piora no canal."
         },
         {
@@ -173,14 +173,14 @@
           correctTitle: "Sinal priorizado sem inventar causalidade",
           incorrectTitle: "Separe evidência de hipótese",
           correctFeedback: "Os dados localizam um sinal relevante no Chat, mas não identificam sua causa. Segmentar e verificar estabilidade, períodos e motivos transforma o sinal em uma investigação testável.",
-          incorrectFeedback: "O recorte mostra onde a queda se concentrou, não por que ocorreu. A próxima decisão deve investigar o Chat e considerar volume e possível ruído.",
+          incorrectFeedback: "Separe o que os números observam do que ainda é hipótese. O próximo passo deve buscar evidências capazes de explicar o sinal.",
           attention: "Uma diferença observada orienta hipóteses; causalidade exige evidência adicional."
         }
       ],
       thinkingSteps: [
-        ["Como consolidar?", "Some numeradores e denominadores antes de dividir."],
-        ["O peso mudou?", "O Chat passou a representar dois terços das respostas."],
-        ["O dado prova a causa?", "Não; ele localiza um sinal para investigação."]
+        ["Os grupos têm o mesmo peso?", "Observe os volumes antes de escolher como consolidar."],
+        ["Desempenho e participação mudaram?", "Compare as duas dimensões sem assumir qual canal explica o total."],
+        ["O dado observa ou explica?", "Diferencie sinal medido de hipótese causal."]
       ],
       conclusion: "Você calculou um KPI ponderado, identificou a contribuição do Chat e formulou uma investigação sem confundir associação com causalidade.",
       completionTitle: "Decomposição do KPI concluída",
@@ -233,7 +233,7 @@
           correctTitle: "Denominadores aplicados corretamente",
           incorrectTitle: "Use a etapa imediatamente anterior",
           correctFeedback: "As taxas são 4.000/10.000 = 40%, 1.000/4.000 = 25%, 600/1.000 = 60%, 300/600 = 50% e 300/10.000 = 3% no total.",
-          incorrectFeedback: "Em cada transição, divida o volume da etapa atual pelo volume da etapa anterior. Somente a conversão total usa visitantes como denominador.",
+          incorrectFeedback: "Para cada percentual, identifique qual grupo realmente podia avançar para a etapa seguinte. Depois trate a conversão total como uma comparação distinta.",
           attention: "Usar visitantes como denominador em todas as etapas mistura conversão condicional com conversão acumulada."
         },
         {
@@ -250,7 +250,7 @@
           correctTitle: "Volume e proporção separados",
           incorrectTitle: "Compare quantidade perdida e taxa de perda",
           correctFeedback: "A primeira transição perde 6.000 visitantes em volume. Já visualização → carrinho retém 25% e perde 75%, a maior perda proporcional do funil.",
-          incorrectFeedback: "Subtraia os volumes para a perda absoluta e calcule 1 menos a taxa de conversão para a perda proporcional. Os dois critérios podem indicar etapas diferentes.",
+          incorrectFeedback: "Calcule separadamente quantas pessoas saíram e qual fração não avançou; os dois critérios podem levar a leituras diferentes.",
           attention: "A maior perda absoluta não é automaticamente o melhor ponto de intervenção; alcance, intenção e custo também importam."
         },
         {
@@ -267,14 +267,14 @@
           correctTitle: "Prioridade justificada com ressalvas",
           incorrectTitle: "Recomende uma investigação, não uma causa",
           correctFeedback: "A passagem de visualização para carrinho tem a menor taxa condicional, 25%, e merece investigação. A ação correta é formular hipóteses e testar; o funil sozinho não prova causa nem impacto futuro.",
-          incorrectFeedback: "Os dados sustentam priorizar uma etapa para investigação, mas não autorizam atribuir causa, garantir impacto ou eliminar uma etapa do processo.",
+          incorrectFeedback: "Escolha uma ação compatível com o que o funil observa: priorizar uma investigação é diferente de afirmar causa ou prometer impacto.",
           attention: "Prioridade analítica combina taxa, volume e contexto de negócio; a melhoria precisa ser confirmada por teste."
         }
       ],
       thinkingSteps: [
-        ["Qual é o denominador?", "O volume da etapa imediatamente anterior."],
-        ["Que perda está sendo comparada?", "Quantidade absoluta ou proporção da etapa."],
-        ["O funil prova a causa?", "Não; ele orienta uma investigação e um teste."]
+        ["Quem podia avançar nesta transição?", "Associe cada etapa ao grupo exposto à decisão seguinte."],
+        ["Você compara volume ou proporção?", "Defina o critério antes de apontar a maior perda."],
+        ["O funil observa ou explica?", "Use o padrão como ponto de partida para uma hipótese testável."]
       ],
       conclusion: "Você concluiu a jornada de Indicadores e KPIs: interpretou meta e resultado, definiu métricas comparáveis, decompôs um consolidado e priorizou uma investigação de funil.",
       completionTitle: "Trilha Indicadores e KPIs concluída",
