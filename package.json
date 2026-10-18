@@ -11,15 +11,18 @@
     "test:progress-next-practice": "node scripts/test-progress-next-practice.js",
     "test:sql-ai-tutor": "node scripts/test-sql-ai-tutor.js",
     "test:mapia-security": "node scripts/test-mapia-security.js",
+    "test:mapia-quota-runtime": "vitest run --config vitest.mapia.config.mjs",
     "test:guided-practice": "node scripts/test-guided-practice.js",
     "test:kpi-journey": "node scripts/test-kpi-journey.js",
     "test:project-01": "node scripts/test-project-01-sales-analysis.js",
     "test:visual": "node scripts/visual-smoke.js"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.4",
     "@electric-sql/pglite": "0.4.5",
     "@playwright/test": "^1.60.0",
     "playwright": "^1.60.0",
-    "playwright-core": "^1.60.0"
+    "playwright-core": "^1.60.0",
+    "vitest": "^4.1.11"
   }
 }

@@ -57,10 +57,18 @@ function secondsUntilNextUtcDay(nowMs) {
   return Math.max(1, Math.ceil((nextDay - nowMs) / 1000));
 }
 
+function validReservationPayload(payload) {
+  const { requestId, actorKey, ipKey } = payload || {};
+  return [requestId, actorKey, ipKey].every((value) => (
+    typeof value === "string" && value.length >= 16 && value.length <= 160
+  ));
+}
+
 export class MapiaQuota extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.env = env;
+    this.storage = ctx.storage;
     this.sql = ctx.storage.sql;
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS daily_usage (
@@ -114,14 +122,16 @@ export class MapiaQuota extends DurableObject {
     ))?.count) || 0;
   }
 
-  getActiveCount(actorKey = "") {
+  getActiveCount(nowMs, actorKey = "") {
     const cursor = actorKey
       ? this.sql.exec(
-        "SELECT COUNT(*) AS count FROM reservations WHERE status = 'active' AND actor_key = ?",
+        "SELECT COUNT(*) AS count FROM reservations WHERE status = 'active' AND expires_at > ? AND actor_key = ?",
+        nowMs,
         actorKey
       )
       : this.sql.exec(
-        "SELECT COUNT(*) AS count FROM reservations WHERE status = 'active'"
+        "SELECT COUNT(*) AS count FROM reservations WHERE status = 'active' AND expires_at > ?",
+        nowMs
       );
     return Number(firstRow(cursor)?.count) || 0;
   }
@@ -142,102 +152,79 @@ export class MapiaQuota extends DurableObject {
     );
   }
 
-  reserve(payload) {
-    const { requestId, actorKey, ipKey, profile } = payload || {};
-    if (![requestId, actorKey, ipKey].every((value) => (
-      typeof value === "string" && value.length >= 16 && value.length <= 160
-    ))) {
-      return jsonResponse({ ok: false, error: "invalid_reservation_request" }, 400);
-    }
-
-    let policy;
-    try {
-      policy = readPolicy(this.env, profile);
-    } catch (error) {
-      console.error("[MapIA quota] Configuração inválida.");
-      return jsonResponse({ ok: false, error: "quota_configuration_invalid" }, 503);
-    }
-
-    const nowMs = Date.now();
+  getDecisionContext(policy, nowMs) {
     const usageDay = new Date(nowMs).toISOString().slice(0, 10);
     const windowMs = policy.rateWindowSeconds * 1000;
     const windowStart = Math.floor(nowMs / windowMs) * windowMs;
-    const rateRetryAfter = Math.max(1, Math.ceil((windowStart + windowMs - nowMs) / 1000));
-    const dayRetryAfter = secondsUntilNextUtcDay(nowMs);
+    return {
+      nowMs,
+      usageDay,
+      windowStart,
+      rateRetryAfter: Math.max(1, Math.ceil((windowStart + windowMs - nowMs) / 1000)),
+      dayRetryAfter: secondsUntilNextUtcDay(nowMs)
+    };
+  }
 
-    this.cleanup(nowMs, windowStart);
-
-    const existing = firstRow(this.sql.exec(
-      "SELECT reservation_id, status FROM reservations WHERE reservation_id = ?",
-      requestId
-    ));
-    if (existing) {
-      return jsonResponse({
-        ok: true,
-        allowed: existing.status === "active" || existing.status === "settled",
-        reservationId: existing.reservation_id,
-        duplicate: true
-      });
-    }
-
+  evaluateLimits(payload, policy, context) {
+    const { actorKey, ipKey, profile } = payload;
+    const { nowMs, usageDay, windowStart, rateRetryAfter, dayRetryAfter } = context;
     if (this.getRateCount("actor", actorKey, windowStart) >= policy.actorRateLimit) {
-      return jsonResponse({
-        ok: true,
-        allowed: false,
-        reason: "actor_rate_limit",
-        retryAfterSeconds: rateRetryAfter
-      });
+      return { allowed: false, reason: "actor_rate_limit", retryAfterSeconds: rateRetryAfter };
     }
     if (this.getRateCount("ip", ipKey, windowStart) >= policy.ipRateLimit) {
-      return jsonResponse({
-        ok: true,
-        allowed: false,
-        reason: "ip_rate_limit",
-        retryAfterSeconds: rateRetryAfter
-      });
+      return { allowed: false, reason: "ip_rate_limit", retryAfterSeconds: rateRetryAfter };
     }
-    if (this.getActiveCount(actorKey) >= policy.actorConcurrencyLimit) {
-      return jsonResponse({
-        ok: true,
+    if (this.getActiveCount(nowMs, actorKey) >= policy.actorConcurrencyLimit) {
+      return {
         allowed: false,
         reason: "actor_concurrency",
         retryAfterSeconds: Math.min(policy.reservationTtlSeconds, 10)
-      });
+      };
     }
-    if (this.getActiveCount() >= policy.globalConcurrencyLimit) {
-      return jsonResponse({
-        ok: true,
+    if (this.getActiveCount(nowMs) >= policy.globalConcurrencyLimit) {
+      return {
         allowed: false,
         reason: "global_concurrency",
         retryAfterSeconds: Math.min(policy.reservationTtlSeconds, 10)
-      });
+      };
     }
     if (this.getDailyCount("global", "all", usageDay) >= policy.globalDailyLimit) {
-      return jsonResponse({
-        ok: true,
-        allowed: false,
-        reason: "global_limit",
-        retryAfterSeconds: dayRetryAfter
-      });
+      return { allowed: false, reason: "global_limit", retryAfterSeconds: dayRetryAfter };
     }
     if (this.getDailyCount("actor", actorKey, usageDay) >= policy.profileDailyLimit) {
-      return jsonResponse({
-        ok: true,
-        allowed: false,
-        reason: "profile_quota",
-        retryAfterSeconds: dayRetryAfter
-      });
+      return { allowed: false, reason: "profile_quota", retryAfterSeconds: dayRetryAfter };
     }
     if (profile === "visitor"
       && this.getDailyCount("visitor_ip", ipKey, usageDay) >= policy.visitorIpDailyLimit) {
-      return jsonResponse({
-        ok: true,
-        allowed: false,
-        reason: "visitor_ip_quota",
-        retryAfterSeconds: dayRetryAfter
-      });
+      return { allowed: false, reason: "visitor_ip_quota", retryAfterSeconds: dayRetryAfter };
     }
+    return { allowed: true };
+  }
 
+  readReservationPolicy(payload) {
+    if (!validReservationPayload(payload)) {
+      return { response: jsonResponse({ ok: false, error: "invalid_reservation_request" }, 400) };
+    }
+    try {
+      return { policy: readPolicy(this.env, payload.profile) };
+    } catch (error) {
+      console.error("[MapIA quota] Configuração inválida.");
+      return { response: jsonResponse({ ok: false, error: "quota_configuration_invalid" }, 503) };
+    }
+  }
+
+  inspect(payload) {
+    const { policy, response } = this.readReservationPolicy(payload);
+    if (response) return response;
+
+    const context = this.getDecisionContext(policy, Date.now());
+    const decision = this.evaluateLimits(payload, policy, context);
+    return jsonResponse({ ok: true, ...decision, inspected: true });
+  }
+
+  applyReservationWrites(payload, policy, context) {
+    const { requestId, actorKey, ipKey, profile } = payload;
+    const { usageDay, windowStart, nowMs } = context;
     this.sql.exec(
       `INSERT INTO rate_windows (scope, subject_key, window_start, count)
        VALUES ('actor', ?, ?, 1)
@@ -292,12 +279,36 @@ export class MapiaQuota extends DurableObject {
       nowMs,
       nowMs + (policy.reservationTtlSeconds * 1000)
     );
+  }
 
-    return jsonResponse({
-      ok: true,
-      allowed: true,
-      reservationId: requestId
+  reserve(payload) {
+    const { policy, response } = this.readReservationPolicy(payload);
+    if (response) return response;
+
+    const context = this.getDecisionContext(policy, Date.now());
+    const result = this.storage.transactionSync(() => {
+      this.cleanup(context.nowMs, context.windowStart);
+
+      const existing = firstRow(this.sql.exec(
+        "SELECT reservation_id, status FROM reservations WHERE reservation_id = ?",
+        payload.requestId
+      ));
+      if (existing) {
+        return {
+          allowed: existing.status === "active" || existing.status === "settled",
+          reservationId: existing.reservation_id,
+          duplicate: true
+        };
+      }
+
+      const decision = this.evaluateLimits(payload, policy, context);
+      if (!decision.allowed) return decision;
+
+      this.applyReservationWrites(payload, policy, context);
+      return { allowed: true, reservationId: payload.requestId };
     });
+
+    return jsonResponse({ ok: true, ...result });
   }
 
   settle(payload) {
@@ -310,13 +321,32 @@ export class MapiaQuota extends DurableObject {
     }
 
     const nowMs = Date.now();
-    this.sql.exec(
-      "UPDATE reservations SET status = 'settled', outcome = ?, settled_at = ? WHERE reservation_id = ? AND status = 'active'",
-      outcome,
-      nowMs,
-      reservationId
-    );
-    return jsonResponse({ ok: true, settled: true, charged: true });
+    const result = this.storage.transactionSync(() => {
+      const reservation = firstRow(this.sql.exec(
+        "SELECT status, expires_at FROM reservations WHERE reservation_id = ?",
+        reservationId
+      ));
+      if (!reservation) return { settled: false, charged: false };
+      if (reservation.status !== "active") {
+        return { settled: false, charged: reservation.status !== "released", duplicate: true };
+      }
+      if (Number(reservation.expires_at) <= nowMs) {
+        this.sql.exec(
+          "UPDATE reservations SET status = 'expired', outcome = 'reservation_timeout', settled_at = ? WHERE reservation_id = ? AND status = 'active'",
+          nowMs,
+          reservationId
+        );
+        return { settled: false, charged: true, expired: true };
+      }
+      this.sql.exec(
+        "UPDATE reservations SET status = 'settled', outcome = ?, settled_at = ? WHERE reservation_id = ? AND status = 'active'",
+        outcome,
+        nowMs,
+        reservationId
+      );
+      return { settled: true, charged: true };
+    });
+    return jsonResponse({ ok: true, ...result });
   }
 
   release(payload) {
@@ -325,37 +355,49 @@ export class MapiaQuota extends DurableObject {
       return jsonResponse({ ok: false, error: "reservation_id_required" }, 400);
     }
 
-    const reservation = firstRow(this.sql.exec(
-      "SELECT actor_key, ip_key, profile, usage_day, status FROM reservations WHERE reservation_id = ?",
-      reservationId
-    ));
-    if (!reservation || reservation.status !== "active") {
-      return jsonResponse({ ok: true, released: false, charged: true });
-    }
-
     const nowMs = Date.now();
-    this.sql.exec(
-      "UPDATE daily_usage SET count = MAX(0, count - 1) WHERE scope = 'global' AND subject_key = 'all' AND usage_day = ?",
-      reservation.usage_day
-    );
-    this.sql.exec(
-      "UPDATE daily_usage SET count = MAX(0, count - 1) WHERE scope = 'actor' AND subject_key = ? AND usage_day = ?",
-      reservation.actor_key,
-      reservation.usage_day
-    );
-    if (reservation.profile === "visitor") {
+    const result = this.storage.transactionSync(() => {
+      const reservation = firstRow(this.sql.exec(
+        "SELECT actor_key, ip_key, profile, usage_day, status, expires_at FROM reservations WHERE reservation_id = ?",
+        reservationId
+      ));
+      if (!reservation) return { released: false, charged: false };
+      if (reservation.status !== "active") {
+        return { released: false, charged: reservation.status !== "released" };
+      }
+      if (Number(reservation.expires_at) <= nowMs) {
+        this.sql.exec(
+          "UPDATE reservations SET status = 'expired', outcome = 'reservation_timeout', settled_at = ? WHERE reservation_id = ? AND status = 'active'",
+          nowMs,
+          reservationId
+        );
+        return { released: false, charged: true, expired: true };
+      }
+
       this.sql.exec(
-        "UPDATE daily_usage SET count = MAX(0, count - 1) WHERE scope = 'visitor_ip' AND subject_key = ? AND usage_day = ?",
-        reservation.ip_key,
+        "UPDATE daily_usage SET count = MAX(0, count - 1) WHERE scope = 'global' AND subject_key = 'all' AND usage_day = ?",
         reservation.usage_day
       );
-    }
-    this.sql.exec(
-      "UPDATE reservations SET status = 'released', outcome = 'pre_inference_release', settled_at = ? WHERE reservation_id = ? AND status = 'active'",
-      nowMs,
-      reservationId
-    );
-    return jsonResponse({ ok: true, released: true, charged: false });
+      this.sql.exec(
+        "UPDATE daily_usage SET count = MAX(0, count - 1) WHERE scope = 'actor' AND subject_key = ? AND usage_day = ?",
+        reservation.actor_key,
+        reservation.usage_day
+      );
+      if (reservation.profile === "visitor") {
+        this.sql.exec(
+          "UPDATE daily_usage SET count = MAX(0, count - 1) WHERE scope = 'visitor_ip' AND subject_key = ? AND usage_day = ?",
+          reservation.ip_key,
+          reservation.usage_day
+        );
+      }
+      this.sql.exec(
+        "UPDATE reservations SET status = 'released', outcome = 'pre_inference_release', settled_at = ? WHERE reservation_id = ? AND status = 'active'",
+        nowMs,
+        reservationId
+      );
+      return { released: true, charged: false };
+    });
+    return jsonResponse({ ok: true, ...result });
   }
 
   async fetch(request) {
@@ -368,6 +410,7 @@ export class MapiaQuota extends DurableObject {
       return jsonResponse({ ok: false, error: "invalid_json" }, 400);
     }
 
+    if (payload.operation === "inspect") return this.inspect(payload);
     if (payload.operation === "reserve") return this.reserve(payload);
     if (payload.operation === "settle") return this.settle(payload);
     if (payload.operation === "release") return this.release(payload);
@@ -376,12 +419,7 @@ export class MapiaQuota extends DurableObject {
 }
 
 export default {
-  async fetch(request, env) {
-    const namespace = env?.MAPIA_QUOTA_COORDINATOR;
-    if (!namespace || typeof namespace.idFromName !== "function" || typeof namespace.get !== "function") {
-      return jsonResponse({ ok: false, error: "quota_binding_unavailable" }, 503);
-    }
-    const id = namespace.idFromName("mapia-global-v1");
-    return namespace.get(id).fetch(request);
+  async fetch() {
+    return jsonResponse({ ok: false, error: "access_denied" }, 403);
   }
 };

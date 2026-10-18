@@ -45,6 +45,7 @@ class QuotaMock {
     this.active = new Map();
     this.globalUsage = 0;
     this.profilesSeen = [];
+    this.inspectCalls = 0;
   }
 
   idFromName(name) {
@@ -59,8 +60,10 @@ class QuotaMock {
     if (this.unavailable) throw new Error("quota offline");
     const payload = JSON.parse(init.body);
 
-    if (payload.operation === "reserve") {
-      this.profilesSeen.push(payload.profile);
+    if (payload.operation === "inspect" || payload.operation === "reserve") {
+      const isInspection = payload.operation === "inspect";
+      if (isInspection) this.inspectCalls += 1;
+      else this.profilesSeen.push(payload.profile);
       const activeForActor = [...this.active.values()]
         .filter((item) => item.actorKey === payload.actorKey).length;
       if (activeForActor >= this.concurrencyLimit) {
@@ -86,6 +89,14 @@ class QuotaMock {
           allowed: false,
           reason: "profile_quota",
           retryAfterSeconds: 60
+        });
+      }
+
+      if (isInspection) {
+        return Response.json({
+          ok: true,
+          allowed: true,
+          inspected: true
         });
       }
 
@@ -359,6 +370,55 @@ async function testQuotaUnavailable(endpoint) {
   assert.strictEqual((await response.json()).code, "quota_unavailable");
 }
 
+async function testAuditDoesNotConsumeOrReject(endpoint) {
+  const quota = new QuotaMock({ visitorLimit: 1 });
+  const auditEnv = makeEnv(quota, undefined, { MAPIA_SECURITY_MODE: "audit" });
+  let cookie = "";
+  for (let index = 0; index < 3; index += 1) {
+    const response = await invoke(
+      endpoint,
+      auditEnv,
+      makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload(), { cookie })
+    );
+    assert.strictEqual(response.status, 200);
+    cookie ||= cookieFrom(response);
+  }
+  assert.strictEqual(quota.inspectCalls, 3);
+  assert.strictEqual(quota.globalUsage, 0);
+  assert.strictEqual(quota.actorUsage.size, 0);
+  assert.strictEqual(quota.active.size, 0);
+
+  const enforceEnv = { ...auditEnv, MAPIA_SECURITY_MODE: "enforce" };
+  const allowed = await invoke(
+    endpoint,
+    enforceEnv,
+    makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload(), { cookie })
+  );
+  assert.strictEqual(allowed.status, 200);
+  const blocked = await invoke(
+    endpoint,
+    enforceEnv,
+    makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload(), { cookie })
+  );
+  assert.strictEqual(blocked.status, 429);
+
+  const auditLogs = [];
+  const originalLog = console.log;
+  console.log = (...args) => auditLogs.push(args.join(" "));
+  try {
+    const observedOnly = await invoke(
+      endpoint,
+      auditEnv,
+      makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload(), { cookie })
+    );
+    assert.strictEqual(observedOnly.status, 200);
+  } finally {
+    console.log = originalLog;
+  }
+  assert.strictEqual(quota.globalUsage, 1);
+  assert.ok(auditLogs.some((line) => line.includes("request_would_be_blocked")));
+}
+
 async function testGlobalLimit(endpoint) {
   const quota = new QuotaMock({ globalLimit: 1 });
   const env = makeEnv(quota);
@@ -451,6 +511,29 @@ async function testCompatibilityAndInputLimits(endpoint) {
   const oversizedResponse = await invoke(endpoint, offEnv, oversized);
   assert.strictEqual(oversizedResponse.status, 413);
 
+  let streamCancelled = false;
+  let pulls = 0;
+  const oversizedStream = new ReadableStream({
+    pull(controller) {
+      pulls += 1;
+      controller.enqueue(new Uint8Array(20 * 1024));
+    },
+    cancel() {
+      streamCancelled = true;
+    }
+  });
+  const streamedOversized = new Request("https://trilhadedados.com.br/api/sql-tutor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: oversizedStream,
+    duplex: "half"
+  });
+  const streamedOversizedResponse = await invoke(endpoint, offEnv, streamedOversized);
+  assert.strictEqual(streamedOversizedResponse.status, 413);
+  assert.strictEqual((await streamedOversizedResponse.json()).code, "payload_too_large");
+  assert.strictEqual(streamCancelled, true);
+  assert.ok(pulls <= 3, "o leitor limitado não deve consumir o restante do stream");
+
   const crossOrigin = await invoke(
     endpoint,
     offEnv,
@@ -480,6 +563,7 @@ async function run() {
   await testConcurrentQuota(endpoint);
   await testDomainsShareQuota(endpoint);
   await testQuotaUnavailable(endpoint);
+  await testAuditDoesNotConsumeOrReject(endpoint);
   await testGlobalLimit(endpoint);
   await testInferenceFailureAndTimeoutAreCharged(endpoint);
   await testCompatibilityAndInputLimits(endpoint);
@@ -492,7 +576,23 @@ async function run() {
   assert.match(workerSource, /status = 'active'/);
   assert.match(workerSource, /visitor_ip_quota/);
   assert.match(workerSource, /quota_configuration_invalid/);
+  assert.match(workerSource, /transactionSync/);
+  assert.match(workerSource, /operation === "inspect"/);
+  assert.match(workerSource, /access_denied/);
+  assert.doesNotMatch(workerSource, /MAPIA_QUOTA_COORDINATOR/);
   assert.doesNotMatch(workerSource, /MAPIA_VISITOR_DAILY_LIMIT[^\n]+\|\|\s*5/);
+
+  const practiceHtml = fs.readFileSync(
+    path.join(__dirname, "..", "praticas-sql.html"),
+    "utf8"
+  );
+  const authScriptIndex = practiceHtml.indexOf('src="src/auth-service.js"');
+  const tutorScriptIndex = practiceHtml.indexOf(
+    'src="src/sql-ai-tutor.js?v=20261017-mapia-security"'
+  );
+  assert.ok(authScriptIndex >= 0, "auth-service.js deve estar presente");
+  assert.ok(tutorScriptIndex > authScriptIndex, "auth-service.js deve carregar antes da MapIA");
+  assert.doesNotMatch(practiceHtml, /20260614-tutor-final/);
 
   console.log("MapIA security and quota tests passed");
 }

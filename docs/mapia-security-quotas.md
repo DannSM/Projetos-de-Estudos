@@ -41,27 +41,34 @@ novamente pelo Supabase Auth no servidor.
 
 A Pages Function não pode declarar a classe Durable Object dentro do próprio
 projeto Pages. Por isso, `workers/mapia-quota/src/index.mjs` é um Worker separado
-e a Pages Function depende do binding `MAPIA_QUOTA`. Criar o Worker, namespace,
-migration/tag e binding exige aprovação e configuração externa.
+e a Pages Function depende exclusivamente do binding direto de Durable Object
+`MAPIA_QUOTA`. O roteador HTTP do Worker nega toda chamada com HTTP 403. Criar
+o Worker, namespace, migration/tag e binding exige aprovação e configuração
+externa.
 
 ## Fluxo de segurança
 
 1. Rejeitar método, origem web cruzada, tipo de conteúdo, corpo maior que 32 KiB,
-   JSON inválido, campos desconhecidos e estruturas fora dos limites.
+   JSON inválido, campos desconhecidos e estruturas fora dos limites. Sem
+   `Content-Length` confiável, o corpo é lido em stream e cancelado assim que
+   ultrapassa 32 KiB, antes de ser carregado integralmente.
 2. Em `audit`/`enforce`, validar o bearer token no Supabase Auth; token informado
    e inválido nunca é rebaixado silenciosamente para visitante.
 3. Resolver o perfil no backend. O navegador não envia perfil.
 4. Gerar chaves HMAC para usuário, dispositivo visitante e IP. IP, e-mail,
    pergunta, query, token e UUID do Supabase não são gravados nos contadores ou
    logs operacionais.
-5. Reservar atomicamente, antes da inferência:
+5. Em `audit`, executar somente `inspect`: a mesma decisão é calculada a
+   partir dos contadores persistidos, sem limpeza, reserva ou qualquer escrita.
+   Um possível bloqueio gera `request_would_be_blocked`, mas a requisição segue.
+6. Em `enforce`, reservar atomicamente, antes da inferência:
    - janela de rajada por ator e por IP;
    - concorrência por ator e global;
    - quota diária do perfil por ator;
    - quota diária adicional por IP para visitantes;
    - teto diário global.
-6. Executar o mesmo modelo e os mesmos prompts pedagógicos.
-7. Liquidar a reserva como `success`, `error` ou `timeout`.
+7. Executar o mesmo modelo e os mesmos prompts pedagógicos.
+8. Liquidar a reserva como `success`, `error` ou `timeout`.
 
 Uma reserva incrementa o consumo antes da chamada ao Workers AI. Depois que a
 inferência começa, sucesso, erro e timeout permanecem cobrados, pois o provedor
@@ -69,6 +76,12 @@ pode ter consumido recursos mesmo sem resposta. Apenas uma falha local
 comprovadamente anterior à inferência usa `release`. Se a Pages Function morrer
 antes da liquidação, a reserva expira para liberar concorrência, mas o consumo
 permanece contabilizado. Isso evita uso ilimitado induzindo falhas ou timeouts.
+
+`reserve`, `settle` e `release` usam `transactionSync`. Assim, uma falha
+SQL intermediária desfaz todas as escritas da operação. `release` reverte os
+contadores diários e libera a reserva; as janelas de rajada permanecem como
+registro da tentativa recebida. Reservas expiradas deixam de ocupar concorrência,
+mas preservam o consumo diário.
 
 ## Configuração externa necessária
 
@@ -81,7 +94,9 @@ estão no código nem são defaults.
 - `MAPIA_ID_HASH_SECRET`: segredo forte para HMAC e assinatura do cookie.
 - `SUPABASE_URL`: URL do projeto.
 - `SUPABASE_PUBLISHABLE_KEY`: chave publicável; não usar `service_role`.
-- `MAPIA_QUOTA`: binding para o Durable Object ou Worker interno de quotas.
+- `MAPIA_QUOTA`: binding direto para a classe Durable Object `MapiaQuota`.
+  No Wrangler do Pages, usar `script_name: "mapia-quota"`; Service Binding e
+  chamada HTTP não são suportados.
 - `MAPIA_ENTITLEMENTS`: binding futuro e opcional; não configurar antes de
   existir uma fonte real de assinatura/permissão.
 - `MAPIA_ANALYTICS`: binding opcional do Analytics Engine.
@@ -89,9 +104,10 @@ estão no código nem são defaults.
 
 ### Worker de quotas
 
-- `MAPIA_QUOTA_COORDINATOR`: binding do próprio Worker para a classe
-  `MapiaQuota` quando a Pages Function usar um Service binding. Em ligação
-  direta da Pages Function ao Durable Object, esse roteador HTTP não é usado.
+- `workers_dev: false`, `preview_urls: false` e ausência de rotas públicas,
+  conforme `workers/mapia-quota/wrangler.jsonc`.
+- Handler HTTP com negação incondicional `403 access_denied`, inclusive como
+  defesa contra exposição acidental por URL de deployment, preview ou domínio.
 - `MAPIA_VISITOR_DAILY_LIMIT`
 - `MAPIA_VISITOR_IP_DAILY_LIMIT`
 - `MAPIA_FREE_DAILY_LIMIT`
@@ -107,13 +123,19 @@ estão no código nem são defaults.
 O Worker recusa reservas com HTTP 503 se qualquer limite necessário estiver
 ausente ou inválido. Não há fallback em memória.
 
+Os números de `wrangler.test.jsonc` existem apenas para testes locais
+determinísticos e não são proposta de cotas comerciais.
+
 ## Respostas e observabilidade
 
 - Bloqueios de quota, rajada e concorrência retornam HTTP 429, código estável,
   mensagem pedagógica neutra e `Retry-After`.
 - Indisponibilidade da quota em `enforce` retorna HTTP 503 e falha fechada.
+- `audit` nunca retorna 429 por quota nem cria consumo; indisponibilidade é
+  observada e a inferência segue.
 - São emitidos eventos estruturados para requisição recebida, inferência,
-  bloqueio, erro, timeout e falha de liquidação.
+  bloqueio efetivo, possível bloqueio em audit, erro, timeout e falha de
+  liquidação.
 - Os eventos contêm perfil, resultado, motivo, modelo, latência e tokens de
   entrada/saída quando o Workers AI os fornece.
 - O `requestId` aleatório permite correlação sem guardar pergunta, query, IP,
@@ -128,6 +150,16 @@ ausente ou inválido. Não há fallback em memória.
 5. Homologar concorrência, expiração, falhas e perfis com contas de teste.
 6. Ativar `enforce` somente em Preview.
 7. Solicitar aprovação separada antes de configurar Production.
+
+## Validação local do Durable Object
+
+`npm run test:mapia-quota-runtime` executa a implementação real no runtime
+Workers/Miniflare com SQLite. A suíte cobre disputa simultânea pela última
+quota, teto global entre usuários, limites por IP e usuário, liquidação
+duplicada, expiração, liberação, rollback após falha SQL intermediária,
+persistência após eviction, transição de `audit` para `enforce` e rejeição
+das operações na superfície HTTP externa. Não há inferência real nem acesso à
+Cloudflare.
 
 ## Riscos restantes
 

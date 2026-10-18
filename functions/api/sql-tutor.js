@@ -238,7 +238,50 @@ async function readJsonBody(request) {
 
   let bodyText;
   try {
-    bodyText = await request.text();
+    if (!request.body) {
+      bodyText = "";
+    } else {
+      const reader = request.body.getReader();
+      const chunks = [];
+      let totalBytes = 0;
+      let tooLarge = false;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+          totalBytes += chunk.byteLength;
+          if (totalBytes > MAX_BODY_BYTES) {
+            tooLarge = true;
+            await reader.cancel("payload_too_large").catch(() => {});
+            break;
+          }
+          chunks.push(chunk);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      if (tooLarge) {
+        return {
+          ok: false,
+          response: jsonResponse({
+            ok: false,
+            code: "payload_too_large",
+            message: "A solicitação excede o tamanho máximo permitido."
+          }, 413)
+        };
+      }
+
+      const bytes = new Uint8Array(totalBytes);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      bodyText = new TextDecoder().decode(bytes);
+    }
   } catch (error) {
     return {
       ok: false,
@@ -249,18 +292,6 @@ async function readJsonBody(request) {
       }, 400)
     };
   }
-
-  if (new TextEncoder().encode(bodyText).byteLength > MAX_BODY_BYTES) {
-    return {
-      ok: false,
-      response: jsonResponse({
-        ok: false,
-        code: "payload_too_large",
-        message: "A solicitação excede o tamanho máximo permitido."
-      }, 413)
-    };
-  }
-
   try {
     return { ok: true, payload: JSON.parse(bodyText) };
   } catch (error) {
@@ -617,7 +648,6 @@ function getQuotaStub(env) {
   if (typeof binding.idFromName === "function" && typeof binding.get === "function") {
     return binding.get(binding.idFromName("mapia-global-v1"));
   }
-  if (typeof binding.fetch === "function") return binding;
   return null;
 }
 
@@ -843,7 +873,7 @@ export async function handleSqlTutorRequest(context, dependencies = {}) {
     if (quotaSubject) {
       try {
         const quota = await callQuotaService(context.env, {
-          operation: "reserve",
+          operation: securityMode === "audit" ? "inspect" : "reserve",
           requestId,
           actorKey: quotaSubject.actorKey,
           ipKey: quotaSubject.ipKey,
@@ -852,7 +882,17 @@ export async function handleSqlTutorRequest(context, dependencies = {}) {
           nowMs: Date.now()
         });
 
-        if (quota.allowed === true && quota.reservationId) {
+        if (securityMode === "audit") {
+          if (quota.allowed !== true) {
+            emitOperationalMetric(context, "request_would_be_blocked", {
+              requestId,
+              profile,
+              outcome: securityMode,
+              reason: quota.reason || "quota_exceeded",
+              model
+            });
+          }
+        } else if (quota.allowed === true && quota.reservationId) {
           reservationId = quota.reservationId;
         } else if (quota.allowed !== true) {
           emitOperationalMetric(context, "request_blocked", {

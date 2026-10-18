@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "mapia-quota-local-test",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": false,
+  "preview_urls": false,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MAPIA_QUOTA",
+        "class_name": "MapiaQuota"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["MapiaQuota"]
+    }
+  ],
+  "vars": {
+    "MAPIA_VISITOR_DAILY_LIMIT": "3",
+    "MAPIA_VISITOR_IP_DAILY_LIMIT": "2",
+    "MAPIA_FREE_DAILY_LIMIT": "3",
+    "MAPIA_PREMIUM_DAILY_LIMIT": "5",
+    "MAPIA_GLOBAL_DAILY_LIMIT": "4",
+    "MAPIA_ACTOR_RATE_LIMIT": "20",
+    "MAPIA_IP_RATE_LIMIT": "20",
+    "MAPIA_RATE_WINDOW_SECONDS": "60",
+    "MAPIA_ACTOR_CONCURRENCY_LIMIT": "2",
+    "MAPIA_GLOBAL_CONCURRENCY_LIMIT": "3",
+    "MAPIA_RESERVATION_TTL_SECONDS": "60"
+  }
+}
