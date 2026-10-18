@@ -2187,6 +2187,13 @@
   opacity: 1;
 }
 
+.auth-status-toast {
+  color: #7f1d1d;
+  background: #fef2f2;
+  border-color: rgba(220, 38, 38, 0.34);
+  box-shadow: 0 16px 34px rgba(153, 27, 27, 0.18);
+}
+
 .auth-modal-overlay {
   position: fixed;
   inset: 0;

@@ -43,7 +43,7 @@
     return globalScope.authService?.getClient?.() || null;
   }
 
-  async function getAuthenticatedUser() {
+  async function getAuthenticatedUser(expectedUserId) {
     const client = getClient();
     if (!client) {
       return null;
@@ -51,7 +51,11 @@
 
     try {
       const { data, error } = await client.auth.getSession();
-      return error ? null : data?.session?.user || null;
+      const user = error ? null : data?.session?.user || null;
+      if (expectedUserId && user?.id !== expectedUserId) {
+        return null;
+      }
+      return user;
     } catch (error) {
       return null;
     }
@@ -175,9 +179,9 @@
     }
   }
 
-  async function loadUserState(practice) {
+  async function loadUserState(practice, expectedUserId) {
     const client = getClient();
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(expectedUserId);
     if (!client || !user || !practice?.exerciseId) {
       return { ok: true, authenticated: false };
     }
@@ -302,9 +306,9 @@
     }
   }
 
-  async function saveQueryRun(practice, query, execution, errorMessage) {
+  async function saveQueryRun(practice, query, execution, errorMessage, expectedUserId) {
     const client = getClient();
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(expectedUserId);
     if (!client || !user || !practice?.exerciseId) {
       return { ok: false, skipped: true, authenticated: false };
     }
@@ -328,9 +332,9 @@
     }
   }
 
-  async function saveAttempt(practice, queryRunId, result, attemptNumber) {
+  async function saveAttempt(practice, queryRunId, result, attemptNumber, expectedUserId) {
     const client = getClient();
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(expectedUserId);
     if (!client || !user || !practice?.exerciseId) {
       return { ok: false, skipped: true, authenticated: false };
     }
@@ -366,9 +370,9 @@
     )) || steps.find((step) => step.step_key === fallbackStepKey);
   }
 
-  async function savePracticeProgress(practice) {
+  async function savePracticeProgress(practice, expectedUserId) {
     const client = getClient();
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(expectedUserId);
     const mapping = PRACTICE_PROGRESS_FALLBACK_MAPPINGS[practice?.slug];
     const pathSlug = practice?.trackSlug || mapping?.pathSlug;
 
@@ -503,9 +507,9 @@
     }
   }
 
-  async function saveNote(practice, noteText) {
+  async function saveNote(practice, noteText, expectedUserId) {
     const client = getClient();
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(expectedUserId);
     if (!client || !user || !practice?.exerciseId) {
       return { ok: false, skipped: true, authenticated: false };
     }
@@ -527,9 +531,9 @@
     }
   }
 
-  async function saveFeedback(practice, feedback) {
+  async function saveFeedback(practice, feedback, expectedUserId) {
     const client = getClient();
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(expectedUserId);
     if (!client || !user || !practice?.exerciseId) {
       return { ok: false, skipped: true, authenticated: false };
     }

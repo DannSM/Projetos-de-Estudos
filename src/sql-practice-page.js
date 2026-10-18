@@ -8,7 +8,9 @@
   const sqlPocEngine = globalScope.SqlPocEngine;
   const sqlPracticeService = globalScope.sqlPracticeService;
   const sqlAiTutor = globalScope.SqlAiTutor;
-  if (!sqlValidation || !sqlPocEngine || !sqlAiTutor) {
+  const mapiaSessionGuardApi = globalScope.MapiaSessionGuard;
+  const sqlPracticePrivacy = globalScope.SqlPracticePrivacy;
+  if (!sqlValidation || !sqlPocEngine || !sqlAiTutor || !mapiaSessionGuardApi || !sqlPracticePrivacy) {
     mount.innerHTML = `
       <div class="mission-loading">
         <strong>Não foi possível carregar a Central SQL.</strong>
@@ -165,6 +167,17 @@
 
   const activePracticeIndex = Math.max(1, getInitialPracticeIndex());
 
+  function createEmptyAiTutorState() {
+    return {
+      draft: "",
+      status: "idle",
+      messages: [],
+      error: "",
+      metadata: null,
+      shouldScroll: false
+    };
+  }
+
   const state = {
     activeIndex: practices[activePracticeIndex]?.status === "active" ? activePracticeIndex : 1,
     queryAnswer: "",
@@ -179,11 +192,7 @@
     },
     practiceNote: "",
     noteStatus: "",
-    practiceFeedback: {
-      difficulty: "",
-      confidence: "",
-      comment: ""
-    },
+    practiceFeedback: sqlPracticePrivacy.createEmptyFeedback(),
     feedbackStatus: "",
     activeUtility: "",
     dataSource: "loading",
@@ -194,15 +203,36 @@
     lastQueryRunId: null,
     persistenceStatus: "",
     loadingPracticeSlug: "",
-    aiTutor: {
-      draft: "",
-      status: "idle",
-      messages: [],
-      error: "",
-      metadata: null,
-      shouldScroll: false
-    }
+    aiTutor: createEmptyAiTutorState()
   };
+  let pageInitialized = false;
+  let authEventVerificationGeneration = 0;
+  const mapiaSessionGuard = mapiaSessionGuardApi.createMapiaSessionGuard();
+  mapiaSessionGuard.updateIdentity({ session: null, user: null });
+
+  function clearAiTutorConversation() {
+    state.aiTutor = createEmptyAiTutorState();
+  }
+
+  function applyCentralSqlAuthState(authState = {}, { forceInvalidate = false, render = true } = {}) {
+    const transition = mapiaSessionGuard.updateIdentity(authState, { forceInvalidate });
+    if (!transition.invalidated) {
+      return transition;
+    }
+
+    clearAiTutorConversation();
+    sqlPracticePrivacy.resetCentralSqlPersonalizedState(state);
+    practices = sqlPracticePrivacy.clearPracticeProgress(practices);
+    state.isAuthenticated = !transition.isAnonymous;
+    if (!transition.isAnonymous) {
+      state.studentName = resolveStudentName(authState.user || authState.session?.user);
+    }
+    loadLocalPracticeDrafts(getActivePractice());
+    if (render) {
+      renderPage();
+    }
+    return transition;
+  }
 
   function getInitialPracticeIndex() {
     const params = new URLSearchParams(globalScope.location.search);
@@ -211,45 +241,85 @@
     return index >= 0 ? index : 1;
   }
 
-  function getStorageKey(prefix, slug) {
-    return `${prefix}:${slug}`;
-  }
-
-  function readLocalJson(key, fallback) {
-    try {
-      const rawValue = globalScope.localStorage.getItem(key);
-      return rawValue ? JSON.parse(rawValue) : fallback;
-    } catch (error) {
-      return fallback;
-    }
-  }
-
-  function writeLocalJson(key, value) {
-    try {
-      globalScope.localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function removeLocalItem(key) {
-    try {
-      globalScope.localStorage.removeItem(key);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
   function loadLocalPracticeDrafts(practice) {
-    state.practiceNote = readLocalJson(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug), "");
-    state.practiceFeedback = readLocalJson(
-      getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug),
-      { difficulty: "", confidence: "", comment: "" }
-    );
-    state.noteStatus = "";
-    state.feedbackStatus = "";
+    const drafts = sqlPracticePrivacy.loadScopedDrafts({
+      storage: globalScope.localStorage,
+      identityKey: mapiaSessionGuard.getIdentityKey(),
+      slug: practice.slug,
+      notePrefix: PRACTICE_NOTE_STORAGE_PREFIX,
+      feedbackPrefix: PRACTICE_FEEDBACK_STORAGE_PREFIX
+    });
+    state.practiceNote = drafts.note;
+    state.practiceFeedback = drafts.feedback;
+    state.noteStatus = drafts.legacy.note
+      ? "Uma anotação legada foi preservada neste navegador, sem associação automática a esta identidade."
+      : "";
+    state.feedbackStatus = drafts.legacy.feedback
+      ? "Um feedback legado foi preservado neste navegador, sem associação automática a esta identidade."
+      : "";
+  }
+
+  async function initializeAuthIdentity() {
+    const operation = mapiaSessionGuard.createOperationToken();
+    try {
+      const sessionResult = await globalScope.authService?.getCurrentSession?.();
+      if (!operation.isCurrent()) {
+        return;
+      }
+      const session = sessionResult?.session || null;
+      applyCentralSqlAuthState({
+        session,
+        user: session?.user || null
+      }, { render: false });
+    } catch (error) {
+      // A ausência de sessão mantém o namespace anônimo já inicializado.
+    }
+  }
+
+  async function loadCurrentPersonalizedState(practice, { render = true } = {}) {
+    const expectedUserId = mapiaSessionGuard.getUserId();
+    if (!sqlPracticeService || !expectedUserId || !practice?.exerciseId) {
+      return { ok: true, skipped: true };
+    }
+
+    const operation = mapiaSessionGuard.createOperationToken();
+    const userState = await sqlPracticeService.loadUserState(practice, expectedUserId);
+    if (!operation.isCurrent()) {
+      return { ok: false, stale: true };
+    }
+
+    if (!userState.authenticated || userState.user?.id !== expectedUserId) {
+      return { ok: false, stale: true };
+    }
+
+    state.isAuthenticated = true;
+    state.studentName = resolveStudentName(userState.user);
+    if (!userState.ok) {
+      state.persistenceStatus = "Não foi possível carregar seus dados salvos. O modo local continua disponível.";
+      if (render) {
+        renderPage();
+      }
+      return userState;
+    }
+
+    if (userState.hasNote) {
+      state.practiceNote = userState.note || "";
+    }
+    if (userState.hasFeedback) {
+      state.practiceFeedback = userState.feedback;
+    }
+    state.attempts[practice.slug] = {
+      attemptCount: userState.attemptCount || 0
+    };
+    practices = practices.map((item) => ({
+      ...item,
+      userProgressStatus: userState.practiceProgress?.[item.slug]?.status || ""
+    }));
+    state.persistenceStatus = "";
+    if (render) {
+      renderPage();
+    }
+    return userState;
   }
 
   function escapeHtml(value) {
@@ -934,7 +1004,14 @@
     state.aiTutor.shouldScroll = true;
     renderPage();
 
-    const result = await sqlAiTutor.requestTutor(payload);
+    const request = mapiaSessionGuard.beginRequest();
+    const result = await sqlAiTutor.requestTutor(payload, undefined, {
+      signal: request.signal
+    });
+    if (!request.isCurrent()) {
+      return;
+    }
+
     state.aiTutor.status = "idle";
     if (result.ok) {
       state.aiTutor.messages.push({ role: "assistant", content: result.answer });
@@ -948,6 +1025,7 @@
     }
     state.aiTutor.shouldScroll = true;
     renderPage();
+    request.finish();
   }
 
   function renderTechnicalResult() {
@@ -1451,6 +1529,8 @@
     }
 
     const query = state.queryAnswer.trim();
+    const operation = mapiaSessionGuard.createOperationToken();
+    const expectedUserId = mapiaSessionGuard.getUserId();
     workbench.status = "running";
     workbench.execution = null;
     workbench.executionQuery = "";
@@ -1467,15 +1547,22 @@
       workbench.status = "ready";
     }
 
+    if (!operation.isCurrent()) {
+      return;
+    }
     renderPage({ preserveAiTutorScroll: true });
 
-    if (sqlPracticeService) {
+    if (sqlPracticeService && expectedUserId) {
       const saveResult = await sqlPracticeService.saveQueryRun(
         getActivePractice(),
         query,
         workbench.execution,
-        workbench.error
+        workbench.error,
+        expectedUserId
       );
+      if (!operation.isCurrent()) {
+        return;
+      }
       state.lastQueryRunId = saveResult.ok ? saveResult.id : null;
       if (saveResult.authenticated && !saveResult.ok) {
         state.persistenceStatus = "A consulta rodou localmente, mas não foi possível salvar esta execução.";
@@ -1533,20 +1620,29 @@
 
     renderPage({ preserveAiTutorScroll: true });
 
-    if (sqlPracticeService) {
+    const operation = mapiaSessionGuard.createOperationToken();
+    const expectedUserId = mapiaSessionGuard.getUserId();
+    if (sqlPracticeService && expectedUserId) {
       const saveResult = await sqlPracticeService.saveAttempt(
         practice,
         state.lastQueryRunId,
         result,
-        previousAttemptCount + 1
+        previousAttemptCount + 1,
+        expectedUserId
       );
+      if (!operation.isCurrent()) {
+        return;
+      }
       if (saveResult.authenticated && !saveResult.ok) {
         state.persistenceStatus = "A validação local foi concluída, mas a tentativa não pôde ser salva.";
         renderPage({ preserveAiTutorScroll: true });
       }
 
       if (isCorrect && saveResult.ok) {
-        const progressResult = await sqlPracticeService.savePracticeProgress(practice);
+        const progressResult = await sqlPracticeService.savePracticeProgress(practice, expectedUserId);
+        if (!operation.isCurrent()) {
+          return;
+        }
         if (progressResult.ok) {
           practice.userProgressStatus = "completed";
           const nextPracticeSlug = progressResult.nextStep?.metadata?.practice_slug
@@ -1615,25 +1711,26 @@
     state.lastQueryRunId = null;
     state.activeUtility = "";
     state.activeSupportTab = "concept";
-    state.aiTutor = {
-      draft: "",
-      status: "idle",
-      messages: [],
-      error: "",
-      metadata: null,
-      shouldScroll: false
-    };
+    mapiaSessionGuard.invalidate();
+    clearAiTutorConversation();
     loadLocalPracticeDrafts(practice);
   }
 
   async function persistNote(practice) {
-    const localSaved = writeLocalJson(
-      getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug),
+    const operation = mapiaSessionGuard.createOperationToken();
+    const identityKey = mapiaSessionGuard.getIdentityKey();
+    const expectedUserId = mapiaSessionGuard.getUserId();
+    const localSaved = sqlPracticePrivacy.writeJson(
+      globalScope.localStorage,
+      sqlPracticePrivacy.getScopedStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug, identityKey),
       state.practiceNote
     );
-    const remoteResult = sqlPracticeService
-      ? await sqlPracticeService.saveNote(practice, state.practiceNote)
+    const remoteResult = sqlPracticeService && expectedUserId
+      ? await sqlPracticeService.saveNote(practice, state.practiceNote, expectedUserId)
       : { ok: false, skipped: true, authenticated: false };
+    if (!operation.isCurrent()) {
+      return;
+    }
 
     if (remoteResult.ok) {
       state.noteStatus = "Anotação salva na sua conta.";
@@ -1650,13 +1747,20 @@
   }
 
   async function persistFeedback(practice) {
-    const localSaved = writeLocalJson(
-      getStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug),
+    const operation = mapiaSessionGuard.createOperationToken();
+    const identityKey = mapiaSessionGuard.getIdentityKey();
+    const expectedUserId = mapiaSessionGuard.getUserId();
+    const localSaved = sqlPracticePrivacy.writeJson(
+      globalScope.localStorage,
+      sqlPracticePrivacy.getScopedStorageKey(PRACTICE_FEEDBACK_STORAGE_PREFIX, practice.slug, identityKey),
       state.practiceFeedback
     );
-    const remoteResult = sqlPracticeService
-      ? await sqlPracticeService.saveFeedback(practice, state.practiceFeedback)
+    const remoteResult = sqlPracticeService && expectedUserId
+      ? await sqlPracticeService.saveFeedback(practice, state.practiceFeedback, expectedUserId)
       : { ok: false, skipped: true, authenticated: false };
+    if (!operation.isCurrent()) {
+      return;
+    }
 
     if (remoteResult.ok) {
       state.feedbackStatus = "Feedback salvo na sua conta.";
@@ -1678,6 +1782,7 @@
       return;
     }
 
+    const operation = mapiaSessionGuard.createOperationToken();
     let selectedPractice = practice;
     if (sqlPracticeService) {
       state.loadingPracticeSlug = practice.slug;
@@ -1685,6 +1790,9 @@
       renderPage();
 
       const loadResult = await sqlPracticeService.loadPractice(practice.slug);
+      if (!operation.isCurrent()) {
+        return;
+      }
       state.loadingPracticeSlug = "";
       if (!loadResult.ok) {
         state.persistenceStatus = "Não foi possível carregar esta etapa agora. Tente novamente.";
@@ -1708,16 +1816,6 @@
       }));
       state.dataSource = "supabase";
       state.sourceStatus = "Conteúdo completo carregado; a consulta é executada com segurança no navegador.";
-
-      const userState = await sqlPracticeService.loadUserState(selectedPractice);
-      state.isAuthenticated = Boolean(userState.authenticated);
-      if (userState.ok && userState.authenticated) {
-        state.attempts[selectedPractice.slug] = { attemptCount: userState.attemptCount || 0 };
-        practices = practices.map((item) => ({
-          ...item,
-          userProgressStatus: userState.practiceProgress?.[item.slug]?.status || item.userProgressStatus || ""
-        }));
-      }
     }
 
     state.activeIndex = Math.max(0, practices.findIndex((item) => item.slug === selectedPractice.slug));
@@ -1728,6 +1826,7 @@
     nextUrl.searchParams.set("pratica", selectedPractice.slug);
     globalScope.history.replaceState({}, "", nextUrl);
     renderPage();
+    await loadCurrentPersonalizedState(selectedPractice);
   }
 
   mount.addEventListener("click", (event) => {
@@ -1818,7 +1917,14 @@
     if (clearNoteButton && !clearNoteButton.disabled) {
       const practice = getActivePractice();
       state.practiceNote = "";
-      removeLocalItem(getStorageKey(PRACTICE_NOTE_STORAGE_PREFIX, practice.slug));
+      sqlPracticePrivacy.removeItem(
+        globalScope.localStorage,
+        sqlPracticePrivacy.getScopedStorageKey(
+          PRACTICE_NOTE_STORAGE_PREFIX,
+          practice.slug,
+          mapiaSessionGuard.getIdentityKey()
+        )
+      );
       void persistNote(practice);
       return;
     }
@@ -1930,7 +2036,38 @@
     }
   });
 
+  function applyVerifiedCentralSqlAuthState(authState) {
+    const transition = applyCentralSqlAuthState(authState);
+    if (transition.invalidated && pageInitialized && !transition.isAnonymous) {
+      void loadCurrentPersonalizedState(getActivePractice());
+    }
+  }
+
+  globalScope.addEventListener("data-skill-map-auth-changed", (event) => {
+    const authState = event.detail || {};
+    if (authState.verifiedByAuthService) {
+      authEventVerificationGeneration += 1;
+      applyVerifiedCentralSqlAuthState(authState);
+      return;
+    }
+
+    const verificationGeneration = ++authEventVerificationGeneration;
+    void globalScope.authService?.getCurrentSession?.().then((sessionResult) => {
+      if (verificationGeneration !== authEventVerificationGeneration || !sessionResult?.ok) {
+        return;
+      }
+      const session = sessionResult.session || null;
+      applyVerifiedCentralSqlAuthState({
+        session,
+        user: session?.user || null,
+        verifiedByAuthService: true,
+        source: "custom-event-verification"
+      });
+    });
+  });
+
   async function initializePage() {
+    await initializeAuthIdentity();
     const params = new URLSearchParams(globalScope.location.search);
     const slug = params.get("pratica") || params.get("missao") || "sql-essencial-filtros-where";
 
@@ -1962,28 +2099,6 @@
         state.sourceStatus = "Conteúdo público e dataset carregados do Supabase; validação executada localmente.";
 
         loadLocalPracticeDrafts(mergedPractice);
-        const userState = await sqlPracticeService.loadUserState(mergedPractice);
-        state.isAuthenticated = Boolean(userState.authenticated);
-        if (userState.ok && userState.authenticated) {
-          state.studentName = resolveStudentName(userState.user);
-          if (userState.hasNote) {
-            state.practiceNote = userState.note || "";
-          }
-          if (userState.hasFeedback) {
-            state.practiceFeedback = userState.feedback;
-          }
-          state.attempts[mergedPractice.slug] = {
-            attemptCount: userState.attemptCount || 0
-          };
-          practices = practices.map((item) => ({
-            ...item,
-            userProgressStatus: userState.practiceProgress?.[item.slug]?.status || ""
-          }));
-        } else {
-          if (userState.authenticated) {
-            state.persistenceStatus = "Não foi possível carregar seus dados salvos. O modo local continua disponível.";
-          }
-        }
       } else {
         state.dataSource = "fallback";
         state.sourceStatus = loadResult.notFound
@@ -1998,6 +2113,8 @@
       loadLocalPracticeDrafts(getActivePractice());
     }
 
+    pageInitialized = true;
+    await loadCurrentPersonalizedState(getActivePractice(), { render: false });
     renderPage();
   }
 

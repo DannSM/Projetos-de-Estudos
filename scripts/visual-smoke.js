@@ -4,6 +4,14 @@ const path = require("node:path");
 const { chromium } = require("@playwright/test");
 
 const projectRoot = path.resolve(__dirname, "..");
+const staticRootArgument = process.argv.find((argument) => argument.startsWith("--static-root="));
+const staticRoot = staticRootArgument
+  ? path.resolve(projectRoot, staticRootArgument.slice("--static-root=".length))
+  : projectRoot;
+const staticRootRelative = path.relative(projectRoot, staticRoot);
+if (staticRootRelative.startsWith("..") || path.isAbsolute(staticRootRelative)) {
+  throw new Error("A raiz visual deve permanecer dentro do projeto.");
+}
 const outputDir = path.join(projectRoot, "artifacts", "visual");
 const host = "127.0.0.1";
 const port = Number(process.env.VISUAL_PORT || 4173);
@@ -150,8 +158,8 @@ function resolveRequestPath(requestUrl) {
   const pathname = decodeURIComponent(new URL(requestUrl, baseUrl).pathname);
   const routePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const relativePath = path.extname(routePath) ? routePath : `${routePath}.html`;
-  const filePath = path.resolve(projectRoot, relativePath);
-  const relativeToRoot = path.relative(projectRoot, filePath);
+  const filePath = path.resolve(staticRoot, relativePath);
+  const relativeToRoot = path.relative(staticRoot, filePath);
 
   if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
     return null;
@@ -537,6 +545,18 @@ async function validatePage(browser, pageConfig, viewport) {
           );
           await page.screenshot({ path: initialTutorScreenshotPath, fullPage: true });
 
+          if (pageConfig.finalEvidence) {
+            await page.evaluate(() => {
+              window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+                detail: {
+                  session: { user: { id: "visual-user-a" } },
+                  user: { id: "visual-user-a" },
+                  verifiedByAuthService: true
+                }
+              }));
+            });
+          }
+
           await page.locator("[data-ai-quick-action]").first().click();
           const loading = page.locator(".sql-support-chat__loading");
           await loading.waitFor({ state: "visible", timeout: timeoutMs });
@@ -712,6 +732,88 @@ async function validatePage(browser, pageConfig, viewport) {
           console.log(
             `OK ${pageConfig.name} / tutora-ia-conversa / ${viewport.name} -> ${conversationScreenshotPath}`
           );
+
+          if (pageConfig.finalEvidence) {
+            await page.locator("[data-query-answer]").fill("select dado_privado_da_conta_a");
+            await page.locator('[data-open-practice-utility="notes"]').click();
+            await page.locator("[data-practice-note]").fill("Anotação privada da conta A");
+            await page.locator('button[data-close-practice-utility]').click();
+            await page.locator('[data-open-practice-utility="feedback"]').click();
+            await page.locator('input[name="practiceDifficulty"][value="Dificil"]').check();
+            await page.locator('input[name="practiceConfidence"][value="Baixa"]').check();
+            await page.locator("[data-practice-feedback-comment]").fill("Feedback privado da conta A");
+            await page.locator('button[data-close-practice-utility]').click();
+
+            const messageCountBeforeRefresh = await page.locator(".sql-support-chat__message").count();
+            await page.evaluate(() => {
+              window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+                detail: {
+                  session: { user: { id: "visual-user-a" } },
+                  user: { id: "visual-user-a" },
+                  verifiedByAuthService: true
+                }
+              }));
+            });
+            const messageCountAfterRefresh = await page.locator(".sql-support-chat__message").count();
+            if (messageCountAfterRefresh !== messageCountBeforeRefresh) {
+              throw new Error("renovacao da mesma identidade apagou a conversa da MapIA");
+            }
+
+            await page.evaluate(() => {
+              window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+                detail: { session: null, user: null, verifiedByAuthService: true }
+              }));
+            });
+            await page.waitForFunction(() => (
+              document.querySelectorAll(".sql-support-chat__message").length === 0
+              && !document.querySelector(".sql-support-chat__loading")
+              && Boolean(document.querySelector(".sql-support-chat__welcome"))
+            ));
+
+            const clearedState = await page.evaluate(() => ({
+              draft: document.querySelector("[data-ai-tutor-input]")?.value || "",
+              errors: document.querySelectorAll(".sql-support-chat__error").length,
+              metadata: document.querySelectorAll(".sql-support-chat__meta").length,
+              messages: document.querySelectorAll(".sql-support-chat__message").length,
+              loading: document.querySelectorAll(".sql-support-chat__loading").length
+            }));
+            if (JSON.stringify(clearedState) !== JSON.stringify({
+              draft: "",
+              errors: 0,
+              metadata: 0,
+              messages: 0,
+              loading: 0
+            })) {
+              throw new Error(`estado da MapIA nao foi limpo no logout: ${JSON.stringify(clearedState)}`);
+            }
+
+            const clearedQuery = await page.locator("[data-query-answer]").inputValue();
+            if (clearedQuery !== "") {
+              throw new Error("rascunho SQL da conta anterior continuou visivel apos logout");
+            }
+
+            await page.locator('[data-open-practice-utility="notes"]').click();
+            const clearedNote = await page.locator("[data-practice-note]").inputValue();
+            await page.locator('button[data-close-practice-utility]').click();
+            await page.locator('[data-open-practice-utility="feedback"]').click();
+            const clearedFeedback = await page.locator("[data-practice-feedback-comment]").inputValue();
+            const selectedFeedbackOptions = await page.locator(
+              'input[name="practiceDifficulty"]:checked, input[name="practiceConfidence"]:checked'
+            ).count();
+            await page.locator('button[data-close-practice-utility]').click();
+            if (clearedNote !== "" || clearedFeedback !== "" || selectedFeedbackOptions !== 0) {
+              throw new Error("dados personalizados da Central SQL continuaram visiveis apos logout");
+            }
+
+            const logoutScreenshotPath = path.join(
+              outputDir,
+              `${pageConfig.name}-mapia-pos-logout-${viewport.name}.png`
+            );
+            await page.screenshot({ path: logoutScreenshotPath, fullPage: true });
+            console.log(
+              `OK ${pageConfig.name} / mapia-pos-logout / ${viewport.name} -> ${logoutScreenshotPath}`
+            );
+          }
         }
 
         if (supportTab.id === "data") {

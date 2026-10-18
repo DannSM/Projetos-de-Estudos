@@ -587,9 +587,7 @@ async function run() {
     "utf8"
   );
   const authScriptIndex = practiceHtml.indexOf('src="src/auth-service.js"');
-  const tutorScriptIndex = practiceHtml.indexOf(
-    'src="src/sql-ai-tutor.js?v=20261017-mapia-security"'
-  );
+  const tutorScriptIndex = practiceHtml.indexOf('src="src/sql-ai-tutor.js');
   assert.ok(authScriptIndex >= 0, "auth-service.js deve estar presente");
   assert.ok(tutorScriptIndex > authScriptIndex, "auth-service.js deve carregar antes da MapIA");
   assert.doesNotMatch(practiceHtml, /20260614-tutor-final/);

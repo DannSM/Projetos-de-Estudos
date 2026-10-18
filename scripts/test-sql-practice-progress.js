@@ -172,22 +172,67 @@ async function run() {
 
   const authenticated = createAuthenticatedWindow();
   const authenticatedService = loadService(authenticated.window);
+  const mismatchedAttempt = await authenticatedService.saveAttempt(
+    { id: "activity-3", exerciseId: "exercise-3" },
+    "query-run-wrong-user",
+    { status: "correct", message: "Correto", details: {} },
+    1,
+    "user-2"
+  );
+  assert.strictEqual(mismatchedAttempt.skipped, true);
+  assert.strictEqual(mismatchedAttempt.authenticated, false);
+  assert.strictEqual(authenticated.tables.user_practice_attempts.length, 0);
+
+  const mismatchedLoad = await authenticatedService.loadUserState({
+    slug: "sql-essencial-filtro-antes-agregacao",
+    trackSlug: "sql-essencial",
+    exerciseId: "exercise-3"
+  }, "user-2");
+  assert.strictEqual(mismatchedLoad.authenticated, false);
+
   const attemptResult = await authenticatedService.saveAttempt(
     { id: "activity-3", exerciseId: "exercise-3" },
     "query-run-3",
     { status: "correct", message: "Correto", details: { hasCount: true } },
-    1
+    1,
+    "user-1"
   );
   assert.strictEqual(attemptResult.ok, true);
   assert.strictEqual(authenticated.tables.user_practice_attempts.length, 1);
   assert.strictEqual(authenticated.tables.user_practice_attempts[0].validation_status, "correct");
 
+  authenticated.tables.user_practice_notes.push(
+    { user_id: "user-2", exercise_id: "exercise-3", note_text: "Nota da conta B" },
+    { user_id: "user-1", exercise_id: "exercise-3", note_text: "Nota da conta A" }
+  );
+  authenticated.tables.user_activity_feedback.push(
+    {
+      user_id: "user-2",
+      exercise_id: "exercise-3",
+      source: "sql_practice",
+      difficulty: "Dificil",
+      confidence: "Baixa",
+      comment: "Feedback da conta B"
+    },
+    {
+      user_id: "user-1",
+      exercise_id: "exercise-3",
+      source: "sql_practice",
+      difficulty: "Media",
+      confidence: "Alta",
+      comment: "Feedback da conta A"
+    }
+  );
+
   const loadedUserState = await authenticatedService.loadUserState({
     slug: "sql-essencial-filtro-antes-agregacao",
     trackSlug: "sql-essencial",
     exerciseId: "exercise-3"
-  });
+  }, "user-1");
   assert.strictEqual(loadedUserState.ok, true);
+  assert.strictEqual(loadedUserState.note, "Nota da conta A");
+  assert.strictEqual(loadedUserState.feedback.comment, "Feedback da conta A");
+  assert.notStrictEqual(loadedUserState.note, "Nota da conta B");
   assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtros-where"].status, "not_started");
   assert.strictEqual(loadedUserState.practiceProgress["sql-essencial-filtro-antes-agregacao"].status, "completed");
 

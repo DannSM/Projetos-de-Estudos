@@ -104,6 +104,31 @@ async function run() {
   });
   assert.strictEqual("Authorization" in anonymousHeaders, false);
 
+  const requestController = new AbortController();
+  let forwardedSignal = null;
+  await tutor.requestTutor(freeQuestion, async (url, options) => {
+    forwardedSignal = options.signal;
+    return {
+      status: 200,
+      ok: true,
+      async json() {
+        return { ok: true, answer: "Resposta com sinal" };
+      }
+    };
+  }, { signal: requestController.signal });
+  assert.strictEqual(forwardedSignal, requestController.signal);
+
+  const abortController = new AbortController();
+  const abortedRequest = tutor.requestTutor(freeQuestion, (url, options) => new Promise((resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(new Error("AbortError")), { once: true });
+  }), { signal: abortController.signal });
+  await new Promise((resolve) => setImmediate(resolve));
+  abortController.abort();
+  const abortedResult = await abortedRequest;
+  assert.strictEqual(abortedResult.ok, false);
+  assert.strictEqual(abortedResult.aborted, true);
+  assert.strictEqual(abortedResult.message, "");
+
   let authenticatedRequest = null;
   const authenticatedTutor = loadTutor({
     authService: {

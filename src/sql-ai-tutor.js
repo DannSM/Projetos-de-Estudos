@@ -125,7 +125,7 @@
     };
   }
 
-  async function requestTutor(payload, fetchImpl = globalScope.fetch?.bind(globalScope)) {
+  async function requestTutor(payload, fetchImpl = globalScope.fetch?.bind(globalScope), options = {}) {
     if (!payload || typeof fetchImpl !== "function") {
       return {
         ok: false,
@@ -148,7 +148,8 @@
       const response = await fetchImpl(ENDPOINT, {
         method: "POST",
         headers,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: options.signal
       });
 
       if (response.status === 404 || response.status === 405) {
@@ -171,6 +172,14 @@
 
       return data;
     } catch (error) {
+      if (options.signal?.aborted) {
+        return {
+          ok: false,
+          aborted: true,
+          message: ""
+        };
+      }
+
       return {
         ok: false,
         unavailable: true,

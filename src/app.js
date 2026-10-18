@@ -526,7 +526,39 @@ async function setupAuthEntryPoints() {
 
   let currentSession = null;
   let currentIsAdmin = false;
+  let authStateEstablished = false;
   let recoveryModalOpened = false;
+  let authStateGeneration = 0;
+  let logoutInFlight = false;
+  let authStatusTimeout = null;
+
+  const getSessionUserId = (session) => (
+    typeof session?.user?.id === "string" ? session.user.id.trim() : ""
+  );
+
+  const showAuthStatus = (message) => {
+    let status = document.getElementById("dataSkillMapAuthStatus");
+    if (!status) {
+      status = document.createElement("div");
+      status.id = "dataSkillMapAuthStatus";
+      status.className = "feedback-toast auth-status-toast hidden";
+      status.setAttribute("role", "alert");
+      status.setAttribute("aria-live", "assertive");
+      document.body.appendChild(status);
+    }
+
+    status.textContent = message;
+    status.classList.remove("hidden");
+    status.classList.add("visible");
+    if (authStatusTimeout) {
+      window.clearTimeout(authStatusTimeout);
+    }
+    authStatusTimeout = window.setTimeout(() => {
+      status.classList.remove("visible");
+      status.classList.add("hidden");
+      authStatusTimeout = null;
+    }, 5200);
+  };
 
   const clearAuthHash = () => {
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
@@ -570,21 +602,69 @@ async function setupAuthEntryPoints() {
     setAdminNavVisible(currentIsAdmin);
   };
 
-  const refreshAuthState = async () => {
+  const dispatchVerifiedAuthState = (session, source) => {
+    window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
+      detail: {
+        session: session || null,
+        user: session?.user || null,
+        verifiedByAuthService: true,
+        source
+      }
+    }));
+  };
+
+  const applyVerifiedAuthState = (session, isAdmin = false, { notify = false, source = "auth-service" } = {}) => {
+    const previousUserId = getSessionUserId(currentSession);
+    const nextUserId = getSessionUserId(session);
+    setAuthState(session, isAdmin);
+    authStateEstablished = true;
+
+    const identityChanged = previousUserId !== nextUserId;
+    if (notify && identityChanged) {
+      dispatchVerifiedAuthState(session, source);
+    }
+
+    return { identityChanged, session: currentSession };
+  };
+
+  const applyVerifiedSignedOut = (source) => {
+    const shouldNotifyInitialSignedOut = !authStateEstablished;
+    authStateGeneration += 1;
+    const transition = applyVerifiedAuthState(null, false, { notify: true, source });
+    if (shouldNotifyInitialSignedOut && !transition.identityChanged) {
+      dispatchVerifiedAuthState(null, source);
+    }
+    return transition;
+  };
+
+  const refreshAuthState = async ({ notify = false, source = "session-refresh" } = {}) => {
+    const refreshGeneration = ++authStateGeneration;
     const sessionResult = await window.authService.getCurrentSession();
-    const session = sessionResult && sessionResult.ok ? sessionResult.session : null;
+    if (refreshGeneration !== authStateGeneration) {
+      return { ok: false, stale: true, session: currentSession };
+    }
+    if (!sessionResult?.ok) {
+      return { ok: false, error: sessionResult?.error || null, session: currentSession };
+    }
+
+    const session = sessionResult.session || null;
     let isAdmin = false;
 
     if (session && typeof window.authService.checkAdminAuthorization === "function") {
       const authCheck = await window.authService.checkAdminAuthorization();
+      if (refreshGeneration !== authStateGeneration) {
+        return { ok: false, stale: true, session: currentSession };
+      }
       isAdmin = Boolean(authCheck?.ok && Array.isArray(authCheck.data) && authCheck.data.some((row) => row?.is_authorized === true));
     }
 
-    setAuthState(session, isAdmin);
+    const transition = applyVerifiedAuthState(session, isAdmin, { notify, source });
 
     if (session && window.diagnosticAccountLinkService?.claimPendingDiagnostic) {
       await window.diagnosticAccountLinkService.claimPendingDiagnostic();
     }
+
+    return { ok: true, session, isAdmin, transition };
   };
 
   const openPasswordRecovery = async (eventSession = null) => {
@@ -607,10 +687,7 @@ async function setupAuthEntryPoints() {
     window.authModal.openPasswordRecoveryModal({
       onSuccess: async ({ signedOut } = {}) => {
         if (signedOut) {
-          setAuthState(null, false);
-          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-            detail: { session: null, user: null }
-          }));
+          applyVerifiedSignedOut("password-recovery");
           return;
         }
 
@@ -622,6 +699,20 @@ async function setupAuthEntryPoints() {
 
   if (typeof window.authService.onAuthStateChange === "function") {
     window.authService.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        window.setTimeout(() => {
+          applyVerifiedSignedOut("supabase:SIGNED_OUT");
+        }, 0);
+        return;
+      }
+
+      if (["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
+        window.setTimeout(() => {
+          void refreshAuthState({ notify: true, source: `supabase:${event}` });
+        }, 0);
+        return;
+      }
+
       if (event !== "PASSWORD_RECOVERY") {
         return;
       }
@@ -632,8 +723,11 @@ async function setupAuthEntryPoints() {
     });
   }
 
-  window.addEventListener("data-skill-map-auth-changed", () => {
-    void refreshAuthState();
+  window.addEventListener("data-skill-map-auth-changed", (event) => {
+    if (event.detail?.verifiedByAuthService) {
+      return;
+    }
+    void refreshAuthState({ notify: true, source: "custom-event" });
   });
 
   document.addEventListener("click", async (event) => {
@@ -653,13 +747,37 @@ async function setupAuthEntryPoints() {
 
     const logoutButton = event.target.closest("[data-account-logout]");
     if (logoutButton) {
+      if (logoutInFlight) {
+        return;
+      }
+
+      logoutInFlight = true;
+      logoutButton.disabled = true;
+      logoutButton.setAttribute("aria-busy", "true");
       closeAccountMenus();
       closeMobileMenu();
-      await window.authService.signOut();
-      setAuthState(null, false);
-      window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-        detail: { session: null, user: null }
-      }));
+      let signOutResult = null;
+      try {
+        signOutResult = await window.authService.signOut();
+      } catch (error) {
+        signOutResult = { ok: false };
+      }
+
+      if (!signOutResult?.ok) {
+        const reconciliation = await refreshAuthState({ notify: true, source: "signout-error-reconcile" });
+        if (!reconciliation.session) {
+          logoutInFlight = false;
+          return;
+        }
+        showAuthStatus("Não foi possível sair agora. Sua sessão continua ativa; tente novamente.");
+        logoutButton.disabled = false;
+        logoutButton.removeAttribute("aria-busy");
+        logoutInFlight = false;
+        return;
+      }
+
+      applyVerifiedSignedOut("logout-button");
+      logoutInFlight = false;
       return;
     }
 
@@ -680,11 +798,8 @@ async function setupAuthEntryPoints() {
 
     if (window.authModal && typeof window.authModal.openAuthModal === "function") {
       window.authModal.openAuthModal({
-        onSuccess: async ({ session, user } = {}) => {
-          await refreshAuthState();
-          window.dispatchEvent(new CustomEvent("data-skill-map-auth-changed", {
-            detail: { session: session || null, user: user || null }
-          }));
+        onSuccess: async () => {
+          await refreshAuthState({ notify: true, source: "auth-modal" });
         }
       });
     }
@@ -773,4 +888,8 @@ async function init() {
   }
 }
 
-void init();
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { setupAuthEntryPoints };
+} else {
+  void init();
+}
