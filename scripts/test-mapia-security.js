@@ -370,6 +370,71 @@ async function testQuotaUnavailable(endpoint) {
   assert.strictEqual((await response.json()).code, "quota_unavailable");
 }
 
+async function testSecurityConfigurationFailsClosed(endpoint) {
+  let inferenceCalls = 0;
+  const aiRun = async () => {
+    inferenceCalls += 1;
+    return { response: "Esta inferência não deveria ser executada." };
+  };
+  const quota = new QuotaMock();
+  const protectedBindings = {
+    MAPIA_ID_HASH_SECRET: "test-secret-with-sufficient-entropy-not-for-production",
+    MAPIA_QUOTA: quota,
+    AI: { run: aiRun }
+  };
+
+  for (const env of [
+    protectedBindings,
+    { ...protectedBindings, MAPIA_SECURITY_MODE: "unexpected" },
+    { ...protectedBindings, MAPIA_SECURITY_MODE: "   " }
+  ]) {
+    const response = await invoke(
+      endpoint,
+      env,
+      makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload())
+    );
+    assert.strictEqual(response.status, 503);
+    const body = await response.json();
+    assert.strictEqual(body.code, "security_configuration_invalid");
+    assert.doesNotMatch(JSON.stringify(body), /MAPIA_|test-secret|unexpected/i);
+  }
+
+  for (const securityMode of ["audit", "enforce"]) {
+    for (const overrides of [
+      { MAPIA_ID_HASH_SECRET: undefined },
+      { MAPIA_QUOTA: undefined }
+    ]) {
+      const response = await invoke(
+        endpoint,
+        makeEnv(quota, aiRun, { ...overrides, MAPIA_SECURITY_MODE: securityMode }),
+        makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload())
+      );
+      assert.strictEqual(response.status, 503);
+      const body = await response.json();
+      assert.strictEqual(body.code, "security_configuration_invalid");
+      assert.doesNotMatch(JSON.stringify(body), /MAPIA_|test-secret/i);
+    }
+  }
+
+  for (const overrides of [
+    { SUPABASE_URL: undefined },
+    { SUPABASE_PUBLISHABLE_KEY: undefined }
+  ]) {
+    const response = await invoke(
+      endpoint,
+      makeEnv(quota, aiRun, overrides),
+      makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload(), {
+        token: "authenticated-user-token"
+      })
+    );
+    assert.strictEqual(response.status, 503);
+    assert.strictEqual((await response.json()).code, "auth_unavailable");
+  }
+
+  assert.strictEqual(inferenceCalls, 0);
+  assert.strictEqual(quota.globalUsage, 0);
+}
+
 async function testAuditDoesNotConsumeOrReject(endpoint) {
   const quota = new QuotaMock({ visitorLimit: 1 });
   const auditEnv = makeEnv(quota, undefined, { MAPIA_SECURITY_MODE: "audit" });
@@ -542,14 +607,6 @@ async function testCompatibilityAndInputLimits(endpoint) {
     })
   );
   assert.strictEqual(crossOrigin.status, 403);
-
-  const invalidMode = await invoke(
-    endpoint,
-    { ...offEnv, MAPIA_SECURITY_MODE: "typo" },
-    makeRequest("https://trilhadedados.com.br/api/sql-tutor", validPayload())
-  );
-  assert.strictEqual(invalidMode.status, 503);
-  assert.strictEqual((await invalidMode.json()).code, "security_configuration_invalid");
 }
 
 async function run() {
@@ -563,6 +620,7 @@ async function run() {
   await testConcurrentQuota(endpoint);
   await testDomainsShareQuota(endpoint);
   await testQuotaUnavailable(endpoint);
+  await testSecurityConfigurationFailsClosed(endpoint);
   await testAuditDoesNotConsumeOrReject(endpoint);
   await testGlobalLimit(endpoint);
   await testInferenceFailureAndTimeoutAreCharged(endpoint);

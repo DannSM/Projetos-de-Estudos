@@ -447,10 +447,29 @@ function buildMessages(context) {
 
 function getSecurityMode(env) {
   if (env?.MAPIA_SECURITY_MODE === undefined || env?.MAPIA_SECURITY_MODE === null) {
-    return "off";
+    return "invalid";
   }
   const configured = String(env.MAPIA_SECURITY_MODE).trim().toLowerCase();
   return SECURITY_MODES.has(configured) ? configured : "invalid";
+}
+
+function getSecurityConfigurationError(env, securityMode) {
+  if (securityMode === "off" || securityMode === "invalid") return "";
+
+  if (!String(env?.MAPIA_ID_HASH_SECRET || "").trim()) {
+    return "missing_identity_hash_secret";
+  }
+
+  const quotaBinding = env?.MAPIA_QUOTA;
+  if (
+    !quotaBinding
+    || typeof quotaBinding.idFromName !== "function"
+    || typeof quotaBinding.get !== "function"
+  ) {
+    return "missing_quota_binding";
+  }
+
+  return "";
 }
 
 function getBearerToken(request) {
@@ -792,14 +811,6 @@ export async function handleSqlTutorRequest(context, dependencies = {}) {
     }, 400, baseHeaders);
   }
 
-  if (!context.env?.AI || typeof context.env.AI.run !== "function") {
-    return jsonResponse({
-      ok: false,
-      code: "ai_unavailable",
-      message: "IA tutora indisponível: binding AI não configurado."
-    }, 503, baseHeaders);
-  }
-
   const startedAt = Date.now();
   const model = truncate(context.env.SQL_TUTOR_AI_MODEL, 160) || AI_MODEL;
   const securityMode = getSecurityMode(context.env);
@@ -827,6 +838,33 @@ export async function handleSqlTutorRequest(context, dependencies = {}) {
       ok: false,
       code: "security_configuration_invalid",
       message: "A MapIA está temporariamente indisponível por segurança."
+    }, 503, responseHeaders);
+  }
+
+  const securityConfigurationError = getSecurityConfigurationError(
+    context.env,
+    securityMode
+  );
+  if (securityConfigurationError) {
+    emitOperationalMetric(context, "request_blocked", {
+      requestId,
+      profile,
+      outcome: "configuration_error",
+      reason: securityConfigurationError,
+      model
+    });
+    return jsonResponse({
+      ok: false,
+      code: "security_configuration_invalid",
+      message: "A MapIA está temporariamente indisponível por segurança."
+    }, 503, responseHeaders);
+  }
+
+  if (!context.env?.AI || typeof context.env.AI.run !== "function") {
+    return jsonResponse({
+      ok: false,
+      code: "ai_unavailable",
+      message: "IA tutora indisponível: binding AI não configurado."
     }, 503, responseHeaders);
   }
 

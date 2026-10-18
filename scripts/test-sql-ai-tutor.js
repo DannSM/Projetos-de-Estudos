@@ -175,6 +175,7 @@ async function run() {
       body: JSON.stringify(payload)
     }),
     env: {
+      MAPIA_SECURITY_MODE: "off",
       AI: {
         async run(model, input) {
           modelCall = { model, input };
