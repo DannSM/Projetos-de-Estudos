@@ -3,8 +3,29 @@ const MAX_QUERY_CHARS = 4000;
 const MAX_RESULT_ROWS = 5;
 const MAX_HISTORY_MESSAGES = 6;
 const MAX_ANSWER_WORDS = 90;
+const MAX_BODY_BYTES = 32 * 1024;
+const DEFAULT_INFERENCE_TIMEOUT_MS = 25_000;
 const AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
 const PROVIDER = "cloudflare-workers-ai";
+const ANONYMOUS_COOKIE = "mapia_anon";
+const SECURITY_MODES = new Set(["off", "audit", "enforce"]);
+const ALLOWED_PAYLOAD_KEYS = new Set([
+  "practiceSlug",
+  "practiceTitle",
+  "practicePrompt",
+  "practiceObjective",
+  "practiceConcept",
+  "practiceHint",
+  "prompt",
+  "quickAction",
+  "studentQuery",
+  "lastResultPreview",
+  "lastError",
+  "validationStatus",
+  "attemptCount",
+  "recentMessages",
+  "schema"
+]);
 const ALLOWED_ACTIONS = new Set([
   "hint",
   "explain_error",
@@ -59,14 +80,199 @@ const ACTION_INSTRUCTIONS = {
   free_question: "Responda somente à dúvida relacionada a esta prática."
 };
 
-function jsonResponse(body, status = 200) {
+function jsonResponse(body, status = 200, extraHeaders = {}) {
   return Response.json(body, {
     status,
     headers: {
       "Cache-Control": "no-store",
-      "Content-Type": "application/json; charset=utf-8"
+      "Content-Type": "application/json; charset=utf-8",
+      ...extraHeaders
     }
   });
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasOnlyKeys(value, allowedKeys) {
+  return isPlainObject(value)
+    && Object.keys(value).every((key) => allowedKeys.has(key));
+}
+
+function isOptionalString(value, maxLength) {
+  return value === undefined
+    || (typeof value === "string" && value.length <= maxLength);
+}
+
+function validateColumns(columns) {
+  if (columns === undefined) return true;
+  if (!Array.isArray(columns) || columns.length > 30) return false;
+
+  const allowedKeys = new Set(["name", "type"]);
+  return columns.every((column) => (
+    hasOnlyKeys(column, allowedKeys)
+    && isOptionalString(column.name, 80)
+    && isOptionalString(column.type, 80)
+  ));
+}
+
+function validatePayloadShape(payload) {
+  if (!hasOnlyKeys(payload, ALLOWED_PAYLOAD_KEYS)) {
+    return "O payload contém parâmetros não permitidos.";
+  }
+
+  const stringLimits = {
+    practiceSlug: 120,
+    practiceTitle: 160,
+    practicePrompt: 1200,
+    practiceObjective: 800,
+    practiceConcept: 1200,
+    practiceHint: 800,
+    prompt: MAX_PROMPT_CHARS,
+    quickAction: 30,
+    studentQuery: MAX_QUERY_CHARS,
+    lastError: 1200,
+    validationStatus: 20
+  };
+
+  for (const [key, maxLength] of Object.entries(stringLimits)) {
+    if (!isOptionalString(payload[key], maxLength)) {
+      return `O campo ${key} é inválido ou excede o limite permitido.`;
+    }
+  }
+
+  if (payload.attemptCount !== undefined && (
+    !Number.isInteger(payload.attemptCount)
+    || payload.attemptCount < 0
+    || payload.attemptCount > 100
+  )) {
+    return "O campo attemptCount é inválido.";
+  }
+
+  if (payload.lastResultPreview !== undefined) {
+    if (!Array.isArray(payload.lastResultPreview) || payload.lastResultPreview.length > MAX_RESULT_ROWS) {
+      return "A prévia do resultado excede o limite permitido.";
+    }
+
+    for (const row of payload.lastResultPreview) {
+      if (!isPlainObject(row) || Object.keys(row).length > 12) {
+        return "A prévia do resultado é inválida.";
+      }
+      for (const [key, value] of Object.entries(row)) {
+        if (key.length > 80 || !(
+          value === null
+          || typeof value === "number"
+          || typeof value === "boolean"
+          || (typeof value === "string" && value.length <= 300)
+        )) {
+          return "A prévia do resultado contém dados não permitidos.";
+        }
+      }
+    }
+  }
+
+  if (payload.recentMessages !== undefined) {
+    const messageKeys = new Set(["role", "content"]);
+    if (!Array.isArray(payload.recentMessages) || payload.recentMessages.length > MAX_HISTORY_MESSAGES) {
+      return "O histórico recente excede o limite permitido.";
+    }
+    const messagesAreValid = payload.recentMessages.every((message) => (
+      hasOnlyKeys(message, messageKeys)
+      && ["assistant", "student"].includes(message.role)
+      && typeof message.content === "string"
+      && message.content.length <= 500
+    ));
+    if (!messagesAreValid) return "O histórico recente é inválido.";
+  }
+
+  if (payload.schema !== undefined) {
+    const schemaKeys = new Set(["table", "columns", "tables"]);
+    const tableKeys = new Set(["table", "columns"]);
+    if (!hasOnlyKeys(payload.schema, schemaKeys)
+      || !isOptionalString(payload.schema.table, 80)
+      || !validateColumns(payload.schema.columns)) {
+      return "O schema informado é inválido.";
+    }
+
+    if (payload.schema.tables !== undefined) {
+      if (!Array.isArray(payload.schema.tables) || payload.schema.tables.length > 5) {
+        return "O schema excede o limite de tabelas permitido.";
+      }
+      const tablesAreValid = payload.schema.tables.every((table) => (
+        hasOnlyKeys(table, tableKeys)
+        && isOptionalString(table.table, 80)
+        && validateColumns(table.columns)
+      ));
+      if (!tablesAreValid) return "O schema contém uma tabela inválida.";
+    }
+  }
+
+  return "";
+}
+
+async function readJsonBody(request) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return {
+      ok: false,
+      response: jsonResponse({
+        ok: false,
+        code: "unsupported_media_type",
+        message: "Envie o conteúdo no formato JSON."
+      }, 415)
+    };
+  }
+
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    return {
+      ok: false,
+      response: jsonResponse({
+        ok: false,
+        code: "payload_too_large",
+        message: "A solicitação excede o tamanho máximo permitido."
+      }, 413)
+    };
+  }
+
+  let bodyText;
+  try {
+    bodyText = await request.text();
+  } catch (error) {
+    return {
+      ok: false,
+      response: jsonResponse({
+        ok: false,
+        code: "invalid_json",
+        message: "Payload JSON inválido."
+      }, 400)
+    };
+  }
+
+  if (new TextEncoder().encode(bodyText).byteLength > MAX_BODY_BYTES) {
+    return {
+      ok: false,
+      response: jsonResponse({
+        ok: false,
+        code: "payload_too_large",
+        message: "A solicitação excede o tamanho máximo permitido."
+      }, 413)
+    };
+  }
+
+  try {
+    return { ok: true, payload: JSON.parse(bodyText) };
+  } catch (error) {
+    return {
+      ok: false,
+      response: jsonResponse({
+        ok: false,
+        code: "invalid_json",
+        message: "Payload JSON inválido."
+      }, 400)
+    };
+  }
 }
 
 function truncate(value, maxLength) {
@@ -208,62 +414,587 @@ function buildMessages(context) {
   ];
 }
 
-export async function onRequest(context) {
+function getSecurityMode(env) {
+  if (env?.MAPIA_SECURITY_MODE === undefined || env?.MAPIA_SECURITY_MODE === null) {
+    return "off";
+  }
+  const configured = String(env.MAPIA_SECURITY_MODE).trim().toLowerCase();
+  return SECURITY_MODES.has(configured) ? configured : "invalid";
+}
+
+function getBearerToken(request) {
+  const authorization = request.headers.get("authorization") || "";
+  const match = authorization.match(/^Bearer\s+([^\s]+)$/i);
+  return match ? match[1] : "";
+}
+
+function sameOriginOrNonBrowser(request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin;
+  } catch (error) {
+    return false;
+  }
+}
+
+function parseCookies(request) {
+  const cookies = new Map();
+  const cookieHeader = request.headers.get("cookie") || "";
+  for (const item of cookieHeader.split(";")) {
+    const separatorIndex = item.indexOf("=");
+    if (separatorIndex < 1) continue;
+    const name = item.slice(0, separatorIndex).trim();
+    const value = item.slice(separatorIndex + 1).trim();
+    if (name) cookies.set(name, value);
+  }
+  return cookies;
+}
+
+function bytesToBase64Url(bytes) {
+  const binary = String.fromCharCode(...bytes);
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+async function hmacIdentifier(secret, value, cryptoImpl = globalThis.crypto) {
+  if (!secret || !cryptoImpl?.subtle) {
+    throw new Error("MAPIA_ID_HASH_SECRET não configurado.");
+  }
+  const encoder = new TextEncoder();
+  const key = await cryptoImpl.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await cryptoImpl.subtle.sign("HMAC", key, encoder.encode(value));
+  return bytesToBase64Url(new Uint8Array(signature));
+}
+
+async function resolveIdentity(request, env, dependencies = {}) {
+  const token = getBearerToken(request);
+  if (!token) return { kind: "anonymous", userId: "" };
+
+  const supabaseUrl = String(env?.SUPABASE_URL || "").replace(/\/+$/g, "");
+  const publishableKey = String(
+    env?.SUPABASE_PUBLISHABLE_KEY || env?.SUPABASE_ANON_KEY || ""
+  ).trim();
+  if (!supabaseUrl || !publishableKey) {
+    return {
+      error: jsonResponse({
+        ok: false,
+        code: "auth_unavailable",
+        message: "Não foi possível validar sua sessão agora. Tente novamente em instantes."
+      }, 503)
+    };
+  }
+
+  const fetchImpl = dependencies.fetchImpl || fetch;
+  let response;
+  try {
+    response = await fetchImpl(`${supabaseUrl}/auth/v1/user`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: publishableKey
+      }
+    });
+  } catch (error) {
+    return {
+      error: jsonResponse({
+        ok: false,
+        code: "auth_unavailable",
+        message: "Não foi possível validar sua sessão agora. Tente novamente em instantes."
+      }, 503)
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      error: jsonResponse({
+        ok: false,
+        code: "invalid_access_token",
+        message: "Sua sessão não é válida ou expirou. Entre novamente para continuar."
+      }, 401)
+    };
+  }
+
+  const user = await response.json().catch(() => null);
+  if (!user?.id || typeof user.id !== "string") {
+    return {
+      error: jsonResponse({
+        ok: false,
+        code: "invalid_access_token",
+        message: "Sua sessão não é válida ou expirou. Entre novamente para continuar."
+      }, 401)
+    };
+  }
+
+  return { kind: "authenticated", userId: user.id };
+}
+
+async function resolveUsageProfile(identity, env) {
+  if (identity.kind !== "authenticated") return "visitor";
+
+  const entitlementService = env?.MAPIA_ENTITLEMENTS;
+  if (!entitlementService || typeof entitlementService.fetch !== "function") {
+    return "free";
+  }
+
+  try {
+    const response = await entitlementService.fetch(
+      "https://mapia-entitlements.internal/v1/resolve",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: identity.userId, permission: "mapia.premium" })
+      }
+    );
+    if (!response.ok) return "free";
+    const entitlement = await response.json().catch(() => null);
+    return entitlement?.active === true && entitlement?.plan === "premium"
+      ? "premium"
+      : "free";
+  } catch (error) {
+    return "free";
+  }
+}
+
+async function resolveQuotaSubject(identity, request, env, dependencies = {}) {
+  const secret = String(env?.MAPIA_ID_HASH_SECRET || "");
+  const cryptoImpl = dependencies.cryptoImpl || globalThis.crypto;
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  const ipKey = await hmacIdentifier(secret, `ip:${ip}`, cryptoImpl);
+
+  if (identity.kind === "authenticated") {
+    return {
+      actorKey: await hmacIdentifier(secret, `user:${identity.userId}`, cryptoImpl),
+      ipKey,
+      setCookie: ""
+    };
+  }
+
+  const cookies = parseCookies(request);
+  const cookieValue = cookies.get(ANONYMOUS_COOKIE) || "";
+  const [candidateId, candidateSignature] = cookieValue.split(".", 2);
+  let anonymousId = "";
+
+  if (/^[0-9a-f-]{36}$/i.test(candidateId || "") && candidateSignature) {
+    const expectedSignature = await hmacIdentifier(
+      secret,
+      `anonymous-cookie:${candidateId}`,
+      cryptoImpl
+    );
+    if (candidateSignature === expectedSignature) anonymousId = candidateId;
+  }
+
+  let setCookie = "";
+  if (!anonymousId) {
+    anonymousId = cryptoImpl.randomUUID();
+    const signature = await hmacIdentifier(
+      secret,
+      `anonymous-cookie:${anonymousId}`,
+      cryptoImpl
+    );
+    setCookie = `${ANONYMOUS_COOKIE}=${anonymousId}.${signature}; Max-Age=31536000; Path=/; Secure; HttpOnly; SameSite=Lax`;
+  }
+
+  return {
+    actorKey: await hmacIdentifier(secret, `anonymous-device:${anonymousId}`, cryptoImpl),
+    ipKey,
+    setCookie
+  };
+}
+
+function getQuotaStub(env) {
+  const binding = env?.MAPIA_QUOTA;
+  if (!binding) return null;
+  if (typeof binding.idFromName === "function" && typeof binding.get === "function") {
+    return binding.get(binding.idFromName("mapia-global-v1"));
+  }
+  if (typeof binding.fetch === "function") return binding;
+  return null;
+}
+
+async function callQuotaService(env, payload) {
+  const stub = getQuotaStub(env);
+  if (!stub || typeof stub.fetch !== "function") {
+    throw new Error("Binding MAPIA_QUOTA não configurado.");
+  }
+
+  const response = await stub.fetch("https://mapia-quota.internal/v1/quota", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !body) {
+    throw new Error("Serviço de quotas indisponível.");
+  }
+  return body;
+}
+
+function quotaBlockedResponse(quota, profile, responseHeaders) {
+  const reason = quota?.reason || "quota_exceeded";
+  const retryAfterSeconds = Math.max(1, Number(quota?.retryAfterSeconds) || 60);
+  let message = "Você atingiu o limite de uso da MapIA neste período. Tente novamente mais tarde.";
+
+  if (reason === "global_limit") {
+    message = "A MapIA atingiu o limite temporário de uso. Tente novamente mais tarde.";
+  } else if (reason === "actor_rate_limit" || reason === "ip_rate_limit") {
+    message = "Muitas solicitações foram enviadas em pouco tempo. Aguarde um momento e tente novamente.";
+  } else if (reason === "actor_concurrency" || reason === "global_concurrency") {
+    message = "A MapIA já está processando outras solicitações. Aguarde um momento e tente novamente.";
+  }
+
+  return jsonResponse({
+    ok: false,
+    code: reason,
+    profile,
+    retryAfterSeconds,
+    message
+  }, 429, {
+    ...responseHeaders,
+    "Retry-After": String(retryAfterSeconds)
+  });
+}
+
+function getUsage(result) {
+  const usage = result?.usage || {};
+  return {
+    inputTokens: Number(usage.prompt_tokens ?? usage.input_tokens) || 0,
+    outputTokens: Number(usage.completion_tokens ?? usage.output_tokens) || 0
+  };
+}
+
+function emitOperationalMetric(context, event, values = {}) {
+  const metric = {
+    component: "mapia",
+    event,
+    timestamp: new Date().toISOString(),
+    requestId: values.requestId || "",
+    profile: values.profile || "unknown",
+    outcome: values.outcome || "",
+    reason: values.reason || "",
+    model: values.model || "",
+    durationMs: Number(values.durationMs) || 0,
+    inputTokens: Number(values.inputTokens) || 0,
+    outputTokens: Number(values.outputTokens) || 0
+  };
+  console.log("[MapIA]", JSON.stringify(metric));
+
+  const analytics = context.env?.MAPIA_ANALYTICS;
+  if (analytics && typeof analytics.writeDataPoint === "function") {
+    try {
+      analytics.writeDataPoint({
+        blobs: [event, metric.profile, metric.outcome, metric.reason, metric.model],
+        doubles: [metric.durationMs, metric.inputTokens, metric.outputTokens],
+        indexes: [metric.requestId]
+      });
+    } catch (error) {
+      console.warn("[MapIA] Falha ao registrar métrica agregada.");
+    }
+  }
+}
+
+async function runWithTimeout(promise, timeoutMs) {
+  let timeoutId;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((resolve, reject) => {
+        timeoutId = setTimeout(() => {
+          const error = new Error("Tempo limite da inferência excedido.");
+          error.code = "inference_timeout";
+          reject(error);
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+export async function handleSqlTutorRequest(context, dependencies = {}) {
+  const runtimeCrypto = dependencies.cryptoImpl || globalThis.crypto;
+  const requestId = runtimeCrypto?.randomUUID?.() || `mapia-${Date.now()}`;
+  const baseHeaders = { "X-MapIA-Request-Id": requestId };
+
   if (context.request.method !== "POST") {
     return jsonResponse({
       ok: false,
+      code: "method_not_allowed",
       message: "Método não permitido."
-    }, 405);
+    }, 405, { ...baseHeaders, Allow: "POST" });
   }
 
-  let payload;
-  try {
-    payload = sanitizePayload(await context.request.json());
-  } catch (error) {
+  if (!sameOriginOrNonBrowser(context.request)) {
     return jsonResponse({
       ok: false,
-      message: "Payload JSON inválido."
-    }, 400);
+      code: "origin_not_allowed",
+      message: "Origem da solicitação não permitida."
+    }, 403, baseHeaders);
   }
 
+  const parsedBody = await readJsonBody(context.request);
+  if (!parsedBody.ok) return parsedBody.response;
+
+  const validationError = validatePayloadShape(parsedBody.payload);
+  if (validationError) {
+    return jsonResponse({
+      ok: false,
+      code: "invalid_payload",
+      message: validationError
+    }, 400, baseHeaders);
+  }
+
+  const payload = sanitizePayload(parsedBody.payload);
   if (!payload) {
     return jsonResponse({
       ok: false,
+      code: "invalid_action",
       message: "Informe uma pergunta ou ação rápida válida."
-    }, 400);
+    }, 400, baseHeaders);
   }
 
   if (!context.env?.AI || typeof context.env.AI.run !== "function") {
     return jsonResponse({
       ok: false,
+      code: "ai_unavailable",
       message: "IA tutora indisponível: binding AI não configurado."
-    }, 503);
+    }, 503, baseHeaders);
   }
 
   const startedAt = Date.now();
   const model = truncate(context.env.SQL_TUTOR_AI_MODEL, 160) || AI_MODEL;
+  const securityMode = getSecurityMode(context.env);
+  let profile = "visitor";
+  let quotaSubject = null;
+  let reservationId = "";
+  let inferenceStarted = false;
+  const responseHeaders = { ...baseHeaders };
+
+  emitOperationalMetric(context, "request_received", {
+    requestId,
+    profile,
+    model
+  });
+
+  if (securityMode === "invalid") {
+    emitOperationalMetric(context, "request_blocked", {
+      requestId,
+      profile,
+      outcome: "configuration_error",
+      reason: "invalid_security_mode",
+      model
+    });
+    return jsonResponse({
+      ok: false,
+      code: "security_configuration_invalid",
+      message: "A MapIA está temporariamente indisponível por segurança."
+    }, 503, responseHeaders);
+  }
+
+  if (securityMode !== "off") {
+    const identity = await resolveIdentity(context.request, context.env, dependencies);
+    if (identity.error) {
+      emitOperationalMetric(context, "request_blocked", {
+        requestId,
+        profile,
+        outcome: "auth_rejected",
+        reason: "invalid_or_unavailable_auth",
+        model
+      });
+      return identity.error;
+    }
+
+    profile = await resolveUsageProfile(identity, context.env);
+
+    try {
+      quotaSubject = await resolveQuotaSubject(
+        identity,
+        context.request,
+        context.env,
+        dependencies
+      );
+      if (quotaSubject.setCookie) responseHeaders["Set-Cookie"] = quotaSubject.setCookie;
+    } catch (error) {
+      emitOperationalMetric(context, "quota_unavailable", {
+        requestId,
+        profile,
+        outcome: securityMode,
+        reason: "identity_configuration",
+        model
+      });
+      if (securityMode === "enforce") {
+        return jsonResponse({
+          ok: false,
+          code: "quota_unavailable",
+          message: "A MapIA está temporariamente indisponível para proteger seu uso. Tente novamente em instantes."
+        }, 503, responseHeaders);
+      }
+    }
+
+    if (quotaSubject) {
+      try {
+        const quota = await callQuotaService(context.env, {
+          operation: "reserve",
+          requestId,
+          actorKey: quotaSubject.actorKey,
+          ipKey: quotaSubject.ipKey,
+          profile,
+          model,
+          nowMs: Date.now()
+        });
+
+        if (quota.allowed === true && quota.reservationId) {
+          reservationId = quota.reservationId;
+        } else if (quota.allowed !== true) {
+          emitOperationalMetric(context, "request_blocked", {
+            requestId,
+            profile,
+            outcome: securityMode,
+            reason: quota.reason || "quota_exceeded",
+            model
+          });
+          if (securityMode === "enforce") {
+            return quotaBlockedResponse(quota, profile, responseHeaders);
+          }
+        } else if (securityMode === "enforce") {
+          throw new Error("Reserva de quota inválida.");
+        }
+      } catch (error) {
+        emitOperationalMetric(context, "quota_unavailable", {
+          requestId,
+          profile,
+          outcome: securityMode,
+          reason: "storage_unavailable",
+          model
+        });
+        if (securityMode === "enforce") {
+          return jsonResponse({
+            ok: false,
+            code: "quota_unavailable",
+            message: "A MapIA está temporariamente indisponível para proteger seu uso. Tente novamente em instantes."
+          }, 503, responseHeaders);
+        }
+      }
+    }
+  }
 
   try {
-    const result = await context.env.AI.run(model, {
-      messages: buildMessages(payload),
-      max_tokens: 160,
-      temperature: 0.25
-    });
+    inferenceStarted = true;
+    const configuredTimeout = Number(context.env.MAPIA_INFERENCE_TIMEOUT_MS);
+    const inferenceTimeoutMs = Number.isFinite(dependencies.inferenceTimeoutMs)
+      ? dependencies.inferenceTimeoutMs
+      : Number.isFinite(configuredTimeout) && configuredTimeout > 0
+        ? Math.min(configuredTimeout, 60_000)
+        : DEFAULT_INFERENCE_TIMEOUT_MS;
+    const result = await runWithTimeout(
+      context.env.AI.run(model, {
+        messages: buildMessages(payload),
+        max_tokens: 160,
+        temperature: 0.25
+      }),
+      inferenceTimeoutMs
+    );
     const answer = truncate(truncateWords(result?.response, MAX_ANSWER_WORDS), 1600);
     if (!answer) throw new Error("Resposta vazia do modelo.");
+
+    if (reservationId) {
+      try {
+        await callQuotaService(context.env, {
+          operation: "settle",
+          reservationId,
+          outcome: "success",
+          nowMs: Date.now()
+        });
+      } catch (error) {
+        emitOperationalMetric(context, "quota_settlement_failed", {
+          requestId,
+          profile,
+          outcome: "success",
+          reason: "storage_unavailable",
+          model
+        });
+      }
+    }
+
+    const usage = getUsage(result);
+    emitOperationalMetric(context, "inference_completed", {
+      requestId,
+      profile,
+      outcome: "success",
+      model,
+      durationMs: Date.now() - startedAt,
+      ...usage
+    });
 
     return jsonResponse({
       ok: true,
       answer,
       provider: PROVIDER,
       model,
+      durationMs: Date.now() - startedAt,
+      profile
+    }, 200, responseHeaders);
+  } catch (error) {
+    const outcome = error?.code === "inference_timeout" ? "timeout" : "error";
+
+    if (reservationId) {
+      try {
+        await callQuotaService(context.env, {
+          operation: inferenceStarted ? "settle" : "release",
+          reservationId,
+          outcome,
+          nowMs: Date.now()
+        });
+      } catch (settlementError) {
+        emitOperationalMetric(context, "quota_settlement_failed", {
+          requestId,
+          profile,
+          outcome,
+          reason: "storage_unavailable",
+          model
+        });
+      }
+    }
+
+    emitOperationalMetric(context, "inference_failed", {
+      requestId,
+      profile,
+      outcome,
+      reason: outcome,
+      model,
       durationMs: Date.now() - startedAt
     });
-  } catch (error) {
-    console.error("[SQL AI Tutor] Falha no Workers AI.", error);
+    console.error("[SQL AI Tutor] Falha no Workers AI.", {
+      requestId,
+      outcome
+    });
     return jsonResponse({
       ok: false,
-      message: "Não consegui responder agora. Tente novamente em instantes."
-    }, 502);
+      code: outcome === "timeout" ? "inference_timeout" : "inference_failed",
+      message: outcome === "timeout"
+        ? "A resposta demorou mais do que o esperado. Tente novamente em instantes."
+        : "Não consegui responder agora. Tente novamente em instantes."
+    }, outcome === "timeout" ? 504 : 502, responseHeaders);
   }
 }
+
+export async function onRequest(context) {
+  return handleSqlTutorRequest(context);
+}
+
+export const __test = {
+  MAX_BODY_BYTES,
+  AI_MODEL,
+  validatePayloadShape,
+  resolveUsageProfile,
+  hmacIdentifier
+};

@@ -134,9 +134,20 @@
     }
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      try {
+        const sessionResult = await globalScope.authService?.getCurrentSession?.();
+        const accessToken = sessionResult?.session?.access_token;
+        if (typeof accessToken === "string" && accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`;
+        }
+      } catch (error) {
+        // A ausência de sessão mantém o fluxo anônimo; a API valida qualquer token enviado.
+      }
+
       const response = await fetchImpl(ENDPOINT, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload)
       });
 
@@ -152,6 +163,8 @@
       if (!response.ok || !data.ok) {
         return {
           ok: false,
+          code: data.code || "request_failed",
+          retryAfterSeconds: Number(data.retryAfterSeconds) || 0,
           message: data.message || "Não consegui responder agora. Tente novamente em instantes."
         };
       }

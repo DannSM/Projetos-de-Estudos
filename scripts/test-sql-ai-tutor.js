@@ -3,12 +3,12 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-function loadTutor() {
+function loadTutor(windowOverrides = {}) {
   const source = fs.readFileSync(
     path.join(__dirname, "..", "src", "sql-ai-tutor.js"),
     "utf8"
   );
-  const window = {};
+  const window = { ...windowOverrides };
   vm.runInNewContext(source, { window, globalThis: window, JSON, Object, Set });
   return window.SqlAiTutor;
 }
@@ -90,6 +90,47 @@ async function run() {
     throw new Error("offline");
   });
   assert.strictEqual(networkFallback.ok, false);
+
+  let anonymousHeaders = null;
+  await tutor.requestTutor(freeQuestion, async (url, options) => {
+    anonymousHeaders = options.headers;
+    return {
+      status: 200,
+      ok: true,
+      async json() {
+        return { ok: true, answer: "Resposta anônima" };
+      }
+    };
+  });
+  assert.strictEqual("Authorization" in anonymousHeaders, false);
+
+  let authenticatedRequest = null;
+  const authenticatedTutor = loadTutor({
+    authService: {
+      async getCurrentSession() {
+        return { ok: true, session: { access_token: "verified-by-server-later" } };
+      }
+    }
+  });
+  const authenticatedResult = await authenticatedTutor.requestTutor(
+    freeQuestion,
+    async (url, options) => {
+      authenticatedRequest = { url, options };
+      return {
+        status: 200,
+        ok: true,
+        async json() {
+          return { ok: true, answer: "Resposta" };
+        }
+      };
+    }
+  );
+  assert.strictEqual(authenticatedResult.ok, true);
+  assert.strictEqual(authenticatedRequest.url, "/api/sql-tutor");
+  assert.strictEqual(
+    authenticatedRequest.options.headers.Authorization,
+    "Bearer verified-by-server-later"
+  );
 
   const missingBindingResponse = await endpoint.onRequest({
     request: new Request("https://example.com/api/sql-tutor", {

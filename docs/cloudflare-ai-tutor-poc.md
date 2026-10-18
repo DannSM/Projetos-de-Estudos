@@ -65,8 +65,9 @@ faturável.
 ```
 
 Limites do MVP: pergunta com 800 caracteres, query com 4.000 caracteres e
-prévia com 5 linhas. E-mail, token e identidade do usuário não fazem parte do
-contrato.
+prévia com 5 linhas. E-mail, token, identidade, plano e saldo não fazem parte do
+payload. Quando a segurança estiver em `audit` ou `enforce`, o token de sessão é
+enviado exclusivamente no header `Authorization` e validado no backend.
 
 O card usa ações rápidas adaptadas ao estado da prática, mantém o foco na
 mensagem mais recente e permite recolher o schema durante a sessão para ampliar
@@ -100,13 +101,15 @@ Workers AI deve estar configurado no ambiente correspondente:
 Em servidor local estático, `/api/sql-tutor` pode não existir. Nesse caso, o
 card mantém a Central SQL funcional e exibe o fallback controlado.
 
-Não há streaming, histórico persistido, autenticação obrigatória, rate limit
-avançado, logs persistidos nem proteção por Turnstile neste ciclo.
+Não há streaming, histórico persistido nem proteção por Turnstile. A arquitetura
+de autenticação, quotas atômicas e observabilidade está documentada em
+`docs/mapia-security-quotas.md`; ela permanece desativada até a configuração e
+homologação dos recursos externos.
 
 ## Próximos passos
 
 - Medir latência real e taxa de erro.
 - Avaliar qualidade pedagógica das respostas.
 - Comparar Workers AI com Groq e NVIDIA.
-- Adicionar logs mínimos e limite diário.
+- Homologar e configurar o Worker/Durable Object de quotas em Preview.
 - Decidir se o recurso será liberado para usuários anônimos.

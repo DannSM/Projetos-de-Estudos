@@ -10,6 +10,7 @@
     "test:sql-progress": "node scripts/test-sql-practice-progress.js",
     "test:progress-next-practice": "node scripts/test-progress-next-practice.js",
     "test:sql-ai-tutor": "node scripts/test-sql-ai-tutor.js",
+    "test:mapia-security": "node scripts/test-mapia-security.js",
     "test:guided-practice": "node scripts/test-guided-practice.js",
     "test:kpi-journey": "node scripts/test-kpi-journey.js",
     "test:project-01": "node scripts/test-project-01-sales-analysis.js",
