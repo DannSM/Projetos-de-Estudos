@@ -360,7 +360,7 @@ function setupGlobalNavigation() {
     return;
   }
 
-  const headerMobileBreakpoint = 1120;
+  const headerMobileBreakpoint = 1280;
   const mobileQuery = window.matchMedia(`(max-width: ${headerMobileBreakpoint}px)`);
   const header = document.querySelector(".app-header");
 

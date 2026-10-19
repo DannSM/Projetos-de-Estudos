@@ -42,14 +42,6 @@
     return Math.min(100, Math.max(0, Math.round(numberValue)));
   }
 
-  function formatMinutes(value) {
-    const minutes = Number(value);
-    if (!Number.isFinite(minutes) || minutes <= 0) return "";
-    if (minutes < 60) return `${Math.round(minutes)} min`;
-    const hours = Math.round((minutes / 60) * 10) / 10;
-    return `${String(hours).replace(".", ",")} h`;
-  }
-
   function formatContentType(value) {
     const labels = {
       lesson: "Aula",
@@ -362,14 +354,14 @@
     refreshIcons();
   }
 
-  function renderPersonalizedSummary({ featuredPath, featuredProgress, recommendation, latestSession, user }) {
+  function renderPersonalizedSummary({ featuredPath, recommendation, latestSession, user }) {
     if (!user) {
       return `
         <article class="learning-paths-summary">
           <div>
             <span class="section-kicker">Trilhas</span>
-            <h3>Entre para ver sua trilha personalizada.</h3>
-            <p>Explore os caminhos disponíveis. Ao entrar, você também acompanha seu progresso individual.</p>
+            <h3>Descubra qual trilha combina com seu nível.</h3>
+            <p>Faça o diagnóstico gratuito para receber uma recomendação. Crie uma conta para salvar seu progresso e continuar depois.</p>
           </div>
           <div class="learning-paths-summary-actions">
             <a class="button button-primary" href="diagnostico.html">
@@ -399,20 +391,14 @@
           <h3>${escapeHtml(title)}</h3>
           <p>${escapeHtml(text)}</p>
         </div>
-        <div class="learning-paths-summary-progress" aria-label="Progresso na trilha personalizada">
-          <span>${escapeHtml(featuredPath.title)}</span>
-          <strong>${featuredProgress.percent}%</strong>
-          <div class="learning-path-progress"><span style="width: ${featuredProgress.percent}%"></span></div>
-        </div>
       </article>
     `;
   }
 
-  function renderPathCard(path, index, stepsByPath, progressByPath, verifiedTrackStatusByPath, featuredPath) {
+  function renderPathCard(path, index, stepsByPath, featuredPath) {
     const steps = stepsByPath[path.id] || [];
-    const progress = getPathProgress(path, progressByPath, verifiedTrackStatusByPath);
-    const minutes = formatMinutes(path.estimated_minutes);
     const isFeatured = featuredPath?.id === path.id;
+    const example = steps[0];
     return `
       <article class="track-card learning-path-card${isFeatured ? " is-featured" : ""}">
         <div class="learning-path-card-top">
@@ -424,27 +410,8 @@
         <div class="learning-path-meta" aria-label="Metadados da trilha">
           <span>${escapeHtml(path.skill_area || "Área geral")}</span>
           ${path.level ? `<span>${escapeHtml(path.level)}</span>` : ""}
-          ${minutes ? `<span>${escapeHtml(minutes)}</span>` : ""}
         </div>
-        <div class="learning-path-progress-block">
-          <div>
-            <span>Progresso</span>
-            <strong>${progress.percent}%</strong>
-          </div>
-          <div class="learning-path-progress" aria-hidden="true">
-            <span style="width: ${progress.percent}%"></span>
-          </div>
-        </div>
-        ${steps.length ? `
-          <ol class="learning-path-step-list">
-            ${steps.slice(0, 3).map((step) => `
-              <li>
-                <span>${escapeHtml(formatContentType(step.content_type))}</span>
-                <strong>${escapeHtml(step.title)}</strong>
-              </li>
-            `).join("")}
-          </ol>
-        ` : `<p class="learning-path-empty-steps">Passos ainda não cadastrados para esta trilha.</p>`}
+        ${example ? `<p class="learning-path-example"><span>Exemplo de conteúdo:</span> ${escapeHtml(formatContentType(example.content_type))} · ${escapeHtml(example.title)}</p>` : ""}
       </article>
     `;
   }
@@ -456,22 +423,17 @@
     }
 
     const stepsByPath = indexByPathId(data.steps);
-    const progressByPath = indexByPathId(data.progressRows);
     const featuredPath = pickFeaturedPath(data);
-    const featuredProgress = featuredPath
-      ? getPathProgress(featuredPath, progressByPath, data.verifiedTrackStatusByPath)
-      : { percent: 0 };
 
     mount.innerHTML = `
       ${renderPersonalizedSummary({
         featuredPath,
-        featuredProgress,
         recommendation: data.recommendation,
         latestSession: data.latestSession,
         user: data.user
       })}
       <div class="track-grid learning-path-grid">
-        ${data.paths.map((path, index) => renderPathCard(path, index, stepsByPath, progressByPath, data.verifiedTrackStatusByPath, featuredPath)).join("")}
+        ${data.paths.map((path, index) => renderPathCard(path, index, stepsByPath, featuredPath)).join("")}
       </div>
     `;
     refreshIcons();

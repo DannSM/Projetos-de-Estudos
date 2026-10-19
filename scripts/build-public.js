@@ -55,6 +55,7 @@ const PUBLIC_FILES = Object.freeze([
   "style.css",
   "styles/base.css",
   "styles/components.css",
+  "styles/landing.css",
   "styles/layout.css",
   "styles/progress.css",
   "styles/responsive.css",

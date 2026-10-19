@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O build público gera `dist/` a partir de uma allowlist explícita de 54 arquivos. Nenhum arquivo é transformado: o conteúdo copiado para `dist/` permanece byte a byte igual à origem.
+O build público gera `dist/` a partir de uma allowlist explícita de 55 arquivos. Nenhum arquivo é transformado: o conteúdo copiado para `dist/` permanece byte a byte igual à origem.
 
 O diretório `functions/` permanece na raiz do projeto e não é copiado para `dist/`. Assim, o Cloudflare Pages pode compilar `functions/api/sql-tutor.js` como Pages Function, enquanto `dist/` contém somente assets estáticos.
 
@@ -26,7 +26,7 @@ O build:
 
 ## Manutenção da allowlist
 
-A constante `PUBLIC_FILES`, em `scripts/build-public.js`, é a fonte explícita dos arquivos que podem entrar em `dist/`. A contagem atual de 54 arquivos corresponde exatamente à versão homologada no deployment HML `718a9f8d-9c2a-4b44-80a1-f131a61af16a`. Essa contagem não deve ser atualizada automaticamente: qualquer evolução do produto precisa de uma revisão consciente da lista e de uma nova comparação com a HML aprovada.
+A constante `PUBLIC_FILES`, em `scripts/build-public.js`, é a fonte explícita dos arquivos que podem entrar em `dist/`. O deployment HML `718a9f8d-9c2a-4b44-80a1-f131a61af16a` foi homologado com 54 arquivos. A landing comercial adicionou `styles/landing.css`, elevando a contagem para 55; esse pacote exige sua própria conferência antes da publicação. A contagem não deve ser atualizada automaticamente: qualquer evolução do produto precisa de uma revisão consciente da lista.
 
 Para adicionar uma página ou recurso público:
 
@@ -48,13 +48,13 @@ Arquivos de infraestrutura, SQL, migrations, testes, documentação interna, rel
 - 13 arquivos públicos na raiz: nove páginas HTML, `style.css` e três ícones.
 - 2 imagens em `assets/`.
 - 34 módulos JavaScript em `src/`.
-- 5 folhas de estilo em `styles/`.
+- 6 folhas de estilo em `styles/`.
 
 Não são publicados: `.git`, `.codex`, `docs`, `scripts`, `supabase`, `workers`, `functions`, `node_modules`, arquivos SQL, testes, configurações Wrangler, dependências de desenvolvimento ou relatórios internos.
 
 ## Comparação com a HML
 
-Depois do build, gere um manifesto ordenado com caminho relativo, tamanho e SHA-256 para cada arquivo de `dist/`. Compare-o com o manifesto obtido do deployment HML autorizado, sem copiar bindings, tokens ou configurações. A versão atual foi validada com 54/54 arquivos idênticos ao deployment `718a9f8d-9c2a-4b44-80a1-f131a61af16a`.
+Depois do build, gere um manifesto ordenado com caminho relativo, tamanho e SHA-256 para cada arquivo de `dist/`. Compare-o com o manifesto do deployment ativo e explique cada diferença esperada, sem copiar bindings, tokens ou configurações. A comparação anterior de 54/54 arquivos com a HML `718a9f8d-9c2a-4b44-80a1-f131a61af16a` não se aplica ao pacote de 55 arquivos da landing.
 
 Antes de uma publicação futura:
 
@@ -76,19 +76,29 @@ Configuração proposta para `trilha-de-dados` e, se adotado o build Git, para `
 - Production branch oficial: `main`.
 - Pages Functions: manter `functions/` na raiz do projeto; não copiar para `dist/`.
 - Preview branches do projeto oficial: `None`, ou allowlist que exclua branches de homologação.
-- Automatic Production deployments: manter habilitado apenas para `main`, depois da validação do build e dos bindings.
+- Automatic Production deployments: manter desativado para a publicação controlada; não reativar sem autorização separada.
 
 Antes de salvar essa configuração no painel, confirmar que os bindings de Production continuam presentes. O build não deve criar um Wrangler de Pages nem substituir a configuração remota.
+
+## Publicação controlada da landing — executar somente após nova autorização
+
+1. Registrar o ID do deployment Production ativo, a branch de produção, o estado do deploy automático e os nomes/escopos dos bindings e secrets, sem copiar valores sensíveis. Confirmar que push em `main` não dispara deploy automático; se disparar, interromper o procedimento antes do push.
+2. Integrar o commit homologado à `main` por fast-forward, se a história permitir. Se `main` avançou, resolver a divergência na feature branch e repetir as validações antes de integrar. Confirmar que o push contém somente a entrega aprovada.
+3. Na revisão exata de `main` que será publicada, executar `npm run build`, `npm run check:dist` e `npm run test:public-build`. Confirmar 55 assets, ausência de arquivos proibidos e a presença de `functions/api/sql-tutor.js` na raiz do projeto, fora de `dist/`.
+4. Com acesso autorizado ao projeto `trilha-de-dados`, publicar pelo Wrangler a partir da raiz do repositório: `npx wrangler pages deploy dist --project-name trilha-de-dados --branch main`. Conferir antes a configuração remota de Production e a versão do Wrangler. Não usar upload pelo painel, pois ele não inclui Pages Functions.
+5. Conferir o novo deployment e o domínio oficial: páginas principais, assets, navegação anônima, login e acesso admin com contas autorizadas. Confirmar que `/api/sql-tutor` foi implantada por GET e payload inválido, sem inferência real. Confirmar que bindings, modo de segurança e deployment anterior continuam intactos.
+
+Referências: [Git integration e deploy manual](https://developers.cloudflare.com/pages/configuration/git-integration/), [Pages Functions](https://developers.cloudflare.com/pages/functions/get-started/) e [controle de branches](https://developers.cloudflare.com/pages/configuration/branch-build-controls/).
 
 Verificação de cada deployment:
 
 1. Confirmar que o build executou `npm run build` com saída zero.
-2. Confirmar 54 assets estáticos e rota `/api/sql-tutor`.
+2. Confirmar 55 assets estáticos e rota `/api/sql-tutor`.
 3. Verificar que `docs/`, `scripts/`, `workers/`, `supabase/`, `package.json`, `package-lock.json` e `functions/api/sql-tutor.js` não são servidos como assets.
 4. Executar GET `/api/sql-tutor` e payloads inválidos, sem inferência real.
 5. Validar páginas principais em desktop e mobile.
 
-Rollback: selecionar o deployment Production anterior no Cloudflare Pages. O rollback dos assets/Function não deve alterar dados Supabase nem o estado do Durable Object. Mudanças futuras no Worker de quotas exigem rollback separado.
+Rollback: antes de selecionar qualquer deployment Production anterior, conferir sua compatibilidade com os controles atuais de autenticação, MapIA, bindings e quotas. A troca dos assets/Function não deve alterar dados Supabase nem o estado do Durable Object. Mudanças futuras no Worker de quotas exigem avaliação separada.
 
 ## Proposta para GitHub Pages — não implementada
 

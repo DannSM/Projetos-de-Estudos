@@ -13,6 +13,15 @@ const {
 } = require("./build-public");
 
 const REPOSITORY_ROOT = path.resolve(__dirname, "..");
+// Snapshot independente da allowlist aprovada: qualquer novo ativo exige revisão explícita deste teste.
+const APPROVED_PUBLIC_FILE_COUNT = 55;
+const APPROVED_PUBLIC_FILES_SHA256 = "5026ffb07d93504bb9966e97ac1d648319320c22b17b8faa36be52fa3dae17d3";
+
+function assertApprovedPublicFiles() {
+  assert.equal(PUBLIC_FILES.length, APPROVED_PUBLIC_FILE_COUNT);
+  const digest = crypto.createHash("sha256").update(JSON.stringify(PUBLIC_FILES)).digest("hex");
+  assert.equal(digest, APPROVED_PUBLIC_FILES_SHA256, "A allowlist pública mudou sem revisão explícita.");
+}
 
 async function hashFile(filePath) {
   return crypto.createHash("sha256").update(await fs.promises.readFile(filePath)).digest("hex");
@@ -132,8 +141,9 @@ async function assertPackageSymlinkRejected(temporaryRoot) {
 }
 
 async function run() {
+  assertApprovedPublicFiles();
   const first = await buildPublic();
-  assert.equal(first.fileCount, 54);
+  assert.equal(first.fileCount, APPROVED_PUBLIC_FILE_COUNT);
   assert.deepEqual(first.files, [...PUBLIC_FILES]);
 
   for (const relativePath of PUBLIC_FILES) {
@@ -145,7 +155,7 @@ async function run() {
   const firstManifest = await buildManifest();
   const second = await buildPublic();
   const secondManifest = await buildManifest();
-  assert.equal(second.fileCount, 54);
+  assert.equal(second.fileCount, APPROVED_PUBLIC_FILE_COUNT);
   assert.deepEqual(secondManifest, firstManifest, "duas execuções devem produzir o mesmo conjunto e conteúdo");
 
   const temporaryRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), "data-skill-map-public-build-"));
@@ -160,7 +170,7 @@ async function run() {
   }
 
   const finalValidation = await validateDist(DIST_ROOT, PUBLIC_FILES);
-  assert.equal(finalValidation.fileCount, 54);
+  assert.equal(finalValidation.fileCount, APPROVED_PUBLIC_FILE_COUNT);
   console.log(
     `Public build tests passed: ${finalValidation.fileCount} files, `
     + `${finalValidation.totalBytes} bytes, symlink test: ${symlinkTestMode}`
