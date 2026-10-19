@@ -580,33 +580,62 @@ function renderLevelRoadmap() {
   `;
 }
 
-function renderDiagnosticIntro() {
-  const totalQuestions = getDefaultSessionQuestionCount();
-  const questionPool = getDiagnosticQuestionPool();
+function syncDiagnosticIntroActionOrder() {
+  const intro = quizMount?.querySelector(".diagnostic-intro");
+  if (!intro) return;
 
+  const action = intro.querySelector(".diagnostic-intro-action");
+  const nextSection = window.matchMedia("(max-width: 680px)").matches
+    ? intro.querySelector(".diagnostic-intro-benefits")
+    : intro.querySelector(".diagnostic-intro-rules");
+
+  if (action.nextElementSibling !== nextSection) {
+    intro.insertBefore(action, nextSection);
+  }
+}
+
+window.addEventListener("resize", syncDiagnosticIntroActionOrder);
+
+function renderDiagnosticIntro() {
   quizMount.innerHTML = `
     <div class="diagnostic-intro quiz-step">
-      <span class="section-kicker">Diagnóstico adaptativo</span>
-      <h3 class="question-title">Diagnóstico por níveis</h3>
-      <p class="question-meta">
-        Responda 5 perguntas por nível com ordem aleatória. Banco atual com ${questionPool.length} questões.
-      </p>
-      ${renderLevelRoadmap()}
-      <div class="diagnostic-summary diagnostic-summary-inline">
-        <span>${totalQuestions} por sessão • 3 níveis • meta de 75% por nível</span>
+      <div class="diagnostic-intro-heading">
+        <h2>Seu próximo passo começa aqui.</h2>
+        <p>Você começa pelo nível Básico e avança conforme seus acertos.</p>
       </div>
-      <p class="explanation">
-        Você avança para o próximo nível ao atingir 75% no nível atual.
-      </p>
-      <div class="diagnostic-area-chips" aria-label="Áreas avaliadas">
-        ${areaGoals.map((area) => `<span>${area}</span>`).join("")}
+      <div class="diagnostic-intro-roadmap" aria-label="Progressão dos níveis">
+        <div class="diagnostic-intro-level is-first"><span>01</span><strong>Básico</strong><small>5 perguntas</small></div>
+        <div class="diagnostic-intro-level"><span>02</span><strong>Intermediário</strong><small>5 perguntas</small></div>
+        <div class="diagnostic-intro-level"><span>03</span><strong>Avançado</strong><small>5 perguntas</small></div>
       </div>
-      <button class="submit-button" id="startDiagnostic">Iniciar diagnóstico</button>
-      <p class="diagnostic-start-note">15 perguntas rápidas · sem cadastro obrigatório · resultado com próxima prioridade</p>
+      <div class="diagnostic-intro-benefits" aria-label="O que você recebe ao concluir">
+        <div><span class="diagnostic-benefit-mark" aria-hidden="true"><i data-lucide="chart-no-axes-combined"></i></span><p><strong>Visão do seu desempenho por área</strong><span>Entenda onde você está bem e onde pode evoluir.</span></p></div>
+        <div><span class="diagnostic-benefit-mark" aria-hidden="true"><i data-lucide="target"></i></span><p><strong>Pontos fortes e habilidades a reforçar</strong><span>Identifique os conhecimentos demonstrados e os temas que precisam de atenção.</span></p></div>
+        <div><span class="diagnostic-benefit-mark" aria-hidden="true"><i data-lucide="route"></i></span><p><strong>Prioridade de estudo e próxima ação</strong><span>Receba uma recomendação para continuar sua jornada, conforme seu resultado e o conteúdo disponível.</span></p></div>
+      </div>
+      <div class="diagnostic-intro-areas">
+        <strong>Áreas avaliadas</strong>
+        <div class="diagnostic-area-chips" aria-label="Áreas avaliadas">
+          <span>SQL</span><span>Estatística</span><span>Excel</span><span>Lógica de dados</span><span>Indicadores</span>
+        </div>
+      </div>
+      <div class="diagnostic-intro-action">
+        <button class="submit-button" id="startDiagnostic">Começar diagnóstico grátis <i data-lucide="arrow-right" aria-hidden="true"></i></button>
+        <p class="diagnostic-start-note">Sem cadastro obrigatório. Entre depois para salvar e acompanhar sua evolução.</p>
+      </div>
+      <details class="diagnostic-intro-rules">
+        <summary>Como funciona a avaliação?</summary>
+        <p>São até 15 perguntas, com cinco por nível. Você avança ao acertar pelo menos quatro das cinco questões do nível. Se essa meta não for atingida, o diagnóstico termina naquele nível e apresenta o resultado disponível.</p>
+      </details>
     </div>
   `;
 
   document.querySelector("#startDiagnostic").addEventListener("click", startDiagnostic);
+  quizMount.querySelector(".diagnostic-intro-rules").open = false;
+  syncDiagnosticIntroActionOrder();
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
 }
 
 async function isCurrentUserAuthenticated() {

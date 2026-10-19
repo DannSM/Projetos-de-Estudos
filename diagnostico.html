@@ -3,29 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diagnóstico - Data Skill Map</title>
-  <meta name="description" content="Data Skill Map: diagnóstico adaptativo com progressão por níveis, desempenho por área e recomendações práticas para evoluir em dados.">
+  <title>Diagnóstico gratuito | Trilha de Dados</title>
+  <meta name="description" content="Descubra seu nível em dados, seus pontos fortes e a habilidade que merece sua atenção agora. Faça o diagnóstico gratuito da Trilha de Dados.">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=diagnostico-refino-20261019">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="diagnostic-ui">
   <header class="app-header">
-    <a class="brand" href="index.html" aria-label="Data Skill Map">
+    <a class="brand" href="index.html" aria-label="Trilha de Dados, Data Skill Map">
       <span class="brand-logo-wrap" aria-hidden="true">
-        <img class="brand-logo" src="assets/header-logo.png" alt="Data Skill Map">
+        <img class="brand-logo" src="assets/header-logo.png" alt="">
       </span>
-      <span class="brand-name">
-        <span><strong>D</strong>ata</span>
-        <span><strong>S</strong>kill</span>
-        <span><strong>M</strong>ap</span>
-      </span>
+      <span class="landing-brand-name"><strong>Trilha de Dados</strong><small>Data Skill Map</small></span>
     </a>
 
     <nav class="header-nav" data-global-nav="desktop" aria-label="Navegação principal"></nav>
@@ -45,10 +41,10 @@
   <nav id="mobileGlobalNav" class="mobile-nav-panel" data-global-nav="mobile" aria-label="Menu principal"></nav>
 
   <main class="diagnostic-page">
-    <section class="section-shell diagnostic-hero">
-      <span class="section-kicker">Diagnóstico</span>
-      <h1>Mapa objetivo do seu nível em dados.</h1>
-      <p class="diagnostic-hero-copy">Cada etapa testa fundamentos e libera a próxima somente quando sua base estiver consistente.</p>
+    <section class="section-shell diagnostic-hero" aria-labelledby="diagnosticHeroTitle">
+      <span class="section-kicker">Diagnóstico gratuito</span>
+      <h1 id="diagnosticHeroTitle">Descubra seu nível em dados e <span class="diagnostic-title-accent">o que estudar primeiro.</span></h1>
+      <p class="diagnostic-hero-copy">Responda até 15 perguntas, identifique seus pontos fortes e descubra qual habilidade merece sua atenção agora.</p>
     </section>
 
     <section class="section-shell diagnostic-shell">
@@ -65,8 +61,8 @@
   <footer class="contact-footer contact-footer--compact">
     <div class="contact-footer__content">
       <div class="contact-footer__brand">
-        <strong>Data Skill Map</strong>
-        <span>Desenvolvido por Daniellysson Mendes</span>
+        <strong>Trilha de Dados</strong>
+        <span>Data Skill Map · Desenvolvido por Daniellysson Mendes</span>
       </div>
 
       <nav class="contact-footer__links" aria-label="Links úteis">
@@ -92,7 +88,7 @@
     </div>
 
     <div class="contact-footer__bottom">
-      <span>© 2026 Data Skill Map. Plataforma educacional para evolução em Dados.</span>
+      <span>© 2026 Trilha de Dados. Data Skill Map é a plataforma educacional de aprendizagem em dados.</span>
     </div>
   </footer>
 
@@ -110,7 +106,7 @@
   <script src="src/personalized-learning-service.js"></script>
   <script src="src/diagnostic-account-link-service.js"></script>
   <script src="src/study-plan-content.js"></script>
-  <script src="src/quiz.js?v=mobile-polish-2"></script>
+  <script src="src/quiz.js?v=diagnostico-cta-mobile-20261019"></script>
   <script src="src/app.js"></script>
 </body>
 </html>
