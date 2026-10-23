@@ -6,6 +6,7 @@
     "check:dist": "node scripts/build-public.js --check",
     "test:public-build": "node scripts/test-public-build.js",
     "test:diagnostic-link": "node scripts/test-diagnostic-account-link.js",
+    "test:diagnostic-v2-migrations": "node scripts/test-diagnostic-v2-migrations.js",
     "test:auth-session": "node scripts/test-auth-session-integration.js",
     "test:sql-missions": "node scripts/test-sql-mission-validation.js",
     "test:sql-poc": "node scripts/test-sql-poc-engine.js",
