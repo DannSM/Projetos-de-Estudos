@@ -7,10 +7,12 @@ create schema if not exists private;
 create table private.diagnostic_v2_blueprints (
   version text primary key,
   algorithm_version text not null,
-  max_items integer not null check (max_items between 15 and 25),
-  rules jsonb not null check (jsonb_typeof(rules) = 'object'),
+  max_items integer not null check (max_items = 25),
+  rules jsonb not null check (rules =
+    '{"mapping_per_area":{"basic":2,"intermediate":1},"validation_per_area":1,"advanced_max":5}'::jsonb),
   is_active boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  check (version = 'v2-pilot-1' and algorithm_version = 'deterministic-1')
 );
 
 insert into private.diagnostic_v2_blueprints
@@ -19,6 +21,23 @@ values
   ('v2-pilot-1', 'deterministic-1', 25,
    '{"mapping_per_area":{"basic":2,"intermediate":1},"validation_per_area":1,"advanced_max":5}'::jsonb,
    false);
+
+create or replace function private.diagnostic_v2_guard_blueprint()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'DELETE' then
+    raise exception 'blueprint definition is immutable' using errcode = '23514';
+  end if;
+  if (to_jsonb(new) - 'is_active') is distinct from
+    (to_jsonb(old) - 'is_active') then
+    raise exception 'blueprint definition is immutable' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+create trigger diagnostic_v2_blueprint_guard
+before update or delete on private.diagnostic_v2_blueprints
+for each row execute function private.diagnostic_v2_guard_blueprint();
 
 create table private.diagnostic_v2_item_versions (
   id uuid primary key default gen_random_uuid(),
@@ -56,8 +75,19 @@ declare
   v_count integer;
   v_distinct integer;
 begin
-  if tg_op in ('UPDATE', 'DELETE') and old.published_at is not null then
+  if tg_op = 'DELETE' and old.published_at is not null then
     raise exception 'published item versions are immutable' using errcode = '23514';
+  end if;
+  if tg_op = 'UPDATE' and old.published_at is not null then
+    if (to_jsonb(new) - 'retired_at') is distinct from
+       (to_jsonb(old) - 'retired_at')
+       or old.retired_at is not null
+       or new.retired_at is null
+       or new.retired_at < old.published_at
+       or new.retired_at > now() then
+      raise exception 'published item versions are immutable except retirement'
+        using errcode = '23514';
+    end if;
   end if;
   if tg_op = 'DELETE' then return old; end if;
   v_count := jsonb_array_length(new.options);
@@ -88,6 +118,9 @@ for each row execute function private.diagnostic_v2_guard_item_version();
 create table private.diagnostic_v2_attempts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
+  ever_authenticated boolean not null default false,
+  anonymous_access_expires_at timestamptz not null default (now() + interval '24 hours'),
+  start_idempotency_key uuid not null unique,
   attempt_token_hash bytea not null unique,
   claim_token_hash bytea not null unique,
   blueprint_version text not null references private.diagnostic_v2_blueprints(version),
@@ -103,7 +136,8 @@ create table private.diagnostic_v2_attempts (
   completed_at timestamptz,
   claimed_at timestamptz,
   result_json jsonb,
-  check (status = 'active' or completed_at is not null)
+  check (status = 'active' or completed_at is not null),
+  check (user_id is null or ever_authenticated)
 );
 create index diagnostic_v2_attempt_owner_idx
   on private.diagnostic_v2_attempts (user_id, started_at desc);
@@ -191,7 +225,10 @@ begin
     where attempt_token_hash = sha256(convert_to(p_attempt_token,'UTF8'));
   end if;
   if v_attempt.id is null
-    or (v_attempt.user_id is not null and v_attempt.user_id is distinct from auth.uid()) then
+    or (v_attempt.ever_authenticated and
+      (v_attempt.user_id is null or v_attempt.user_id is distinct from auth.uid()))
+    or (not v_attempt.ever_authenticated and
+      v_attempt.anonymous_access_expires_at <= now()) then
     raise exception 'attempt not found or forbidden' using errcode = '42501';
   end if;
   return v_attempt;
@@ -206,6 +243,7 @@ declare
   v_total integer;
   v_correct integer;
   v_basic integer;
+  v_basic_wrong integer;
   v_intermediate integer;
   v_advanced integer;
   v_skills integer;
@@ -229,10 +267,11 @@ begin
     select count(*)::integer,
       count(*) filter (where ai.is_correct)::integer,
       count(distinct iv.skill_code) filter (where iv.level='Básico' and ai.is_correct)::integer,
+      count(*) filter (where iv.level='Básico' and not ai.is_correct)::integer,
       count(distinct iv.skill_code) filter (where iv.level='Intermediário' and ai.is_correct)::integer,
       count(distinct iv.skill_code) filter (where iv.level='Avançado' and ai.is_correct)::integer,
       count(distinct iv.skill_code)::integer
-    into v_total,v_correct,v_basic,v_intermediate,v_advanced,v_skills
+    into v_total,v_correct,v_basic,v_basic_wrong,v_intermediate,v_advanced,v_skills
     from private.diagnostic_v2_attempt_items ai
     join private.diagnostic_v2_item_versions iv on iv.id=ai.item_version_id
     where ai.attempt_id=p_attempt_id and ai.answered_at is not null and iv.area=v_area;
@@ -240,12 +279,11 @@ begin
       when v_basic >= 2 and v_intermediate >= 2 and v_advanced >= 2 then 'Avançado provisório'
       when v_basic >= 2 and v_intermediate >= 2 then 'Intermediário demonstrado'
       when v_basic >= 2 then 'Fundamentos demonstrados'
-      when v_total >= 2 then 'Fundamentos a revisar'
+      when v_basic_wrong >= 2 then 'Fundamentos a revisar'
       else 'Indeterminado'
     end;
     v_confidence := case
-      when v_total >= 4 and v_skills >= 3 then 'alta'
-      when v_total >= 2 and v_skills >= 2 then 'moderada'
+      when v_basic >= 2 and v_total >= 3 and v_skills >= 2 then 'moderada'
       else 'baixa'
     end;
     select coalesce(jsonb_agg(jsonb_build_object(
@@ -260,7 +298,7 @@ begin
       group by iv.skill_code
     ) skill_evidence;
     v_recommendation := case
-      when v_total < 2 then 'collect_more_evidence'
+      when v_level = 'Indeterminado' then 'collect_more_evidence'
       when v_basic < 2 then 'review_fundamentals'
       when v_intermediate < 2 then 'study_intermediate'
       else 'deepen_advanced'
@@ -296,14 +334,19 @@ begin
 end;
 $$;
 
-create or replace function private.diagnostic_v2_start(p_device_class text default 'unknown')
+create or replace function private.diagnostic_v2_start(
+  p_device_class text, p_idempotency_key uuid)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   v_token text := replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-','');
   v_claim text := replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-','');
   v_attempt_id uuid;
   v_blueprint private.diagnostic_v2_blueprints;
+  v_existing private.diagnostic_v2_attempts;
 begin
+  if p_idempotency_key is null then
+    raise exception 'start idempotency key required' using errcode = '22023';
+  end if;
   if p_device_class not in ('desktop','mobile','tablet','unknown') then
     raise exception 'invalid device class' using errcode = '22023';
   end if;
@@ -313,8 +356,23 @@ begin
     raise exception 'diagnostic v2 unavailable' using errcode = 'P0001';
   end if;
   if not exists (select 1 from private.diagnostic_v2_item_versions
-    where published_at is not null and retired_at is null) then
+    where published_at <= now() and retired_at is null) then
     raise exception 'diagnostic v2 item pool unavailable' using errcode = 'P0001';
+  end if;
+  -- Serializa inícios da mesma conta e reenvios anônimos da mesma chave.
+  perform pg_advisory_xact_lock(hashtextextended(
+    coalesce(auth.uid()::text, p_idempotency_key::text), 0));
+  select * into v_existing from private.diagnostic_v2_attempts
+    where start_idempotency_key=p_idempotency_key;
+  if v_existing.id is not null then
+    if (v_existing.ever_authenticated and
+      v_existing.user_id is distinct from auth.uid()) or
+      (not v_existing.ever_authenticated and
+        v_existing.anonymous_access_expires_at<=now()) then
+      raise exception 'start key already used' using errcode = '42501';
+    end if;
+    -- Tokens não são guardados em texto puro; o cliente conserva a primeira resposta.
+    return jsonb_build_object('status','already_started','attempt_id',v_existing.id);
   end if;
   if auth.uid() is not null and (
     select count(*) from private.diagnostic_v2_attempts
@@ -323,15 +381,18 @@ begin
     raise exception 'diagnostic rate limit' using errcode = 'P0001';
   end if;
   insert into private.diagnostic_v2_attempts
-    (user_id,attempt_token_hash,claim_token_hash,blueprint_version,algorithm_version,device_class)
+    (user_id,ever_authenticated,start_idempotency_key,
+     attempt_token_hash,claim_token_hash,blueprint_version,algorithm_version,device_class)
   values
-    (auth.uid(),sha256(convert_to(v_token,'UTF8')),sha256(convert_to(v_claim,'UTF8')),
+    (auth.uid(),auth.uid() is not null,p_idempotency_key,
+     sha256(convert_to(v_token,'UTF8')),sha256(convert_to(v_claim,'UTF8')),
      v_blueprint.version,v_blueprint.algorithm_version,p_device_class)
   returning id into v_attempt_id;
   insert into private.diagnostic_v2_events(attempt_id,event_type)
   values (v_attempt_id,'started');
-  return jsonb_build_object('attempt_id',v_attempt_id,'attempt_token',v_token,
-    'claim_token',v_claim,'methodology_version','v2.0',
+  return jsonb_build_object('status','started','attempt_id',v_attempt_id,'attempt_token',v_token,
+    'claim_token',case when auth.uid() is null then v_claim else null end,
+    'methodology_version','v2.0',
     'blueprint_version',v_blueprint.version);
 end;
 $$;
@@ -340,6 +401,7 @@ create or replace function private.diagnostic_v2_next(p_attempt_token text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   v_attempt private.diagnostic_v2_attempts;
+  v_blueprint private.diagnostic_v2_blueprints;
   v_current private.diagnostic_v2_attempt_items;
   v_item private.diagnostic_v2_item_versions;
   v_position integer;
@@ -351,6 +413,8 @@ declare
   v_public_options jsonb;
 begin
   v_attempt := private.diagnostic_v2_check_attempt(p_attempt_token,true);
+  select * into v_blueprint from private.diagnostic_v2_blueprints
+    where version=v_attempt.blueprint_version;
   if v_attempt.status <> 'active' then
     return jsonb_build_object('status',v_attempt.status,'result',v_attempt.result_json);
   end if;
@@ -361,7 +425,7 @@ begin
     select * into v_item from private.diagnostic_v2_item_versions
     where id=v_current.item_version_id;
   else
-    while v_attempt.selection_cursor < 25 loop
+    while v_attempt.selection_cursor < v_blueprint.max_items loop
       v_position := v_attempt.selection_cursor + 1;
       v_attempt.selection_cursor := v_position;
       update private.diagnostic_v2_attempts
@@ -394,14 +458,16 @@ begin
         ) candidate
         where candidate.basic_hits>=2 and candidate.intermediate_hits>=2
           and candidate.advanced_count<2
-        order by candidate.advanced_count,candidate.area
+        order by candidate.advanced_count desc,
+          array_position(array['SQL','Estatística','Excel','Lógica de dados','Indicadores'],
+            candidate.area)
         limit 1;
         if v_area is null then exit; end if;
         v_level := 'Avançado'; v_stage := 'deepening';
       end if;
       select * into v_item from private.diagnostic_v2_item_versions iv
       where iv.area=v_area and iv.level=v_level
-        and iv.published_at is not null and iv.retired_at is null
+        and iv.published_at <= now() and iv.retired_at is null
         and not exists (select 1 from private.diagnostic_v2_attempt_items ai
           where ai.attempt_id=v_attempt.id and ai.item_version_id=iv.id)
       order by
@@ -419,7 +485,8 @@ begin
         values (v_attempt.id,'pool_gap',jsonb_build_object('area',v_area,'level',v_level));
         continue;
       end if;
-      select jsonb_agg(value->>'id' order by md5((value->>'id') || v_attempt.id::text))
+      select jsonb_agg(value->>'id' order by
+        md5((value->>'id') || v_item.id::text || v_attempt.id::text))
         into v_order from jsonb_array_elements(v_item.options);
       insert into private.diagnostic_v2_attempt_items
         (attempt_id,item_version_id,position,stage,option_order)
@@ -463,9 +530,6 @@ begin
     raise exception 'missing answer fields' using errcode = '22023';
   end if;
   v_attempt := private.diagnostic_v2_check_attempt(p_attempt_token,true);
-  if v_attempt.status <> 'active' then
-    raise exception 'attempt already finished' using errcode = '23514';
-  end if;
   select * into v_presented from private.diagnostic_v2_attempt_items
   where id=p_attempt_item_id and attempt_id=v_attempt.id for update;
   if v_presented.id is null then
@@ -478,6 +542,9 @@ begin
         'idempotent',true);
     end if;
     raise exception 'item already answered' using errcode = '23505';
+  end if;
+  if v_attempt.status <> 'active' then
+    raise exception 'attempt already finished' using errcode = '23514';
   end if;
   select * into v_item from private.diagnostic_v2_item_versions
   where id=v_presented.item_version_id;
@@ -525,37 +592,41 @@ begin
   if v_attempt.user_id=v_user_id then
     return jsonb_build_object('status','already_claimed','attempt_id',v_attempt.id);
   end if;
-  if v_attempt.user_id is not null or v_attempt.started_at<now()-interval '24 hours' then
+  if v_attempt.user_id is not null or v_attempt.ever_authenticated
+    or v_attempt.anonymous_access_expires_at<=now() then
     raise exception 'claim forbidden or expired' using errcode = '42501';
   end if;
   update private.diagnostic_v2_attempts
-  set user_id=v_user_id,claimed_at=now() where id=v_attempt.id;
+  set user_id=v_user_id,ever_authenticated=true,claimed_at=now() where id=v_attempt.id;
   insert into private.diagnostic_v2_events(attempt_id,event_type)
   values (v_attempt.id,'claimed');
   return jsonb_build_object('status','claimed','attempt_id',v_attempt.id);
 end;
 $$;
 
--- Funções SECURITY DEFINER permanecem no schema não exposto. Wrappers
+-- Funções SECURITY DEFINER permanecem no schema private (confirmar na
+-- homologação que ele não está exposto na Data API). Wrappers
 -- públicos são SECURITY INVOKER e não recebem privilégios nas tabelas.
-revoke all on function private.diagnostic_v2_guard_item_version(),
+revoke all on function private.diagnostic_v2_guard_blueprint(),
+  private.diagnostic_v2_guard_item_version(),
   private.diagnostic_v2_check_attempt(text,boolean),
-  private.diagnostic_v2_finish(uuid), private.diagnostic_v2_start(text),
+  private.diagnostic_v2_finish(uuid), private.diagnostic_v2_start(text,uuid),
   private.diagnostic_v2_next(text),
   private.diagnostic_v2_submit(text,uuid,text,uuid),
   private.diagnostic_v2_result(text), private.diagnostic_v2_claim(text)
   from public, anon, authenticated;
 grant usage on schema private to anon, authenticated;
-grant execute on function private.diagnostic_v2_start(text) to anon, authenticated;
+grant execute on function private.diagnostic_v2_start(text,uuid) to anon, authenticated;
 grant execute on function private.diagnostic_v2_next(text) to anon, authenticated;
 grant execute on function private.diagnostic_v2_submit(text,uuid,text,uuid)
   to anon, authenticated;
 grant execute on function private.diagnostic_v2_result(text) to anon, authenticated;
 grant execute on function private.diagnostic_v2_claim(text) to authenticated;
 
-create or replace function public.diagnostic_v2_start(p_device_class text default 'unknown')
+create or replace function public.diagnostic_v2_start(
+  p_device_class text, p_idempotency_key uuid)
 returns jsonb language sql security invoker set search_path = '' as $$
-  select private.diagnostic_v2_start(p_device_class);
+  select private.diagnostic_v2_start(p_device_class,p_idempotency_key);
 $$;
 create or replace function public.diagnostic_v2_next(p_attempt_token text)
 returns jsonb language sql security invoker set search_path = '' as $$
@@ -578,13 +649,13 @@ returns jsonb language sql security invoker set search_path = '' as $$
   select private.diagnostic_v2_claim(p_claim_token);
 $$;
 
-revoke all on function public.diagnostic_v2_start(text) from public, anon, authenticated;
+revoke all on function public.diagnostic_v2_start(text,uuid) from public, anon, authenticated;
 revoke all on function public.diagnostic_v2_next(text) from public, anon, authenticated;
 revoke all on function public.diagnostic_v2_submit(text,uuid,text,uuid)
   from public, anon, authenticated;
 revoke all on function public.diagnostic_v2_result(text) from public, anon, authenticated;
 revoke all on function public.diagnostic_v2_claim(text) from public, anon, authenticated;
-grant execute on function public.diagnostic_v2_start(text) to anon, authenticated;
+grant execute on function public.diagnostic_v2_start(text,uuid) to anon, authenticated;
 grant execute on function public.diagnostic_v2_next(text) to anon, authenticated;
 grant execute on function public.diagnostic_v2_submit(text,uuid,text,uuid)
   to anon, authenticated;
