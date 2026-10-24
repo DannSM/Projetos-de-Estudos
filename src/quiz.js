@@ -513,6 +513,7 @@ function resetDiagnostic() {
 }
 
 window.addEventListener("data-skill-map-auth-changed", () => {
+  if (window.diagnosticV2Service?.isLocalPreview?.()) return;
   if (!quizMount || !resultMount) {
     return;
   }

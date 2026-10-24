@@ -1,0 +1,38 @@
+(function initDiagnosticV2Progress(globalScope) {
+  const service = globalScope.diagnosticV2Service;
+  if (!service) return;
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  async function renderForUser(user) {
+    const dashboard = globalScope.document.querySelector(".progress-dashboard");
+    const attempt = service.readAttempt();
+    if (!dashboard || !attempt || !service.isLocalPreview() || !user?.id) return;
+    if (attempt.owner_id && attempt.owner_id !== user.id) return;
+    if (!attempt.owner_id && attempt.claim_token) {
+      try { await service.claim(attempt, user.id); } catch (_) { return; }
+    }
+    if (attempt.owner_id !== user.id) return;
+    try {
+      const response = await service.result(attempt);
+      const result = response?.result;
+      if (!result || !Array.isArray(result.areas)) return;
+      const section = globalScope.document.createElement("section");
+      section.className = "progress-detail-card diagnostic-v2-history";
+      section.setAttribute("aria-label", "Diagnóstico V2 por área");
+      section.innerHTML = `<span class="progress-panel-label">Diagnóstico V2 · resultado desta sessão</span>
+        <p>Metodologia V2: desempenho e evidência por área. Os percentuais da avaliação anterior usam outra metodologia.</p>
+        <div class="diagnostic-v2-area-grid">${result.areas.map((area) => `<article class="diagnostic-v2-area-card">
+          <h3>${escapeHtml(area.area)}</h3>
+          <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
+          <p>${Number(area.correct) || 0}/${Number(area.total) || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}%`}</p>
+          <p>${area.evidence_sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio."}</p>
+        </article>`).join("")}</div>`;
+      dashboard.appendChild(section);
+    } catch (_) {
+      // A V1 permanece disponível quando o token da sessão V2 expira.
+    }
+  }
+  globalScope.diagnosticV2Progress = { renderForUser };
+})(window);

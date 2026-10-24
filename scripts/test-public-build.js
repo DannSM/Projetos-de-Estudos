@@ -14,8 +14,8 @@ const {
 
 const REPOSITORY_ROOT = path.resolve(__dirname, "..");
 // Snapshot independente da allowlist aprovada: qualquer novo ativo exige revisão explícita deste teste.
-const APPROVED_PUBLIC_FILE_COUNT = 55;
-const APPROVED_PUBLIC_FILES_SHA256 = "5026ffb07d93504bb9966e97ac1d648319320c22b17b8faa36be52fa3dae17d3";
+const APPROVED_PUBLIC_FILE_COUNT = 59;
+const APPROVED_PUBLIC_FILES_SHA256 = "dc38e2df992f5fe3b601d08d562a0b008380b75fa01c1e991e703bf3f4e2ea87";
 
 function assertApprovedPublicFiles() {
   assert.equal(PUBLIC_FILES.length, APPROVED_PUBLIC_FILE_COUNT);

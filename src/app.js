@@ -867,7 +867,8 @@ async function init() {
     state.anonymousUserId = window.supabaseDataService.getAnonymousUserId();
   }
 
-  if (window.questionBankService && typeof window.questionBankService.loadQuestionContent === "function") {
+  if (!window.diagnosticV2Service?.isLocalPreview?.()
+    && window.questionBankService && typeof window.questionBankService.loadQuestionContent === "function") {
     await window.questionBankService.loadQuestionContent();
   }
 
@@ -879,8 +880,10 @@ async function init() {
   }
 
   if (document.querySelector("#quizMount")) {
-    renderAreaList();
-    resetDiagnostic();
+    if (!window.diagnosticV2Page?.init?.()) {
+      renderAreaList();
+      resetDiagnostic();
+    }
   }
 
   if (document.querySelector("#challengeMount")) {

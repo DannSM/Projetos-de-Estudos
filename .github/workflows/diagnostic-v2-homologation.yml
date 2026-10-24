@@ -11,6 +11,16 @@ on:
       - supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql
       - supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql
       - scripts/test-diagnostic-v2-migrations.js
+      - scripts/test-diagnostic-v2-frontend.js
+      - scripts/test-public-build.js
+      - scripts/build-public.js
+      - src/diagnostic-v2-*.js
+      - src/app.js
+      - src/quiz.js
+      - src/progress-page.js
+      - diagnostico.html
+      - meu-progresso.html
+      - styles/components.css
   workflow_dispatch:
 
 permissions:
@@ -56,6 +66,7 @@ jobs:
           npm ci
           node tests/diagnostic-v2-homologation/check-fixture.cjs
           npm run test:diagnostic-v2-migrations
+          npm run test:diagnostic-v2-frontend
           npm run test:diagnostic-link
           npm run test:auth-session
           npm run test:progress-next-practice
@@ -75,6 +86,9 @@ jobs:
 
       - name: Testar Auth, PostgREST, JWT, concorrencia e regras pedagogicas
         run: node tests/diagnostic-v2-homologation/run-gateway-tests.cjs
+
+      - name: Validar jornada V2 no navegador local
+        run: node tests/diagnostic-v2-homologation/run-browser-tests.cjs
 
       - name: Encerrar stack e apagar log local
         if: always()

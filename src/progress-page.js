@@ -1071,7 +1071,7 @@
             <span class="progress-history-dot" aria-hidden="true"></span>
             <div class="progress-history-main">
               <span>${escapeHtml(formatDateTime(getSessionDate(session)))}</span>
-              <strong>${escapeHtml(session.overall_level || session.identified_profile || "Resultado registrado")}</strong>
+              <strong>Diagnóstico anterior · ${escapeHtml(session.overall_level || session.identified_profile || "Resultado registrado")}</strong>
             </div>
             <p class="progress-history-score">${escapeHtml(formatPercent(session.score_percent) || "sem percentual")} geral</p>
           </li>
@@ -1364,6 +1364,7 @@
     `;
 
     refreshIcons();
+    void globalScope.diagnosticV2Progress?.renderForUser?.(user);
   }
 
   async function refreshProgressPage() {
@@ -1385,7 +1386,12 @@
       renderAuthenticatedState(sessionResult.session, data);
     } catch (error) {
       console.warn("[Meu Progresso] Falha ao carregar dados.", error);
-      renderErrorState(sessionResult.session);
+      if (globalScope.diagnosticV2Service?.isLocalPreview?.()) {
+        mount.innerHTML = `<div class="progress-dashboard"><section class="progress-detail-card"><span class="progress-panel-label">Prévia local V2</span><h1>Meu Progresso</h1><p>O histórico V1 completo não faz parte da base sintética desta prévia.</p></section></div>`;
+        void globalScope.diagnosticV2Progress?.renderForUser?.(sessionResult.user);
+      } else {
+        renderErrorState(sessionResult.session);
+      }
     }
   }
 
