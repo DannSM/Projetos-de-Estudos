@@ -45,7 +45,9 @@ jobs:
           cp supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql "$target/"
           cp supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql "$target/"
           cp supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql "$target/"
-          test "$(find "$target" -maxdepth 1 -name '*.sql' | wc -l)" -eq 4
+          cp tests/diagnostic-v2-homologation/fixtures/v2-items.sql \
+            "$target/20261023023320_synthetic_v2_items.sql"
+          test "$(find "$target" -maxdepth 1 -name '*.sql' | wc -l)" -eq 5
           ! grep -Eiq 'project_ref|service_role' \
             tests/diagnostic-v2-homologation/supabase/config.toml
 
@@ -70,13 +72,6 @@ jobs:
             exit 1
           fi
           echo 'Stack Supabase isolada iniciada.'
-
-      - name: Popular somente itens sinteticos V2
-        run: |
-          supabase db query --local \
-            --workdir tests/diagnostic-v2-homologation \
-            --file fixtures/v2-items.sql \
-            > /dev/null
 
       - name: Testar Auth, PostgREST, JWT, concorrencia e regras pedagogicas
         run: node tests/diagnostic-v2-homologation/run-gateway-tests.cjs
