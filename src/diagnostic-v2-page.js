@@ -85,7 +85,7 @@
         <div class="diagnostic-intro-heading">
           <span class="section-kicker">Prévia local · Diagnóstico V2</span>
           <h2>Descubra o que estudar a seguir.</h2>
-          <p>Até 25 perguntas adaptativas em cinco áreas. O resultado descreve as evidências observadas em cada área, sem atribuir um nível geral.</p>
+          <p>Até 25 perguntas adaptativas em cinco áreas. A estimativa editorial é de 30 a 50 minutos; você pode pausar e retomar nesta sessão. O resultado descreve as evidências observadas em cada área, sem atribuir um nível geral.</p>
         </div>
         <div class="diagnostic-intro-areas"><strong>Áreas avaliadas</strong>
           <div class="diagnostic-area-chips">${service.AREAS.map((area) => `<span>${escapeHtml(area)}</span>`).join("")}</div>
@@ -267,6 +267,7 @@
           <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
           <p>${area.total || 0} respostas · ${area.correct || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}% de desempenho`}</p>
           <p>${sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio nesta área."}</p>
+          ${catalog.advancedEvidenceText(area.advanced_evidence_status) ? `<p>${escapeHtml(catalog.advancedEvidenceText(area.advanced_evidence_status))}</p>` : ""}
           ${renderSkillSummary(signals, area.area, false)}
           ${renderSkillSummary(gaps, area.area, true)}
           <p class="diagnostic-v2-guidance">${escapeHtml(catalog.describe(area.recommendation_code))}</p>

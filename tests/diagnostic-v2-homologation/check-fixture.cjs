@@ -19,6 +19,7 @@ async function main() {
       'supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql',
       'supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql',
       'supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql',
+      'supabase/migrations/20261024164620_diagnostico_v2_fair_deepening.sql',
       'tests/diagnostic-v2-homologation/fixtures/v2-items.sql'
     ]) await db.exec(read(file));
     const result = (await db.query(`select
@@ -28,7 +29,7 @@ async function main() {
       has_function_privilege('authenticated',
         'private.claim_anonymous_diagnostic(text,text)','EXECUTE') v1_claim`)).rows[0];
     assert.deepEqual(result,{items:60,active:true,v1_claim:true});
-    console.log('Synthetic fixture and four-migration chain: pass in PGlite (partial schema only)');
+    console.log('Synthetic fixture and V2 migration chain: pass in PGlite (partial schema only)');
   } finally { await db.close(); }
 }
 main().catch(error=>{console.error(error.message);process.exitCode=1;});

@@ -8,6 +8,7 @@
     "test:diagnostic-link": "node scripts/test-diagnostic-account-link.js",
     "test:diagnostic-v2-migrations": "node scripts/test-diagnostic-v2-migrations.js",
     "test:diagnostic-v2-frontend": "node scripts/test-diagnostic-v2-frontend.js",
+    "test:diagnostic-v2-area-fairness": "node scripts/test-diagnostic-v2-area-fairness.js",
     "test:auth-session": "node scripts/test-auth-session-integration.js",
     "test:sql-missions": "node scripts/test-sql-mission-validation.js",
     "test:sql-poc": "node scripts/test-sql-poc-engine.js",

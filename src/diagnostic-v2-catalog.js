@@ -84,7 +84,7 @@
     collect_more_evidence: "Há poucas evidências nesta área. Retome os fundamentos e faça um novo diagnóstico quando houver mais conteúdo disponível.",
     review_fundamentals: "Revise os fundamentos desta área antes de avançar.",
     study_intermediate: "Consolide os conceitos intermediários com exemplos e exercícios.",
-    deepen_advanced: "Continue praticando em situações mais complexas. O nível avançado ainda é provisório."
+    deepen_advanced: "Continue praticando em situações mais complexas. A conclusão sobre o nível avançado depende das evidências observadas."
   });
 
   function resolve(areaResult) {
@@ -94,12 +94,19 @@
     return gap ? { ...destinations[gap.skill_code], skillCode: gap.skill_code } : null;
   }
   function describe(code) { return guidance[code] || "Continue estudando esta área."; }
+  function advancedEvidenceText(status) {
+    return ({
+      insufficient_evidence: "O nível avançado ainda não foi suficientemente avaliado nesta área.",
+      not_demonstrated: "O nível avançado foi avaliado, mas ainda não foi demonstrado nesta área.",
+      provisional_demonstrated: "O nível avançado foi demonstrado provisoriamente nesta área."
+    })[status] || "";
+  }
   function hasSkillName(code) { return Object.prototype.hasOwnProperty.call(skillNames, code); }
   function skillName(code, area) {
     return hasSkillName(code)
       ? skillNames[code] : `Competência em ${area || "dados"} ainda sem nome editorial`;
   }
-  const api = { resolve, describe, skillName, hasSkillName };
+  const api = { resolve, describe, advancedEvidenceText, skillName, hasSkillName };
   globalScope.diagnosticV2Catalog = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

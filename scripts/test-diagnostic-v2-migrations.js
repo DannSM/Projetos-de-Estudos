@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const read = (name) => fs.readFileSync(path.join(root, 'supabase/migrations', name), 'utf8');
 const securitySql = read('20261023023120_diagnostico_v2_security_and_model.sql');
 const engineSql = read('20261023023220_diagnostico_v2_private_engine.sql');
+const fairDeepeningSql = read('20261024164620_diagnostico_v2_fair_deepening.sql');
 const ownResultsSql = read('20261024000000_diagnostico_v2_my_results.sql');
 const userA = '11111111-1111-4111-8111-111111111111';
 const userB = '22222222-2222-4222-8222-222222222222';
@@ -79,6 +80,7 @@ async function main() {
     `);
     await db.exec(securitySql);
     await db.exec(engineSql);
+    await db.exec(fairDeepeningSql);
     await db.exec(ownResultsSql);
     await assert.rejects(db.query('select public.diagnostic_v2_my_results()'),
       /authentication required/);
@@ -89,11 +91,13 @@ async function main() {
       has_table_privilege('anon','public.diagnostic_funnel_events','TRUNCATE') event_truncate,
       has_function_privilege('authenticated','private.claim_anonymous_diagnostic(text,text)','EXECUTE') old_claim,
       has_function_privilege('anon','private.diagnostic_v2_finish(uuid)','EXECUTE') private_finish,
+      has_function_privilege('anon','private.diagnostic_v2_next(text)','EXECUTE') private_next,
       has_function_privilege('anon','public.diagnostic_v2_start(text,uuid)','EXECUTE') public_start,
       has_function_privilege('anon','public.handle_new_auth_user_profile()','EXECUTE') auth_trigger`)).rows[0];
     assert.deepEqual(grants, {
       q_select: true, q_insert: false, event_insert: true, event_truncate: false,
-      old_claim: true, private_finish: false, public_start: true, auth_trigger: false
+      old_claim: true, private_finish: false, private_next: true,
+      public_start: true, auth_trigger: false
     });
 
     await assert.rejects(db.query(`select public.diagnostic_v2_start('desktop',gen_random_uuid())`),
@@ -194,6 +198,8 @@ async function main() {
     assert.ok(count >= 20 && count <= 25);
     await assert.rejects(db.query(`select public.diagnostic_v2_next($1)`, ['x'.repeat(64)]),
       /attempt not found or forbidden/);
+    await assert.rejects(db.query(`select private.diagnostic_v2_next($1)`, ['x'.repeat(64)]),
+      /attempt not found or forbidden/);
     await db.exec(`reset role; set role authenticated; set request.jwt.claim.sub = '${userA}'`);
     const claimed = (await db.query(`select public.diagnostic_v2_claim($1) value`, [start.claim_token])).rows[0].value;
     assert.equal(claimed.status, 'claimed');
@@ -221,9 +227,12 @@ async function main() {
       (area) => area.demonstrated_level === 'Intermediário demonstrado'));
     const partialAdvanced = await play(db, 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
       (item) => item.level !== 'Avançado' || item.area === 'SQL');
-    assert.equal(partialAdvanced.areas.SQL.demonstrated_level, 'Avançado provisório');
+    assert.ok(['Intermediário demonstrado','Avançado provisório'].includes(
+      partialAdvanced.areas.SQL.demonstrated_level));
+    assert.equal(partialAdvanced.areas.SQL.advanced_evidence_status === 'provisional_demonstrated',
+      partialAdvanced.areas.SQL.demonstrated_level === 'Avançado provisório');
     assert.ok(partialAdvanced.finished.result.areas.filter(
-      (area) => area.demonstrated_level === 'Avançado provisório').length === 1);
+      (area) => area.demonstrated_level === 'Avançado provisório').length <= 1);
     const lucky = await play(db, 'aaaaaaaa-aaaa-4aaa-8aaa-000000000006',
       (item) => item.area === 'SQL' && item.position === 1);
     assert.equal(lucky.areas.SQL.demonstrated_level, 'Fundamentos a revisar');

@@ -19,7 +19,8 @@ const migrations = [
   'tests/diagnostic-v2-homologation/fixtures/v1-dependencies.sql',
   'supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql',
   'supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql',
-  'supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql'
+  'supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql',
+  'supabase/migrations/20261024164620_diagnostico_v2_fair_deepening.sql'
 ];
 
 function fail(message) { throw new Error(message); }
@@ -207,12 +208,18 @@ async function play(db, profile) {
       .map(answer => answer.skill)).size;
     const advancedHits = new Set(observed.filter(answer => answer.level === 'Avançado' && answer.correct)
       .map(answer => answer.skill)).size;
+    const advancedAttempted = new Set(observed.filter(answer => answer.level === 'Avançado')
+      .map(answer => answer.skill)).size;
     const level = basicHits >= 2 && intermediateHits >= 2 && advancedHits >= 2
       ? 'Avançado provisório' : basicHits >= 2 && intermediateHits >= 2
         ? 'Intermediário demonstrado' : basicHits >= 2
           ? 'Fundamentos demonstrados' : basicWrong >= 2
             ? 'Fundamentos a revisar' : 'Indeterminado';
     assert.equal(area.demonstrated_level, level);
+    assert.equal(area.advanced_distinct_items_answered, advancedAttempted);
+    assert.equal(area.advanced_evidence_status, advancedAttempted < 2
+      ? 'insufficient_evidence' : advancedHits >= 2
+        ? 'provisional_demonstrated' : 'not_demonstrated');
     const recommendation = level === 'Indeterminado' ? 'collect_more_evidence'
       : basicHits < 2 ? 'review_fundamentals'
         : intermediateHits < 2 ? 'study_intermediate' : 'deepen_advanced';
