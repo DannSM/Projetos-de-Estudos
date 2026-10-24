@@ -308,7 +308,7 @@ async function main() {
   const excelStrong=await play(item=>item.area==='Excel');
   assert.ok(excelStrong.areas.Excel.score_percent>
     excelStrong.areas.SQL.score_percent);
-  assert.equal(excelStrong.areas['Lógica'].demonstrated_level,'Fundamentos a revisar');
+  assert.equal(excelStrong.areas['Lógica de dados'].demonstrated_level,'Fundamentos a revisar');
   passed++;
 
   const owned1=await play(()=>false,users.b.token);
