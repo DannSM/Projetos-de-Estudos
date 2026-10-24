@@ -4,6 +4,7 @@
   const mount = globalScope.document?.getElementById("quizMount");
   const resultMount = globalScope.document?.getElementById("resultMount");
   const resultSection = globalScope.document?.getElementById("resultado");
+  const hero = globalScope.document?.querySelector(".diagnostic-hero");
   if (!mount || !service || !catalog) return;
 
   let attempt = null;
@@ -18,6 +19,30 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   function icons() { globalScope.lucide?.createIcons?.(); }
+  function setJourneyState(state) {
+    globalScope.document.body.dataset.v2State = state;
+    if (!hero) return;
+    const title = hero.querySelector("#diagnosticHeroTitle");
+    const copy = hero.querySelector(".diagnostic-hero-copy");
+    const kicker = hero.querySelector(".section-kicker");
+    if (state === "question") {
+      title.innerHTML = 'Cada resposta ajuda a <span class="diagnostic-title-accent">revelar seu caminho.</span>';
+      copy.textContent = "Continue explorando suas habilidades. Ao final, você verá o que já demonstrou e o que merece mais atenção.";
+      kicker.textContent = "Sua jornada está em andamento";
+    } else if (state === "result") {
+      title.innerHTML = 'Seu mapa está <span class="diagnostic-title-accent">pronto.</span>';
+      copy.textContent = "Veja suas evidências por área, identifique suas prioridades e descubra como continuar evoluindo.";
+      kicker.textContent = "Diagnóstico concluído";
+    } else if (state === "intro") {
+      title.innerHTML = 'Descubra seu nível em dados e <span class="diagnostic-title-accent">seus próximos passos.</span>';
+      copy.textContent = "Responda até 25 perguntas e descubra seus pontos fortes, suas oportunidades de melhoria e por onde continuar aprendendo.";
+      kicker.textContent = "Diagnóstico gratuito";
+    } else {
+      title.textContent = "Preparando seu diagnóstico";
+      copy.textContent = "Estamos recuperando sua etapa com segurança.";
+      kicker.textContent = "Diagnóstico V2";
+    }
+  }
   function status(message) {
     const node = globalScope.document.getElementById("v2Status");
     if (node) node.textContent = message || "";
@@ -50,6 +75,7 @@
   }
 
   function renderIntro() {
+    setJourneyState("intro");
     currentItem = null;
     hasRenderedResult = false;
     resultSection.classList.add("hidden");
@@ -128,6 +154,7 @@
   }
 
   function renderQuestion(item) {
+    setJourneyState("question");
     currentItem = item;
     questionPresentedAt = globalScope.performance?.now?.() ?? Date.now();
     const position = Math.min(Math.max(Number(item.position) || 1, 1), 25);
@@ -147,7 +174,7 @@
       <button class="filter-button hidden" type="button" data-v2-retry>Tentar novamente</button>
       <button class="filter-button hidden" type="button" data-v2-restart>Novo diagnóstico</button>
       <p id="v2Status" class="diagnostic-v2-status" role="status" aria-live="polite"></p>
-      <p class="diagnostic-start-note">A correção é feita pelo servidor. O gabarito não é mostrado durante a avaliação.</p>
+      <p class="diagnostic-v2-continuity">${position > 1 ? "Resposta anterior registrada. " : ""}Você pode retomar a avaliação nesta etapa.</p>
     </div>`;
     mount.querySelectorAll('input[name="v2Answer"]').forEach((radio) => radio.addEventListener("change", () => {
       mount.querySelector("[data-v2-submit]").disabled = false;
@@ -199,6 +226,7 @@
   function renderResult(result) {
     if (!result || !Array.isArray(result.areas)) { showError(new Error("Resultado indisponível.")); return; }
     currentItem = null;
+    setJourneyState("result");
     mount.innerHTML = "";
     const areas = service.AREAS.map((name) => result.areas.find((area) => area.area === name))
       .filter(Boolean);
@@ -206,28 +234,28 @@
     const destination = catalog.resolve(priority);
     resultMount.innerHTML = `<article class="result-hero-panel diagnostic-v2-result" aria-labelledby="v2ResultTitle">
       <span class="section-kicker">Resultado · Metodologia V2</span>
-      <h2 id="v2ResultTitle">Seu mapa de aprendizagem por área</h2>
+      <h2 id="v2ResultTitle">Suas evidências por área</h2>
       <p>O desempenho observado resume estas respostas. O nível demonstrado depende também da quantidade e diversidade das evidências.</p>
       <div class="diagnostic-v2-result-summary"><strong>${areas.length} áreas avaliadas</strong><span>Até 25 perguntas · níveis independentes</span></div>
+      <div class="diagnostic-v2-next"><h3>Por onde começar</h3>
+        <p><strong>${escapeHtml(priority?.area || "A definir")}</strong> — ${escapeHtml(catalog.describe(priority?.recommendation_code))}</p>
+        ${destination ? `<a class="submit-button" href="${escapeHtml(destination.href)}" data-v2-destination>${escapeHtml(destination.label)}</a>` : `<p>Ainda não há uma prática vinculada a esta competência. Siga a orientação de estudo acima.</p>`}
+        <a class="filter-button" href="meu-progresso.html?preview=v2">Ver Meu Progresso</a>
+      </div>
       <div class="diagnostic-v2-area-grid">${areas.map((area) => {
         const sufficient = area.evidence_sufficient === true;
-        const skills = (area.skills || []).map((skill) => `<li><code>${escapeHtml(skill.skill_code)}</code> · ${Number(skill.correct) || 0}/${Number(skill.total) || 0} respostas observadas</li>`).join("");
+        const signals = (area.skills || []).filter((skill) => Number(skill.correct) > 0);
         const gaps = (area.skills || []).filter((skill) => Number(skill.total) > Number(skill.correct));
         return `<section class="diagnostic-v2-area-card" aria-label="Resultado de ${escapeHtml(area.area)}">
           <h3>${escapeHtml(area.area)}</h3>
           <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
           <p>${area.total || 0} respostas · ${area.correct || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}% de desempenho`}</p>
           <p>${sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio nesta área."}</p>
-          ${skills ? `<details><summary>Competências observadas</summary><ul>${skills}</ul></details>` : ""}
-          ${gaps.length ? `<details><summary>Competências a revisar (${gaps.length})</summary><ul>${gaps.map((skill) => `<li><code>${escapeHtml(skill.skill_code)}</code> · ${Number(skill.total) - Number(skill.correct)} resposta(s) a revisar</li>`).join("")}</ul></details>` : ""}
+          ${signals.length ? `<div class="diagnostic-v2-skill-group"><h4>Sinais positivos observados</h4><ul>${signals.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.correct)}/${Number(skill.total)} acertos</li>`).join("")}</ul></div>` : ""}
+          ${gaps.length ? `<div class="diagnostic-v2-skill-group"><h4>Oportunidades de revisão</h4><ul>${gaps.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.total) - Number(skill.correct)} resposta(s) a revisar</li>`).join("")}</ul></div>` : ""}
           <p class="diagnostic-v2-guidance">${escapeHtml(catalog.describe(area.recommendation_code))}</p>
         </section>`;
       }).join("")}</div>
-      <div class="diagnostic-v2-next"><h3>Prioridade de aprendizagem</h3>
-        <p><strong>${escapeHtml(priority?.area || "A definir")}</strong> — ${escapeHtml(catalog.describe(priority?.recommendation_code))}</p>
-        ${destination ? `<a class="submit-button" href="${escapeHtml(destination.href)}" data-v2-destination>${escapeHtml(destination.label)}</a>` : `<p>Este conteúdo ainda não tem um destino verificado para a competência observada. Use a orientação acima para estudar.</p>`}
-        <a class="filter-button" href="meu-progresso.html?preview=v2">Ver Meu Progresso</a>
-      </div>
       <p id="v2Status" class="diagnostic-v2-status" role="status" aria-live="polite"></p>
     </article>`;
     resultSection.classList.remove("hidden");
@@ -269,8 +297,8 @@
   function init() {
     if (!service.isLocalPreview() || started) return false;
     started = true;
-    const heroCopy = globalScope.document.querySelector(".diagnostic-hero-copy");
-    if (heroCopy) heroCopy.textContent = "Responda até 25 perguntas e veja as evidências observadas em cada uma das cinco áreas.";
+    globalScope.document.body.classList.add("diagnostic-v2-ui");
+    setJourneyState("loading");
     globalScope.addEventListener("data-skill-map-auth-changed", () => { void restore(); });
     void restore();
     return true;

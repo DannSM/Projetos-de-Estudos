@@ -56,6 +56,10 @@ async function main() {
   assert.equal(local.scope.diagnosticV2Catalog.resolve({skills:[{skill_code:'synthetic.sql',correct:0,total:1}]}),null);
   assert.equal(local.scope.diagnosticV2Catalog.resolve({recommendation_code:'review_fundamentals',skills:[{skill_code:'sql.filtering.where_logic',correct:0,total:1}]}).type,'Prática');
   assert.equal(local.scope.diagnosticV2Catalog.resolve({recommendation_code:'collect_more_evidence',skills:[{skill_code:'sql.filtering.where_logic',correct:0,total:1}]}),null);
+  assert.equal(local.scope.diagnosticV2Catalog.skillName('sql.aggregation.counting','SQL'),'Contagem com valores nulos');
+  assert.equal(local.scope.diagnosticV2Catalog.skillName('synthetic.sql.basico.1','SQL'),'Competência em SQL ainda sem nome editorial');
+  assert.equal(local.scope.diagnosticV2Catalog.resolve({recommendation_code:'review_fundamentals',skills:[{skill_code:'sql.aggregation.counting',correct:0,total:1}]}).href,'praticas-sql.html?pratica=sql-essencial-count-nulos-distintos');
+  assert.equal(local.scope.diagnosticV2Catalog.resolve({recommendation_code:'review_fundamentals',skills:[{skill_code:'sql.aggregation.distinct_entities',correct:0,total:1}]}).href,'praticas-sql.html?pratica=sql-essencial-count-nulos-distintos');
   api.clearAttempt();
   assert.equal(api.readAttempt(),null);
   const html = fs.readFileSync(path.join(root,'diagnostico.html'),'utf8');

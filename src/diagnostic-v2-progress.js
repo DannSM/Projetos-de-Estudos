@@ -1,6 +1,7 @@
 (function initDiagnosticV2Progress(globalScope) {
   const service = globalScope.diagnosticV2Service;
-  if (!service) return;
+  const catalog = globalScope.diagnosticV2Catalog;
+  if (!service || !catalog) return;
   function escapeHtml(value) {
     return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -31,6 +32,7 @@
           <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
           <p>${Number(area.correct) || 0}/${Number(area.total) || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}%`}</p>
           <p>${area.evidence_sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio."}</p>
+          ${(area.skills || []).length ? `<details><summary>Competências observadas</summary><ul>${area.skills.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.correct) || 0}/${Number(skill.total) || 0} acertos observados</li>`).join("")}</ul></details>` : ""}
         </article>`).join("")}</div></details>`).join("")}`;
       dashboard.appendChild(section);
     } catch (_) {

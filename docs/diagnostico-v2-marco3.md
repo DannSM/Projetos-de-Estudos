@@ -10,8 +10,15 @@ O Diagnóstico V1 continua sendo o fluxo padrão. A interface V2 só abre em
 - A tentativa e seus tokens ficam em `sessionStorage` para retomada na mesma sessão. A conta é conferida antes de mostrar um resultado vinculado.
 - A tela mostra até 25 perguntas, sem gabarito, e o resultado separado das cinco áreas. Desempenho observado e nível demonstrado recebem rótulos distintos.
 - Meu Progresso mostra a metodologia do histórico V1 e consulta até dez resultados V2 concluídos da conta autenticada, inclusive em outro dispositivo. Os números das duas metodologias não são comparados.
-- A única prática com destino confirmado no catálogo é a competência `sql.filtering.where_logic`; quando não há destino validado, a orientação aparece sem botão fictício.
+- Os destinos confirmados cobrem `sql.filtering.where_logic`, `sql.aggregation.counting` e `sql.aggregation.distinct_entities` nas práticas SQL existentes; quando não há destino validado, a orientação aparece sem botão fictício.
 - Eventos V2 distinguem início, questão exibida, resposta salva, conclusão, resultado por área, recomendação, prática iniciada e retorno. A duração aproximada de resposta e dificuldades por competência seguem em metadados sem alternativa correta ou token; o tempo persistido pelo motor permanece a referência técnica.
+
+## Refinamento visual 3.1
+
+- O hero muda conforme os estados reais `loading`, `intro`, `question` e `result`, inclusive após atualização da página. A área de perguntas é ocultada no resultado para eliminar o skeleton residual; o skeleton permanece no carregamento real.
+- A prioridade aparece antes dos cards de área. Sinais positivos e oportunidades de revisão têm rótulos próprios; um acerto isolado continua sendo somente observação, sem equivaler a domínio.
+- O catálogo de nomes amigáveis cobre os 64 códigos da auditoria local. Códigos sintéticos ou sem nome editorial recebem um rótulo genérico e continuam internos.
+- O Chrome isolado produz capturas com fontes carregadas e animações desativadas em 390, 768 e 1366 px. A captura conjunta V1/V2 usa uma amostra visual V1 explicitamente rotulada, pois a fixture isolada não contém todo o schema da página Meu Progresso; a regressão V1 funcional permanece nos testes existentes e na futura homologação representativa.
 
 ## Homologação
 

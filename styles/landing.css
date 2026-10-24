@@ -826,3 +826,106 @@ body.diagnostic-ui .diagnostic-shell:has(.diagnostic-intro) .quiz-card {
     width: 100%;
   }
 }
+
+/* Estados exclusivos da prévia local V2; a apresentação V1 permanece intacta. */
+body.diagnostic-v2-ui .diagnostic-hero {
+  width: min(70rem, calc(100% - 28px));
+  max-width: 70rem;
+  text-align: center;
+  justify-items: center;
+}
+body.diagnostic-v2-ui .diagnostic-hero h1 {
+  max-width: 29ch;
+  color: #07343b;
+  font-size: clamp(2.2rem, 4vw, 3.35rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+body.diagnostic-v2-ui .diagnostic-hero-copy {
+  max-width: 49rem;
+  color: #3d5961;
+  line-height: 1.55;
+}
+body.diagnostic-v2-ui[data-v2-state="question"] .diagnostic-hero,
+body.diagnostic-v2-ui[data-v2-state="result"] .diagnostic-hero {
+  padding-top: 1.15rem;
+  padding-bottom: 0.5rem;
+}
+body.diagnostic-v2-ui[data-v2-state="question"] .diagnostic-hero h1,
+body.diagnostic-v2-ui[data-v2-state="result"] .diagnostic-hero h1 {
+  max-width: 36ch;
+  font-size: clamp(1.75rem, 2.8vw, 2.45rem);
+}
+body.diagnostic-v2-ui[data-v2-state="result"] .diagnostic-shell { display: none; }
+body.diagnostic-v2-ui[data-v2-state="result"] #quizMount:empty::before { content: none; }
+body.diagnostic-v2-ui[data-v2-state="result"] .result-section { padding-top: 0.35rem; }
+body.diagnostic-v2-ui .diagnostic-v2 .question-title {
+  margin: 0.45rem 0 0.8rem;
+  color: #173b44;
+  font-size: clamp(1.18rem, 2vw, 1.48rem);
+  line-height: 1.35;
+}
+body.diagnostic-v2-ui .diagnostic-v2-stage { margin: 0.9rem 0 0.25rem; }
+body.diagnostic-v2-ui .diagnostic-v2-option {
+  min-height: 3.1rem;
+  color: #173b44;
+  background: #fbfdfd;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+body.diagnostic-v2-ui .diagnostic-v2-option:hover { border-color: #1383a1; }
+body.diagnostic-v2-ui .diagnostic-v2-option:has(input:checked) {
+  border-width: 2px;
+  background: #e8f7f8;
+}
+body.diagnostic-v2-ui .diagnostic-v2-option input { accent-color: #087c80; }
+body.diagnostic-v2-ui .diagnostic-v2-continuity {
+  margin: 0.75rem 0 0;
+  color: #4b6770;
+  font-size: 0.85rem;
+}
+body.diagnostic-v2-ui .diagnostic-v2-result {
+  display: block;
+  padding: clamp(1.15rem, 2.5vw, 2rem);
+  color: #173b44;
+  background: #f4fafb;
+  border: 1px solid #d8e8eb;
+  box-shadow: 0 15px 35px rgba(7, 52, 59, 0.08);
+}
+body.diagnostic-v2-ui .diagnostic-v2-result h2 { color: #07343b; font-size: clamp(1.65rem, 3vw, 2.25rem); }
+body.diagnostic-v2-ui .diagnostic-v2-result > p { color: #3d5961; line-height: 1.6; }
+body.diagnostic-v2-ui .diagnostic-v2-result-summary { color: #48646c; }
+body.diagnostic-v2-ui .diagnostic-v2-next {
+  padding: clamp(1rem, 2vw, 1.35rem);
+  margin: 1.25rem 0 1.5rem;
+  color: #173b44;
+  background: #e5f5f3;
+  border: 1px solid #b9ded8;
+  border-radius: 1rem;
+}
+body.diagnostic-v2-ui .diagnostic-v2-next h3 { color: #075e60; }
+body.diagnostic-v2-ui .diagnostic-v2-next p { line-height: 1.55; }
+body.diagnostic-v2-ui .diagnostic-v2-next .submit-button,
+body.diagnostic-v2-ui .diagnostic-v2-next .filter-button { display: inline-flex; align-items: center; justify-content: center; }
+body.diagnostic-v2-ui .diagnostic-v2-area-card {
+  min-width: 0;
+  color: #173b44;
+  background: #fff;
+}
+body.diagnostic-v2-ui .diagnostic-v2-area-card h3 { color: #07343b; }
+body.diagnostic-v2-ui .diagnostic-v2-skill-group { margin-top: 0.9rem; padding-top: 0.7rem; border-top: 1px solid #e0e9ec; }
+body.diagnostic-v2-ui .diagnostic-v2-skill-group h4 { margin: 0 0 0.45rem; color: #075e60; font-size: 0.9rem; }
+body.diagnostic-v2-ui .diagnostic-v2-skill-group ul { margin: 0; padding-left: 1.2rem; }
+body.diagnostic-v2-ui .diagnostic-v2-skill-group li { margin-top: 0.35rem; line-height: 1.5; }
+body.diagnostic-v2-ui .diagnostic-v2-guidance { margin-top: 0.95rem; }
+@media (max-width: 680px) {
+  body.diagnostic-v2-ui .diagnostic-hero h1 { max-width: 23ch; font-size: clamp(1.85rem, 7vw, 2.5rem); }
+  body.diagnostic-v2-ui[data-v2-state="question"] .diagnostic-hero h1,
+  body.diagnostic-v2-ui[data-v2-state="result"] .diagnostic-hero h1 { font-size: clamp(1.55rem, 6vw, 1.9rem); }
+  body.diagnostic-v2-ui .diagnostic-v2-result { padding: 1rem; }
+  body.diagnostic-v2-ui .diagnostic-v2-next a { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.diagnostic-v2-ui .quiz-step { animation: none; }
+  body.diagnostic-v2-ui .diagnostic-v2-option { transition: none; }
+}
