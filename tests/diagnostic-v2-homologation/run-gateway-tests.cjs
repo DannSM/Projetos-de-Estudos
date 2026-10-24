@@ -296,6 +296,20 @@ async function main() {
   const resumedPlay=await play(()=>false);
   assert.ok(resumedPlay.shown.length>=15);
   passed++;
+  const allCorrect=await play(()=>true);
+  assert.equal(allCorrect.areas.SQL.demonstrated_level,'Avançado provisório');
+  assert.ok(allCorrect.finished.result.areas.every(area=>area.score_percent>0));
+  passed++;
+  const statsStrong=await play(item=>item.area==='Estatística');
+  assert.ok(statsStrong.areas['Estatística'].score_percent>
+    statsStrong.areas.SQL.score_percent);
+  assert.equal(statsStrong.areas.Excel.demonstrated_level,'Fundamentos a revisar');
+  passed++;
+  const excelStrong=await play(item=>item.area==='Excel');
+  assert.ok(excelStrong.areas.Excel.score_percent>
+    excelStrong.areas.SQL.score_percent);
+  assert.equal(excelStrong.areas['Lógica'].demonstrated_level,'Fundamentos a revisar');
+  passed++;
 
   const owned1=await play(()=>false,users.b.token);
   const owned2=await play(()=>false,users.b.token);
@@ -333,7 +347,7 @@ async function main() {
   assert.equal(insufficient.areas.SQL.evidence_sufficient,false);
   passed++;
 
-  console.log(`Gateway homologation: ${passed} checks passed; Auth/PostgREST, concurrency and A-J scenarios exercised; no tokens logged.`);
+  console.log(`Gateway homologation: ${passed} checks passed; Auth/PostgREST, concurrency and 10 pedagogical profiles exercised; no tokens logged.`);
 }
 
 main().catch(error=>{
