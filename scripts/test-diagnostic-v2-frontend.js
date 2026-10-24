@@ -49,6 +49,8 @@ async function main() {
   await api.submit(attempt,'33333333-3333-4333-8333-333333333333','a');
   assert.equal(local.calls[2].payload.p_idempotency_key,key);
   await api.claim(attempt,'44444444-4444-4444-8444-444444444444');
+  await api.myResults();
+  assert.equal(local.calls.at(-1).name,'diagnostic_v2_my_results');
   assert.equal(api.readAttempt().claim_token,null);
   assert.equal(api.readAttempt().owner_id,'44444444-4444-4444-8444-444444444444');
   assert.equal(local.scope.diagnosticV2Catalog.resolve({skills:[{skill_code:'synthetic.sql',correct:0,total:1}]}),null);

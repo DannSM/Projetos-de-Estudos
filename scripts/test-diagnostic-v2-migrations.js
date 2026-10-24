@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const read = (name) => fs.readFileSync(path.join(root, 'supabase/migrations', name), 'utf8');
 const securitySql = read('20261023023120_diagnostico_v2_security_and_model.sql');
 const engineSql = read('20261023023220_diagnostico_v2_private_engine.sql');
+const ownResultsSql = read('20261024000000_diagnostico_v2_my_results.sql');
 const userA = '11111111-1111-4111-8111-111111111111';
 const userB = '22222222-2222-4222-8222-222222222222';
 
@@ -78,6 +79,9 @@ async function main() {
     `);
     await db.exec(securitySql);
     await db.exec(engineSql);
+    await db.exec(ownResultsSql);
+    await assert.rejects(db.query('select public.diagnostic_v2_my_results()'),
+      /authentication required/);
     const grants = (await db.query(`select
       has_table_privilege('anon','public.question_bank','SELECT') q_select,
       has_table_privilege('anon','public.question_bank','INSERT') q_insert,

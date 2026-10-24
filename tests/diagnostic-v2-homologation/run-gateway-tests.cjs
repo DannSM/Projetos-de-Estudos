@@ -92,12 +92,16 @@ async function main() {
     has_table_privilege('anon','public.diagnostic_funnel_events','INSERT') event_insert,
     has_table_privilege('authenticated','public.diagnostic_funnel_events','TRUNCATE') event_truncate,
     has_function_privilege('anon','private.diagnostic_v2_finish(uuid)','EXECUTE') private_finish,
+    has_function_privilege('anon','public.diagnostic_v2_my_results()','EXECUTE') anon_results,
+    has_function_privilege('authenticated','public.diagnostic_v2_my_results()','EXECUTE') owner_results,
     has_function_privilege('authenticated','private.claim_anonymous_diagnostic(text,text)','EXECUTE') v1_claim`)[0];
   assert.equal(grants.q_select, true);
   assert.equal(grants.q_truncate, false);
   assert.equal(grants.event_insert, true);
   assert.equal(grants.event_truncate, false);
   assert.equal(grants.private_finish, false);
+  assert.equal(grants.anon_results, false);
+  assert.equal(grants.owner_results, true);
   assert.equal(grants.v1_claim, true);
   passed++;
 
@@ -117,6 +121,8 @@ async function main() {
     {headers:{'Accept-Profile':'private'}}), 'private schema exposure');
   denied(await request('/rest/v1/rpc/diagnostic_v2_finish',
     {method:'POST',body:{p_attempt_id:uuid()}}), 'private function exposure');
+  denied(await request('/rest/v1/rpc/diagnostic_v2_my_results',
+    {method:'POST',body:{}}), 'anonymous own results');
 
   const legacyAttempt = 'diag_fixture_v1_' + crypto.randomBytes(6).toString('hex');
   sql(`insert into public.diagnostic_sessions(attempt_id,anonymous_user_id,finished_at)
@@ -313,6 +319,17 @@ async function main() {
 
   const owned1=await play(()=>false,users.b.token);
   const owned2=await play(()=>false,users.b.token);
+  const bResults=await rpc('diagnostic_v2_my_results',{},users.b.token);
+  assert.equal(bResults.methodology_version,'v2.0');
+  assert.ok(bResults.results.some(entry=>entry.attempt_id===owned1.start.attempt_id));
+  assert.ok(bResults.results.some(entry=>entry.attempt_id===owned2.start.attempt_id));
+  assert.ok(bResults.results.every(entry=>entry.result?.areas?.length===5));
+  assert.equal(JSON.stringify(bResults).includes('attempt_token'),false);
+  assert.equal(JSON.stringify(bResults).includes('correct_option_id'),false);
+  const aResults=await rpc('diagnostic_v2_my_results',{},users.a.token);
+  assert.ok(aResults.results.every(entry=>entry.attempt_id!==owned1.start.attempt_id &&
+    entry.attempt_id!==owned2.start.attempt_id));
+  passed++;
   const firstVersions=sql(`select attempt_id,item_version_id from private.diagnostic_v2_attempt_items
     where id in ('${requireUuid(owned1.shown[0].attempt_item_id)}',
       '${requireUuid(owned2.shown[0].attempt_item_id)}')`);

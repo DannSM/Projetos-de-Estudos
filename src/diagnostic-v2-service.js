@@ -62,6 +62,7 @@
 
   function next(attempt) { return rpc("next", { p_attempt_token: attempt.attempt_token }); }
   function result(attempt) { return rpc("result", { p_attempt_token: attempt.attempt_token }); }
+  function myResults() { return rpc("my_results", {}); }
   function submit(attempt, itemId, optionId) {
     let pending = attempt.pending_answer;
     if (!pending || pending.item_id !== itemId || pending.option_id !== optionId) {
@@ -94,7 +95,7 @@
   }
 
   const api = { STORAGE_KEY, AREAS, isLocalPreview, getClient, readAttempt,
-    saveAttempt, clearAttempt, start, next, submit, result, claim, currentUserId };
+    saveAttempt, clearAttempt, start, next, submit, result, myResults, claim, currentUserId };
   globalScope.diagnosticV2Service = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

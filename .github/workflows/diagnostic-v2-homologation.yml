@@ -10,6 +10,7 @@ on:
       - supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql
       - supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql
       - supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql
+      - supabase/migrations/20261024000000_diagnostico_v2_my_results.sql
       - scripts/test-diagnostic-v2-migrations.js
       - scripts/test-diagnostic-v2-frontend.js
       - scripts/test-public-build.js
@@ -55,9 +56,10 @@ jobs:
           cp supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql "$target/"
           cp supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql "$target/"
           cp supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql "$target/"
+          cp supabase/migrations/20261024000000_diagnostico_v2_my_results.sql "$target/"
           cp tests/diagnostic-v2-homologation/fixtures/v2-items.sql \
             "$target/20261023023320_synthetic_v2_items.sql"
-          test "$(find "$target" -maxdepth 1 -name '*.sql' | wc -l)" -eq 5
+          test "$(find "$target" -maxdepth 1 -name '*.sql' | wc -l)" -eq 6
           ! grep -Eiq 'project_ref|service_role' \
             tests/diagnostic-v2-homologation/supabase/config.toml
 

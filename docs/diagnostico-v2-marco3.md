@@ -9,7 +9,7 @@ O Diagnóstico V1 continua sendo o fluxo padrão. A interface V2 só abre em
 - O adaptador usa os cinco RPCs homologados: `start`, `next`, `submit`, `result` e `claim`.
 - A tentativa e seus tokens ficam em `sessionStorage` para retomada na mesma sessão. A conta é conferida antes de mostrar um resultado vinculado.
 - A tela mostra até 25 perguntas, sem gabarito, e o resultado separado das cinco áreas. Desempenho observado e nível demonstrado recebem rótulos distintos.
-- Meu Progresso mostra a metodologia do histórico V1 e acrescenta o resultado V2 da sessão atual quando o usuário é o titular. Os números das duas metodologias não são comparados.
+- Meu Progresso mostra a metodologia do histórico V1 e consulta até dez resultados V2 concluídos da conta autenticada, inclusive em outro dispositivo. Os números das duas metodologias não são comparados.
 - A única prática com destino confirmado no catálogo é a competência `sql.filtering.where_logic`; quando não há destino validado, a orientação aparece sem botão fictício.
 
 ## Homologação
@@ -27,6 +27,6 @@ workflow injeta essa configuração apenas no navegador de teste.
 
 ## Pendências para o piloto
 
-- A consulta RPC atual exige `attempt_token`; o resultado de outra sessão ou dispositivo ainda precisa de uma consulta autenticada limitada ao titular. Nenhuma migration foi adicionada neste marco.
+- A consulta de histórico V2 foi adicionada em migration local com leitura limitada a `auth.uid()`. Ainda depende de revisão e aplicação posterior em ambiente autorizado; nenhuma migration foi aplicada ao Supabase remoto.
 - A auditoria editorial consolidada está em `docs/diagnostico-v2-curadoria-marco3.md`. Itens reais exigem revisão humana e importação privada.
 - Permanecem os bloqueadores de produção: regressão V1 ponta a ponta em ambiente representativo, verificação dos schemas da Data API de produção, limite de taxa anônima na borda, exposição do gabarito V1 durante a transição e homologação final da experiência do aluno.
