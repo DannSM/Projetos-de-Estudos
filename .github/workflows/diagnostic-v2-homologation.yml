@@ -75,7 +75,7 @@ jobs:
         run: |
           supabase db query --local \
             --workdir tests/diagnostic-v2-homologation \
-            --file tests/diagnostic-v2-homologation/fixtures/v2-items.sql \
+            --file fixtures/v2-items.sql \
             > /dev/null
 
       - name: Testar Auth, PostgREST, JWT, concorrencia e regras pedagogicas
