@@ -75,6 +75,7 @@
 
   function confirmAnonymous() {
     return new Promise((resolve) => {
+      const previousFocus = globalScope.document.activeElement;
       const overlay = globalScope.document.createElement("div");
       overlay.className = "anonymous-diagnostic-modal-overlay";
       overlay.innerHTML = `<div class="anonymous-diagnostic-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="v2AnonTitle">
@@ -84,8 +85,23 @@
           <button class="filter-button" type="button" data-v2-anon>Continuar sem login</button>
           <button class="submit-button" type="button" data-v2-login>Entrar ou criar conta</button>
         </div></div>`;
-      const close = (continueWithoutLogin) => { overlay.remove(); resolve(continueWithoutLogin); };
+      const close = (continueWithoutLogin) => {
+        overlay.remove();
+        previousFocus?.focus?.();
+        resolve(continueWithoutLogin);
+      };
       globalScope.document.body.appendChild(overlay);
+      overlay.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") { event.preventDefault(); close(false); }
+        if (event.key === "Tab") {
+          const buttons = [...overlay.querySelectorAll("button")];
+          if (event.shiftKey && globalScope.document.activeElement === buttons[0]) {
+            event.preventDefault(); buttons.at(-1).focus();
+          } else if (!event.shiftKey && globalScope.document.activeElement === buttons.at(-1)) {
+            event.preventDefault(); buttons[0].focus();
+          }
+        }
+      });
       overlay.querySelector("[data-v2-anon]").addEventListener("click", () => close(true));
       overlay.querySelector("[data-v2-login]").addEventListener("click", () => {
         close(false);

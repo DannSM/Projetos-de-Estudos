@@ -84,11 +84,20 @@ jobs:
           fi
           echo 'Stack Supabase isolada iniciada.'
 
-      - name: Testar Auth, PostgREST, JWT, concorrencia e regras pedagogicas
-        run: node tests/diagnostic-v2-homologation/run-gateway-tests.cjs
-
       - name: Validar jornada V2 no navegador local
         run: node tests/diagnostic-v2-homologation/run-browser-tests.cjs
+
+      - name: Guardar capturas sinteticas da jornada isolada
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-v2-preview-sintetica
+          path: ${{ runner.temp }}/diagnostic-v2-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Testar Auth, PostgREST, JWT, concorrencia e regras pedagogicas
+        run: node tests/diagnostic-v2-homologation/run-gateway-tests.cjs
 
       - name: Encerrar stack e apagar log local
         if: always()
