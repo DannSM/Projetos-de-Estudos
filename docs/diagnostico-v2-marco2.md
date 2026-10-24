@@ -1,6 +1,6 @@
 # Diagnóstico V2 — Marco 2: implementação para homologação
 
-**Base:** `c998f4b1fe2d80dc45c3e83ad0e4200c95f51809`. A especificação e a auditoria das 80 questões continuam em `docs/planejamento-local/`, preservadas localmente. **As migrações deste marco não foram aplicadas ao Supabase remoto.** Consultas ao projeto remoto foram somente leitura.
+**Base:** `c998f4b1fe2d80dc45c3e83ad0e4200c95f51809`. A especificação e a auditoria das 80 questões continuam em `docs/planejamento-local/`, preservadas localmente. **As migrações deste marco não foram aplicadas ao Supabase remoto.** Consultas ao projeto remoto foram somente leitura. A execução posterior do Marco 2.2 está registrada em [diagnostico-v2-homologacao-marco2-2.md](diagnostico-v2-homologacao-marco2-2.md); referências abaixo a testes de gateway pendentes descrevem o estado anterior do Marco 2.1.
 
 ## Estado e limites
 
@@ -12,7 +12,7 @@
 | Identidade, posse, reenvio idempotente, retomada | IMPLEMENTADO, MAS NÃO HOMOLOGADO | Teste PGlite cobre posse, claim, expiração simulada, reenvio após conclusão e retomada sequencial; JWT e concorrência reais seguem pendentes. |
 | Integração com quiz, recomendações, trilhas, progresso e Analytics | PENDENTE | Há contrato V2 abaixo. Nenhum módulo V1 foi alterado nem passou a consumir V2. |
 | Curadoria e importação de itens aprovados | PENDENTE | Nenhum gabarito ou item V1 foi copiado; o piloto não pode ser ativado com esta entrega. |
-| Teste com clientes anon/authenticated reais | BLOQUEADO | Não há ambiente de homologação isolado aprovado; nenhum teste gravou na produção. |
+| Teste com clientes anon/authenticated reais | EXECUTADO EM AMBIENTE ISOLADO SINTÉTICO | GitHub Actions iniciou Supabase Auth/PostgREST local; relatório do Marco 2.2 detalha evidências e limites. Nenhum teste gravou na produção. |
 
 ## Segurança: estado anterior, mudança e efeito
 
