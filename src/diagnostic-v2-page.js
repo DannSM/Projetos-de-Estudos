@@ -223,6 +223,22 @@
     } catch (error) { showError(error); }
   }
 
+  function renderSkillSummary(skills, area, isGap) {
+    if (!skills.length) return "";
+    const named = skills.filter((skill) => catalog.hasSkillName(skill.skill_code));
+    const unnamed = skills.filter((skill) => !catalog.hasSkillName(skill.skill_code));
+    const namedItems = named.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area))} · ${isGap
+      ? `${Number(skill.total) - Number(skill.correct)} resposta(s) a revisar`
+      : `${Number(skill.correct)}/${Number(skill.total)} acertos observados`}</li>`).join("");
+    const unnamedCount = unnamed.reduce((total, skill) => total + (isGap
+      ? Number(skill.total) - Number(skill.correct) : Number(skill.correct)), 0);
+    const unnamedItem = unnamed.length ? `<li>${unnamedCount} ${isGap
+      ? "resposta(s) a revisar em competências"
+      : "acerto(s) observado(s) em competências"} ainda sem nome editorial nesta área.</li>` : "";
+    return `<div class="diagnostic-v2-skill-group"><h4>${isGap
+      ? "Oportunidades de revisão" : "Sinais positivos observados"}</h4><ul>${namedItems}${unnamedItem}</ul></div>`;
+  }
+
   function renderResult(result) {
     if (!result || !Array.isArray(result.areas)) { showError(new Error("Resultado indisponível.")); return; }
     currentItem = null;
@@ -251,8 +267,8 @@
           <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
           <p>${area.total || 0} respostas · ${area.correct || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}% de desempenho`}</p>
           <p>${sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio nesta área."}</p>
-          ${signals.length ? `<div class="diagnostic-v2-skill-group"><h4>Sinais positivos observados</h4><ul>${signals.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.correct)}/${Number(skill.total)} acertos</li>`).join("")}</ul></div>` : ""}
-          ${gaps.length ? `<div class="diagnostic-v2-skill-group"><h4>Oportunidades de revisão</h4><ul>${gaps.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.total) - Number(skill.correct)} resposta(s) a revisar</li>`).join("")}</ul></div>` : ""}
+          ${renderSkillSummary(signals, area.area, false)}
+          ${renderSkillSummary(gaps, area.area, true)}
           <p class="diagnostic-v2-guidance">${escapeHtml(catalog.describe(area.recommendation_code))}</p>
         </section>`;
       }).join("")}</div>

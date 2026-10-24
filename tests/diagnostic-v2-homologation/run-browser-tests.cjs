@@ -137,6 +137,7 @@ async function main() {
     assert.equal(await page.locator('.diagnostic-shell').isVisible(),false);
     assert.match(await page.locator('#diagnosticHeroTitle').innerText(),/Seu mapa está pronto/);
     await capture('14-resultado-apos-reload',page.locator('.diagnostic-hero'));
+    assert.equal(consoleErrors.length,0,`diagnostic browser console errors: ${consoleErrors.length}`);
     const account=await page.evaluate(async()=>{
       const client=window.authService.getClient();
       const {data,error}=await client.auth.signUp({
@@ -160,8 +161,12 @@ async function main() {
       document.querySelector('.diagnostic-v2-history').before(sample);
     });
     await capture('16-meu-progresso-v1-v2-amostra-visual');
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,
+      'progress mobile horizontal overflow');
+    await capture('17-meu-progresso-mobile');
     assert.equal(errors.length,0,`browser page errors: ${errors.length}`);
-    console.log(`V2 browser flow: 390/768/1366px, resume, own history, 5 areas, no residual skeleton; 16 synthetic screenshots including a labeled V1 visual sample. Console errors seen: ${consoleErrors.length} (isolated fixture may lack V1 tables).`);
+    console.log(`V2 browser flow: 390/768/1366px, resume, own history, 5 areas, no residual skeleton; 17 synthetic screenshots including a labeled V1 visual sample. Diagnostic console errors: 0; progress fixture errors: ${consoleErrors.length}.`);
   } finally {
     await browser?.close();
     await new Promise(resolve=>server.close(resolve));

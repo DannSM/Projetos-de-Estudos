@@ -6,6 +6,15 @@
     return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
+  function skillSummary(area) {
+    const skills = area.skills || [];
+    if (!skills.length) return "";
+    const named = skills.filter((skill) => catalog.hasSkillName(skill.skill_code));
+    const unnamedCount = skills.length - named.length;
+    return `<details><summary>Competências observadas</summary><ul>${named.map((skill) =>
+      `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.correct) || 0}/${Number(skill.total) || 0} acertos observados</li>`).join("")}
+      ${unnamedCount ? `<li>${unnamedCount} competência(s) ainda sem nome editorial nesta área.</li>` : ""}</ul></details>`;
+  }
   async function renderForUser(user) {
     const dashboard = globalScope.document.querySelector(".progress-dashboard");
     const attempt = service.readAttempt();
@@ -32,7 +41,7 @@
           <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
           <p>${Number(area.correct) || 0}/${Number(area.total) || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}%`}</p>
           <p>${area.evidence_sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio."}</p>
-          ${(area.skills || []).length ? `<details><summary>Competências observadas</summary><ul>${area.skills.map((skill) => `<li>${escapeHtml(catalog.skillName(skill.skill_code, area.area))} · ${Number(skill.correct) || 0}/${Number(skill.total) || 0} acertos observados</li>`).join("")}</ul></details>` : ""}
+          ${skillSummary(area)}
         </article>`).join("")}</div></details>`).join("")}`;
       dashboard.appendChild(section);
     } catch (_) {

@@ -19,7 +19,12 @@ create table public.diagnostic_funnel_events (
   attempt_id text,
   anonymous_user_id text,
   user_id uuid references auth.users(id) on delete set null,
-  event_type text not null
+  event_type text not null,
+  level text,
+  question_index integer,
+  total_questions_answered integer,
+  score_percent numeric,
+  metadata jsonb not null default '{}'::jsonb
 );
 alter table public.diagnostic_funnel_events enable row level security;
 create policy diagnostic_funnel_events_insert on public.diagnostic_funnel_events

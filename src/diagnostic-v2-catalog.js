@@ -94,11 +94,12 @@
     return gap ? { ...destinations[gap.skill_code], skillCode: gap.skill_code } : null;
   }
   function describe(code) { return guidance[code] || "Continue estudando esta área."; }
+  function hasSkillName(code) { return Object.prototype.hasOwnProperty.call(skillNames, code); }
   function skillName(code, area) {
-    return Object.prototype.hasOwnProperty.call(skillNames, code)
+    return hasSkillName(code)
       ? skillNames[code] : `Competência em ${area || "dados"} ainda sem nome editorial`;
   }
-  const api = { resolve, describe, skillName };
+  const api = { resolve, describe, skillName, hasSkillName };
   globalScope.diagnosticV2Catalog = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
