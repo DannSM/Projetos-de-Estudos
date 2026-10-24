@@ -11,6 +11,7 @@
   let busy = false;
   let started = false;
   let hasRenderedResult = false;
+  let questionPresentedAt = null;
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -128,6 +129,7 @@
 
   function renderQuestion(item) {
     currentItem = item;
+    questionPresentedAt = globalScope.performance?.now?.() ?? Date.now();
     const position = Math.min(Math.max(Number(item.position) || 1, 1), 25);
     const percent = Math.round((position - 1) * 100 / 25);
     resultSection.classList.add("hidden");
@@ -166,8 +168,11 @@
     mount.querySelector("[data-v2-submit]").disabled = true;
     status("Salvando sua resposta…");
     try {
+      const responseSeconds = Math.min(3600, Math.max(0, Math.round(
+        ((globalScope.performance?.now?.() ?? Date.now()) - questionPresentedAt) / 1000)));
       await service.submit(attempt, currentItem.attempt_item_id, option.value);
-      track("v2_answer_saved", { area: currentItem.area, stage: currentItem.stage });
+      track("v2_answer_saved", { area: currentItem.area, stage: currentItem.stage,
+        skill_code: currentItem.skill_code, response_seconds: responseSeconds });
       attempt.pending_answer = null;
       service.saveAttempt(attempt);
       await advance();
@@ -207,12 +212,14 @@
       <div class="diagnostic-v2-area-grid">${areas.map((area) => {
         const sufficient = area.evidence_sufficient === true;
         const skills = (area.skills || []).map((skill) => `<li><code>${escapeHtml(skill.skill_code)}</code> · ${Number(skill.correct) || 0}/${Number(skill.total) || 0} respostas observadas</li>`).join("");
+        const gaps = (area.skills || []).filter((skill) => Number(skill.total) > Number(skill.correct));
         return `<section class="diagnostic-v2-area-card" aria-label="Resultado de ${escapeHtml(area.area)}">
           <h3>${escapeHtml(area.area)}</h3>
           <p><strong>${escapeHtml(area.demonstrated_level || "Indeterminado")}</strong> · confiança ${escapeHtml(area.confidence_band || "baixa")}</p>
           <p>${area.total || 0} respostas · ${area.correct || 0} acertos observados${area.score_percent == null ? "" : ` · ${escapeHtml(area.score_percent)}% de desempenho`}</p>
           <p>${sufficient ? "Evidência suficiente para esta leitura inicial." : "Evidência insuficiente para concluir domínio nesta área."}</p>
           ${skills ? `<details><summary>Competências observadas</summary><ul>${skills}</ul></details>` : ""}
+          ${gaps.length ? `<details><summary>Competências a revisar (${gaps.length})</summary><ul>${gaps.map((skill) => `<li><code>${escapeHtml(skill.skill_code)}</code> · ${Number(skill.total) - Number(skill.correct)} resposta(s) a revisar</li>`).join("")}</ul></details>` : ""}
           <p class="diagnostic-v2-guidance">${escapeHtml(catalog.describe(area.recommendation_code))}</p>
         </section>`;
       }).join("")}</div>
@@ -226,6 +233,15 @@
     resultSection.classList.remove("hidden");
     if (!hasRenderedResult) {
       track("v2_completed", { area_count: areas.length, priority_area: priority?.area || null });
+      areas.forEach((area) => track("v2_area_result", {
+        area: area.area, demonstrated_level: area.demonstrated_level,
+        confidence_band: area.confidence_band,
+        evidence_sufficient: area.evidence_sufficient === true,
+        score_percent: area.score_percent,
+        difficulties: (area.skills || []).filter((skill) => Number(skill.total) > Number(skill.correct))
+          .map((skill) => ({ skill_code: skill.skill_code,
+            missed: Number(skill.total) - Number(skill.correct) }))
+      }));
       track("v2_recommendation_shown", { area: priority?.area || null, destination_ready: Boolean(destination) });
       hasRenderedResult = true;
     }

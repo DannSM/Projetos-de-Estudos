@@ -11,6 +11,7 @@ O Diagnóstico V1 continua sendo o fluxo padrão. A interface V2 só abre em
 - A tela mostra até 25 perguntas, sem gabarito, e o resultado separado das cinco áreas. Desempenho observado e nível demonstrado recebem rótulos distintos.
 - Meu Progresso mostra a metodologia do histórico V1 e consulta até dez resultados V2 concluídos da conta autenticada, inclusive em outro dispositivo. Os números das duas metodologias não são comparados.
 - A única prática com destino confirmado no catálogo é a competência `sql.filtering.where_logic`; quando não há destino validado, a orientação aparece sem botão fictício.
+- Eventos V2 distinguem início, questão exibida, resposta salva, conclusão, resultado por área, recomendação, prática iniciada e retorno. A duração aproximada de resposta e dificuldades por competência seguem em metadados sem alternativa correta ou token; o tempo persistido pelo motor permanece a referência técnica.
 
 ## Homologação
 
