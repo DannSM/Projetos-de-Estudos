@@ -153,7 +153,7 @@ create table private.diagnostic_v2_attempt_items (
   answered_at timestamptz,
   selected_option_id text,
   is_correct boolean,
-  response_ms integer check (response_ms >= 0),
+  response_ms bigint check (response_ms >= 0),
   idempotency_key uuid,
   unique (attempt_id, position),
   unique (attempt_id, item_version_id),
@@ -556,7 +556,7 @@ begin
   set selected_option_id=p_selected_option_id,
       is_correct=(p_selected_option_id=v_item.correct_option_id),
       answered_at=now(),
-      response_ms=greatest(0,(extract(epoch from now()-presented_at)*1000)::integer),
+      response_ms=greatest(0,(extract(epoch from now()-presented_at)*1000)::bigint),
       idempotency_key=p_idempotency_key
   where id=v_presented.id;
   insert into private.diagnostic_v2_events(attempt_id,attempt_item_id,event_type)

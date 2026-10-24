@@ -53,6 +53,8 @@ async function play(db, key, shouldAnswer, { checkResume = false } = {}) {
 async function main() {
   const db = new PGlite();
   try {
+    await assert.rejects(db.query(`select (extract(epoch from interval '30 days')*1000)::integer`),
+      /out of range/);
     await db.exec(`
       create role anon; create role authenticated;
       create schema auth; create schema private;
@@ -231,7 +233,20 @@ async function main() {
     const firstOwned = await play(db, 'aaaaaaaa-aaaa-4aaa-8aaa-000000000101', () => false);
     assert.equal(firstOwned.started.claim_token, null);
     const secondOwned = await play(db, 'aaaaaaaa-aaaa-4aaa-8aaa-000000000102', () => false);
-    await rpc(db, 'diagnostic_v2_start', ['desktop', 'aaaaaaaa-aaaa-4aaa-8aaa-000000000103']);
+    const longStarted = await rpc(db, 'diagnostic_v2_start',
+      ['desktop', 'aaaaaaaa-aaaa-4aaa-8aaa-000000000103']);
+    const longItem = await rpc(db, 'diagnostic_v2_next', [longStarted.attempt_token]);
+    await db.exec('reset role');
+    await db.query(`update private.diagnostic_v2_attempt_items
+      set presented_at=now()-interval '30 days' where id=$1`, [longItem.attempt_item_id]);
+    await db.exec(`set role authenticated; set request.jwt.claim.sub = '${userA}'`);
+    await rpc(db, 'diagnostic_v2_submit', [longStarted.attempt_token,
+      longItem.attempt_item_id, 'a', '55555555-5555-4555-8555-555555555555']);
+    await db.exec('reset role');
+    const longResponseMs = (await db.query(`select response_ms from
+      private.diagnostic_v2_attempt_items where id=$1`, [longItem.attempt_item_id])).rows[0].response_ms;
+    assert.ok(Number(longResponseMs) > 2_147_483_647);
+    await db.exec(`set role authenticated; set request.jwt.claim.sub = '${userA}'`);
     await rpc(db, 'diagnostic_v2_start', ['desktop', 'aaaaaaaa-aaaa-4aaa-8aaa-000000000104']);
     await assert.rejects(rpc(db, 'diagnostic_v2_start',
       ['desktop', 'aaaaaaaa-aaaa-4aaa-8aaa-000000000105']), /diagnostic rate limit/);

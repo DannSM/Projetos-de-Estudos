@@ -1,0 +1,90 @@
+name: Diagnostico V2 - homologacao isolada
+
+on:
+  push:
+    branches:
+      - codex/diagnostico-v2-marco-2
+    paths:
+      - .github/workflows/diagnostic-v2-homologation.yml
+      - tests/diagnostic-v2-homologation/**
+      - supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql
+      - supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql
+      - supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql
+      - scripts/test-diagnostic-v2-migrations.js
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CI: 'true'
+      SUPABASE_ACCESS_TOKEN: ''
+      SUPABASE_PROJECT_ID: ''
+      SUPABASE_DB_PASSWORD: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.101.0
+
+      - name: Preparar somente migrations da fixture e V2
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=tests/diagnostic-v2-homologation/supabase/migrations
+          mkdir -p "$target"
+          cp tests/diagnostic-v2-homologation/fixtures/v1-dependencies.sql \
+            "$target/20260622000000_synthetic_v1_dependencies.sql"
+          cp supabase/migrations/20260622004102_claim_anonymous_diagnostic.sql "$target/"
+          cp supabase/migrations/20261023023120_diagnostico_v2_security_and_model.sql "$target/"
+          cp supabase/migrations/20261023023220_diagnostico_v2_private_engine.sql "$target/"
+          test "$(find "$target" -maxdepth 1 -name '*.sql' | wc -l)" -eq 4
+          ! grep -Eiq 'project_ref|service_role' \
+            tests/diagnostic-v2-homologation/supabase/config.toml
+
+      - name: Testes existentes de migrations e regressao V1
+        run: |
+          npm ci
+          node tests/diagnostic-v2-homologation/check-fixture.cjs
+          npm run test:diagnostic-v2-migrations
+          npm run test:diagnostic-link
+          npm run test:auth-session
+          npm run test:progress-next-practice
+          npm run test:public-build
+
+      - name: Iniciar Supabase local descartavel
+        shell: bash
+        run: |
+          if ! supabase start --workdir tests/diagnostic-v2-homologation \
+            > "$RUNNER_TEMP/diagnostic-v2-start.log" 2>&1; then
+            echo 'Falha ao iniciar stack local. Linhas sem credenciais:'
+            grep -viE 'key|secret|token|password|postgres://|Authorization' \
+              "$RUNNER_TEMP/diagnostic-v2-start.log" | tail -40 || true
+            exit 1
+          fi
+          echo 'Stack Supabase isolada iniciada.'
+
+      - name: Popular somente itens sinteticos V2
+        run: |
+          supabase db query --local \
+            --workdir tests/diagnostic-v2-homologation \
+            --file tests/diagnostic-v2-homologation/fixtures/v2-items.sql \
+            > /dev/null
+
+      - name: Testar Auth, PostgREST, JWT, concorrencia e regras pedagogicas
+        run: node tests/diagnostic-v2-homologation/run-gateway-tests.cjs
+
+      - name: Encerrar stack e apagar log local
+        if: always()
+        shell: bash
+        run: |
+          supabase stop --workdir tests/diagnostic-v2-homologation \
+            > /dev/null 2>&1 || true
+          rm -f "$RUNNER_TEMP/diagnostic-v2-start.log"
