@@ -18,6 +18,7 @@ function runCli(args) {
 function sql(statement) {
   const raw = runCli(['db', 'query', '--local', '-o', 'json', statement]);
   if (!raw) return [];
+  if (/^(?:INSERT|UPDATE|DELETE) \d+(?: \d+)?$/.test(raw)) return [];
   const parsed = JSON.parse(raw);
   if (Array.isArray(parsed)) return parsed;
   if (Array.isArray(parsed.rows)) return parsed.rows;
